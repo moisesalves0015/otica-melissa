@@ -15,6 +15,8 @@ import {
   Instagram,
   Facebook,
   Twitter,
+  MessageSquare,
+  Lock,
   ChevronLeft,
   Glasses,
   Zap,
@@ -243,7 +245,7 @@ function Header() {
               <NavigationMenuItem key={item.name}>
                 {item.categories ? (
                   <>
-                    <NavigationMenuTrigger className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 data-[state=open]:bg-muted/50 ${item.highlight ? 'text-primary' : 'text-foreground/70'}`}>
+                    <NavigationMenuTrigger className="px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 data-[state=open]:bg-muted/50 text-foreground/70">
                       {item.name}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent className="p-0 md:w-[700px] lg:w-[900px] glass-dark text-white rounded-[2rem] border-none overflow-hidden shadow-2xl">
@@ -289,9 +291,7 @@ function Header() {
                 ) : (
                   <NavigationMenuLink
                     href={item.href}
-                    className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 flex items-center gap-2 ${
-                      item.highlight ? "text-primary italic bg-primary/5 px-6" : "text-foreground/70 hover:text-foreground"
-                    }`}
+                    className="px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 flex items-center gap-2 text-foreground/70 hover:text-foreground"
                   >
                     {item.name}
                     {item.badge && (
@@ -587,7 +587,13 @@ function StoreSection() {
             />
             <div className="absolute inset-0 bg-primary/20 backdrop-overlay" />
           </div>
-     function Footer() {
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 md:py-20 border-t border-slate-900 mt-auto">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
