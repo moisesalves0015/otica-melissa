@@ -74,15 +74,6 @@ const NAV_MENU_DATA = [
   },
   { name: "Lentes", href: "#" },
   { name: "Lançamentos", href: "#", badge: "Novo" },
-  {
-    name: "Marcas",
-    href: "#",
-    categories: [
-      { title: "Grifes Internacionais", links: ["Ray-Ban", "Oakley", "Vogue", "Prada", "Carrera", "Dolce & Gabbana", "Emporio Armani"] },
-      { title: "Exclusivas Gassi", links: ["Gassi House", "Urban Style", "Titanium Collection", "Kids Safe"] },
-    ]
-  },
-  { name: "Outlet", href: "#", highlight: true },
 ];
 
 const BENEFITS = [
@@ -385,11 +376,11 @@ function Hero() {
             viewport={{ once: true }}
             className="flex justify-center relative py-6 md:py-0"
           >
-            {/* Floating Logo 1 - Side of image - LOWERED */}
+            {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
             <motion.img
               src="/logo.png"
               alt=""
-              className="absolute top-12 left-0 -translate-x-1/2 -translate-y-1/2 w-20 md:w-32 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              className="absolute top-12 left-0 -translate-y-1/2 w-20 md:w-32 opacity-100 pointer-events-none z-30 drop-shadow-lg"
               animate={{ 
                 y: [0, -10, 0]
               }}
@@ -400,11 +391,11 @@ function Hero() {
               }}
             />
 
-            {/* Floating Logo 2 - Bottom Right edge of image - EVEN LARGER */}
+            {/* Floating Logo 2 - Bottom Right edge of image - EVEN CLOSER */}
             <motion.img
               src="/logo.png"
               alt=""
-              className="absolute bottom-8 right-0 translate-x-1/2 w-24 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              className="absolute bottom-8 right-0 w-24 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-lg"
               animate={{ 
                 y: [0, 10, 0]
               }}
@@ -596,53 +587,95 @@ function StoreSection() {
             />
             <div className="absolute inset-0 bg-primary/20 backdrop-overlay" />
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Footer() {
+     function Footer() {
   return (
-    <footer className="bg-white border-t border-border mt-auto h-[180px] flex items-center">
-      <div className="max-w-7xl mx-auto px-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-          <div className="md:col-span-3">
-            <h6 className="font-bold text-xs uppercase tracking-wider mb-3">Newsletter</h6>
-            <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-              Descubra o mundo Gassi
+    <footer className="bg-slate-950 text-slate-400 py-16 md:py-20 border-t border-slate-900 mt-auto">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 mb-16">
+          {/* Brand Column */}
+          <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
+            <div className="flex items-center gap-2 mb-6">
+                <div className="bg-white p-1.5 rounded-lg">
+                    <img src="/logo.png" alt="Ótica Melissa" className="h-6 w-auto" />
+                </div>
+                <span className="text-xl font-black text-white uppercase tracking-tighter">Ótica Melissa</span>
+            </div>
+            <p className="text-[13px] leading-relaxed mb-8 max-w-sm">
+                Comprometidos em oferecer não apenas óculos, mas uma nova visão de mundo. 
+                Excelência técnica, design moderno e atendimento personalizado para a sua visão.
             </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Seu e-mail"
-                className="bg-background border-border text-foreground h-9 text-[11px] rounded px-4"
-              />
-              <Button className="h-9 px-4 font-bold rounded text-xs" onClick={() => toast.success("Inscrito!")}>
-                OK
-              </Button>
+            <div className="flex gap-4">
+                {['Instagram', 'Facebook', 'WhatsApp'].map((social) => (
+                    <a key={social} href="#" className="w-10 h-10 rounded-full border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">
+                        <span className="sr-only">{social}</span>
+                        {social === 'Instagram' && <Instagram className="h-4 w-4" />}
+                        {social === 'Facebook' && <Facebook className="h-4 w-4" />}
+                        {social === 'WhatsApp' && <MessageSquare className="h-4 w-4" />}
+                    </a>
+                ))}
             </div>
           </div>
 
-          <div className="md:col-span-6">
-            <h6 className="font-bold text-xs uppercase tracking-wider mb-3">Institucional</h6>
-            <ul className="grid grid-cols-2 gap-x-10 gap-y-1 text-[11px] text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground">Quem Somos</a></li>
-              <li><a href="#" className="hover:text-foreground">Trocas e Devoluções</a></li>
-              <li><a href="#" className="hover:text-foreground">SAC</a></li>
-              <li><a href="#" className="hover:text-foreground">Trabalhe Conosco</a></li>
-              <li><a href="#" className="hover:text-foreground">Nossas Lojas (SP, Lapa, Paraíso)</a></li>
-              <li><a href="#" className="hover:text-foreground">Política de Privacidade</a></li>
+          {/* Links Column - Category */}
+          <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
+            <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Compre Por</h6>
+            <ul className="space-y-4 text-[13px]">
+              {["Óculos de Grau", "Óculos de Sol", "Lentes de Contato", "Acessórios", "Lançamentos"].map(link => (
+                <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
+              ))}
             </ul>
           </div>
 
-          <div className="md:col-span-3 text-right md:text-left">
-            <h6 className="font-bold text-xs uppercase tracking-wider mb-3">Pagamento</h6>
-            <div className="flex gap-3 mb-3 opacity-50 grayscale hover:grayscale-0 transition-all justify-end md:justify-start">
-              <CreditCard className="h-5 w-5" />
-              <Truck className="h-5 w-5" />
-            </div>
-            <p className="text-[11px] text-muted-foreground">© 2024 Óticas Gassi</p>
+          {/* Links Column - Support */}
+          <div className="md:col-span-3 flex flex-col items-center md:items-start text-center md:text-left">
+            <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Atendimento</h6>
+            <ul className="space-y-4 text-[13px]">
+              {["Trocas e Devoluções", "Dúvidas Frequentes", "Política de Entrega", "Cuidados com os Óculos", "Fale Conosco"].map(link => (
+                <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
+              ))}
+              <li className="pt-2">
+                <a href="#" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all justify-center md:justify-start">
+                    <MessageSquare size={16} />
+                    WhatsApp: (11) 9999-9999
+                </a>
+              </li>
+            </ul>
           </div>
+
+          {/* Newsletter Column */}
+          <div className="md:col-span-3">
+             <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6 text-center md:text-left">Assine Nossa News</h6>
+             <p className="text-[13px] mb-6 text-center md:text-left">Receba novidades e descontos exclusivos em primeira mão.</p>
+             <div className="flex gap-2">
+                <Input 
+                    placeholder="Seu melhor e-mail" 
+                    className="bg-slate-900 border-slate-800 text-white h-11 text-[13px] rounded-full px-6 focus:ring-primary focus:border-primary" 
+                />
+                <Button className="h-11 px-6 font-bold rounded-full text-xs uppercase tracking-widest bg-white text-slate-950 hover:bg-slate-200" onClick={() => toast.success("Inscrito!")}>
+                  OK
+                </Button>
+             </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col items-center md:items-start gap-1">
+                <p className="text-[11px]">© 2024 Ótica Melissa. Todos os direitos reservados.</p>
+                <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
+                    <span>CNPJ: 00.000.000/0001-00</span>
+                    <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
+                        <Lock size={10} />
+                        Área Administrativa
+                    </a>
+                </div>
+            </div>
+            
+            <div className="flex gap-3 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                <CreditCard className="h-6 w-6" />
+                <Truck className="h-6 w-6" />
+                {/* Additional payment icons would go here */}
+            </div>
         </div>
       </div>
     </footer>
