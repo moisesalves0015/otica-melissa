@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -283,9 +283,9 @@ export default function Clients() {
 
       {/* Quick Access Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[{ label: 'Aniversariantes', sub: '8 este mÃªs', icon: Calendar, color: 'bg-amber-50 text-amber-600' },
-            { label: 'Inadimplentes', sub: '12 pendÃªncias', icon: AlertCircle, color: 'bg-red-50 text-red-600' },
-            { label: 'LocalizaÃ§Ã£o', sub: 'Mapa de densidade', icon: MapPin, color: 'bg-slate-50 text-slate-600' }
+          {[{ label: 'Aniversariantes', sub: '8 este mês', icon: Calendar, color: 'bg-amber-50 text-amber-600' },
+            { label: 'Inadimplentes', sub: '12 pendências', icon: AlertCircle, color: 'bg-red-50 text-red-600' },
+            { label: 'Localização', sub: 'Mapa de densidade', icon: MapPin, color: 'bg-slate-50 text-slate-600' }
           ].map((item, i) => (
             <Card key={i} className="rounded border-slate-200 shadow-none hover:bg-slate-50/50 transition-colors cursor-pointer bg-white group border-dashed">
                 <CardContent className="p-4 flex items-center gap-4">
