@@ -424,7 +424,7 @@ function Hero() {
 
 function Benefits() {
   return (
-    <section className="pb-4 pt-0 md:pb-8 bg-red-600">
+    <section className="py-6 md:py-10 bg-red-600">
       <div className="w-full md:container mx-auto px-0 md:px-6">
         <ResponsiveSlider autoplay={true} autoplayInterval={3500} dotClassName="bg-white/30">
           {BENEFITS.map((benefit, i) => (
