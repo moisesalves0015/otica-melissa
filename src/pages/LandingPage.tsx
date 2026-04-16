@@ -374,13 +374,14 @@ function Hero() {
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
             viewport={{ once: true }}
-            className="flex justify-center relative py-6 md:py-0"
+            className="flex justify-center relative py-0"
           >
+            {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
             {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
             <motion.img
               src="/logo.png"
               alt=""
-              className="absolute top-12 left-0 -translate-y-1/2 w-20 md:w-32 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              className="absolute top-12 left-8 -translate-y-1/2 w-20 md:w-32 opacity-100 pointer-events-none z-30 drop-shadow-lg"
               animate={{ 
                 y: [0, -10, 0]
               }}
@@ -395,7 +396,7 @@ function Hero() {
             <motion.img
               src="/logo.png"
               alt=""
-              className="absolute bottom-8 right-0 w-24 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              className="absolute bottom-8 right-12 w-24 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-lg"
               animate={{ 
                 y: [0, 10, 0]
               }}
@@ -423,7 +424,7 @@ function Hero() {
 
 function Benefits() {
   return (
-    <section className="py-2 md:py-4 bg-red-600">
+    <section className="pb-4 pt-0 md:pb-8 bg-red-600">
       <div className="w-full md:container mx-auto px-0 md:px-6">
         <ResponsiveSlider autoplay={true} autoplayInterval={3500} dotClassName="bg-white/30">
           {BENEFITS.map((benefit, i) => (
