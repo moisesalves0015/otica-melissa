@@ -48,6 +48,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MOCK_PRODUCTS } from "../../data/mockData";
 
 export default function Products() {
@@ -60,37 +61,52 @@ export default function Products() {
   );
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">Estoque & Produtos</h1>
-          <p className="text-slate-500">Controle total de armações, lentes e acessórios em tempo real.</p>
+          <h1 className="text-xl font-semibold text-slate-900">Estoque & Produtos</h1>
+          <p className="text-xs text-slate-500">Gestão de inventário e controle de reposição.</p>
         </div>
 
         <Dialog>
-          <DialogTrigger render={<Button className="rounded-full px-6 font-bold h-12 shadow-lg shadow-primary/20 flex items-center gap-2" />}>
-            <Plus className="h-5 w-5" /> NOVO PRODUTO
+          <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
+            <Plus className="h-4 w-4" /> NOVO PRODUTO
           </DialogTrigger>
-          <DialogContent className="max-w-2xl rounded-3xl border-none shadow-2xl p-0 overflow-hidden">
-            <DialogHeader className="bg-primary p-8 text-white">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                <Package className="h-6 w-6" /> Cadastrar Produto
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
+            <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
+              <DialogTitle className="text-lg font-semibold flex items-center gap-3">
+                <Package className="h-5 w-5" /> Cadastrar Novo Produto
               </DialogTitle>
-              <p className="text-white/70 text-sm font-medium">Adicione novos itens ao estoque da sua ótica.</p>
+              <p className="text-slate-400 text-xs font-medium">Insira as especificações técnicas e de estoque do item.</p>
             </DialogHeader>
-            <div className="p-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 md:col-span-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nome do Produto</Label>
-                        <Input placeholder="Ex: Ray-Ban RB3025 Aviator" className="rounded-xl border-slate-200 h-11" />
+            
+            <Tabs defaultValue="geral" className="w-full">
+              <TabsList className="w-full justify-start h-10 bg-slate-50 border-b border-slate-100 rounded-none px-6 gap-6">
+                <TabsTrigger value="geral" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
+                  Dados Gerais
+                </TabsTrigger>
+                <TabsTrigger value="precos" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
+                  Preços & Estoque
+                </TabsTrigger>
+                <TabsTrigger value="tecnico" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
+                  Ficha Técnica
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="p-6">
+                <TabsContent value="geral" className="space-y-5 m-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5 md:col-span-2">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome do Produto / Descrição Curta</Label>
+                        <Input placeholder="Ex: Ray-Ban RB3025 Aviator Gradient" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Categoria</Label>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</Label>
                         <Select>
-                            <SelectTrigger className="rounded-xl border-slate-200 h-11 font-bold text-slate-600">
+                            <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600">
                                 <SelectValue placeholder="Selecione..." />
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-none shadow-2xl font-bold">
+                            <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
                                 <SelectItem value="armacoes">Armações</SelectItem>
                                 <SelectItem value="lentes">Lentes</SelectItem>
                                 <SelectItem value="contato">Lentes de Contato</SelectItem>
@@ -99,102 +115,120 @@ export default function Products() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Marca / Fabricante</Label>
-                        <Input placeholder="Ex: Ray-Ban" className="rounded-xl border-slate-200 h-11" />
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Marca / Fabricante</Label>
+                        <Input placeholder="Ex: Ray-Ban" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preço de Venda (R$)</Label>
-                        <Input type="number" placeholder="0,00" className="rounded-xl border-slate-200 h-11" />
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor Principal</Label>
+                        <Input placeholder="Nome do fornecedor" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Estoque Inicial</Label>
-                        <Input type="number" placeholder="0" className="rounded-xl border-slate-200 h-11" />
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">SKU / Código Interno</Label>
+                        <Input placeholder="Ex: RB3025-001" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                </div>
-            </div>
-            <DialogFooter className="bg-slate-50 p-8">
-                <Button variant="ghost" className="rounded-full px-6 font-bold text-slate-500">CANCELAR</Button>
-                <Button className="rounded-full px-10 font-bold shadow-lg shadow-primary/20">SALVAR PRODUTO</Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="precos" className="space-y-5 m-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Custo (R$)</Label>
+                        <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Venda (R$)</Label>
+                        <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Atual</Label>
+                        <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Mínimo (Alerta)</Label>
+                        <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="tecnico" className="space-y-5 m-0">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Material</Label>
+                        <Input placeholder="Ex: Acetato" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cor</Label>
+                        <Input placeholder="Ex: Preto Fosco" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tamanho/Aro</Label>
+                        <Input placeholder="Ex: 54" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-3">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações Adicionais</Label>
+                        <textarea className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Informações extras sobre o produto..."></textarea>
+                    </div>
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+
+            <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
+                <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">SALVAR PRODUTO</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-none shadow-sm bg-white">
-              <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Glasses className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Armações</p>
-                    <p className="text-xl font-black text-slate-900">428</p>
-                  </div>
-              </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm bg-white">
-              <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <Eye className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pares de Lentes</p>
-                    <p className="text-xl font-black text-slate-900">1.250</p>
-                  </div>
-              </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm bg-white">
-              <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <AlertTriangle className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Baixo Estoque</p>
-                    <p className="text-xl font-black text-slate-900">12</p>
-                  </div>
-              </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm bg-white">
-              <CardContent className="p-6 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
-                    <Tag className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gasto Médio</p>
-                    <p className="text-xl font-black text-slate-900">R$ 380</p>
-                  </div>
-              </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[{ icon: Glasses, label: 'Total Armações', value: '428', color: 'text-slate-900' },
+            { icon: Eye, label: 'Pares de Lentes', value: '1.250', color: 'text-slate-900' },
+            { icon: AlertTriangle, label: 'Baixo Estoque', value: '12', color: 'text-red-600' },
+            { icon: Tag, label: 'Gasto Médio', value: 'R$ 380', color: 'text-slate-900' }
+          ].map((card, i) => (
+            <Card key={i} className="rounded border-slate-200 shadow-none bg-white">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded bg-slate-50 text-slate-500 border border-slate-100 flex items-center justify-center">
+                      <card.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{card.label}</p>
+                      <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
+                    </div>
+                </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Main Inventory Section */}
-      <Card className="border-none shadow-sm overflow-hidden bg-white">
-        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-4">
+      <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative flex-1 group">
              <Input
                 placeholder="Buscar por nome, marca ou ID..."
-                className="pl-11 h-12 bg-slate-50 border-none rounded-2xl text-sm focus:ring-1 focus:ring-primary/20 transition-all font-medium"
+                className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           </div>
           <div className="flex gap-2">
              <Select defaultValue="todas">
-                <SelectTrigger className="w-[180px] h-12 rounded-2xl border-slate-200 font-bold text-slate-600">
+                <SelectTrigger className="w-[160px] h-9 rounded border-slate-200 font-medium text-xs text-slate-600">
                     <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-none shadow-2xl font-bold">
+                <SelectContent className="rounded border-slate-200 shadow-xl text-xs">
                     <SelectItem value="todas">Todas Categorias</SelectItem>
                     <SelectItem value="armacoes">Armações</SelectItem>
                     <SelectItem value="lentes">Lentes</SelectItem>
                     <SelectItem value="contato">Lentes de Contato</SelectItem>
                 </SelectContent>
             </Select>
-            <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold border-slate-200 text-slate-600">
-                <Filter className="h-4 w-4 mr-2" /> MAIS FILTROS
+            <Button variant="outline" className="rounded h-9 px-4 font-semibold text-xs border-slate-200 text-slate-600">
+                <Filter className="h-3.5 w-3.5 mr-2" /> FILTROS
             </Button>
           </div>
         </div>
@@ -202,59 +236,59 @@ export default function Products() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-slate-100 hover:bg-transparent">
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Produto / ID</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Categoria</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Marca</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Estoque Atual</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Preço Venda</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Ações</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Produto / SKU</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Marca</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-center">Estoque Atual</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">Preço Venda</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-center">Status</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredProducts.map((product) => (
-                <TableRow key={product.id} className="border-slate-50 hover:bg-slate-50/30 transition-colors group">
-                  <TableCell className="px-8 py-4">
+                <TableRow key={product.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
+                  <TableCell className="px-6 py-3">
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">{product.name}</span>
-                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">SKU: {product.id}</span>
+                        <span className="font-semibold text-slate-900">{product.name}</span>
+                        <span className="text-[11px] text-slate-400 uppercase">#{product.id}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-4">
-                    <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
+                  <TableCell className="px-6 py-3">
+                    <span className="text-[11px] font-medium px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-600">
                         {product.category}
-                    </Badge>
+                    </span>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-sm font-medium text-slate-600">
+                  <TableCell className="px-6 py-3 text-slate-600">
                     {product.brand}
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-center">
+                  <TableCell className="px-6 py-3 text-center">
                     <div className="flex flex-col items-center">
-                        <span className={`font-black text-sm ${product.stock <= product.minStock ? 'text-red-600' : 'text-slate-900'}`}>
+                        <span className={`font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-slate-900'}`}>
                             {product.stock} un
                         </span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Mín: {product.minStock}</span>
+                        <span className="text-[10px] text-slate-400">Mín: {product.minStock}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-right font-black text-slate-900">
+                  <TableCell className="px-6 py-3 text-right font-semibold text-slate-900">
                     R$ {product.price.toFixed(2)}
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-center">
-                    <Badge className={`${
+                  <TableCell className="px-6 py-3 text-center">
+                    <Badge className={`rounded ${
                         product.status === 'Em Estoque' ? 'bg-emerald-100 text-emerald-700' :
                         product.status === 'Baixo Estoque' ? 'bg-amber-100 text-amber-700' :
                         'bg-red-100 text-red-700'
-                    } text-[9px] font-black uppercase tracking-widest border-none rounded-full`}>
+                    } text-[10px] font-semibold uppercase tracking-wider shadow-none border-none px-2 py-0.5 inline-flex items-center gap-1`}>
                         {product.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-right">
+                  <TableCell className="px-6 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary">
-                            <Edit className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100">
+                            <Edit className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400">
-                            <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100 text-slate-400">
+                            <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                   </TableCell>
@@ -266,60 +300,50 @@ export default function Products() {
       </Card>
       
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="border-none shadow-sm overflow-hidden bg-white">
-              <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">A movimentação de Estoque</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+              <CardHeader className="px-6 py-4 border-b border-slate-100">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Últimas Movimentações</CardTitle>
               </CardHeader>
-              <CardContent className="p-8">
-                  <div className="space-y-6">
-                      <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                                <ArrowUpDown className="h-5 w-5" />
+              <CardContent className="p-6">
+                  <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100">
+                                <ArrowUpDown className="h-4 w-4" />
                           </div>
-                          <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                  <h4 className="font-bold text-sm text-slate-900">Entrada de Mercadoria</h4>
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase">Hoje, 09:42</span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-0.5">24 un. Lente Kodak Single Vision adicionadas ao estoque.</p>
+                          <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-[13px] text-slate-900 truncate">Entrada de Mercadoria</h4>
+                                <p className="text-[12px] text-slate-500 line-clamp-1">24 un. Lente Kodak Single Vision adicionadas.</p>
                           </div>
+                          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap">09:42</span>
                       </div>
-                      <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                                <ArrowUpDown className="h-5 w-5" />
+                      <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100">
+                                <ArrowUpDown className="h-4 w-4" />
                           </div>
-                          <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                  <h4 className="font-bold text-sm text-slate-900">Saída por Venda</h4>
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase">Hoje, 11:20</span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-0.5">1 un. Ray-Ban RB3025 (Ref: Venda #1042).</p>
+                          <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-[13px] text-slate-900 truncate">Saída por Venda</h4>
+                                <p className="text-[12px] text-slate-500 line-clamp-1">1 un. Ray-Ban RB3025 (Ref: Venda #1042).</p>
                           </div>
+                          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap">11:20</span>
                       </div>
                   </div>
               </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm overflow-hidden bg-white">
-              <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Relatórios de Inventário</CardTitle>
+          <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+              <CardHeader className="px-6 py-4 border-b border-slate-100">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ferramentas de Inventário</CardTitle>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 gap-4">
-                    <Button variant="outline" className="w-full justify-start h-14 rounded-2xl border-slate-100 hover:border-primary/20 hover:bg-primary/5 transition-all group">
-                         <ClipboardList className="h-5 w-5 mr-4 text-slate-400 group-hover:text-primary transition-colors" />
-                         <div className="text-left">
-                             <p className="text-sm font-bold text-slate-900">Inventário Geral Completo</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase">Gerar PDF para conferência física</p>
-                         </div>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 gap-3">
+                    <Button variant="outline" className="w-full justify-start h-10 rounded border-slate-200 hover:bg-slate-50 transition-all group px-4">
+                         <ClipboardList className="h-4 w-4 mr-3 text-slate-400 group-hover:text-slate-900" />
+                         <span className="text-xs font-semibold text-slate-700">Emitir Relatório de Conferência</span>
                     </Button>
-                    <Button variant="outline" className="w-full justify-start h-14 rounded-2xl border-slate-100 hover:border-primary/20 hover:bg-primary/5 transition-all group">
-                         <AlertTriangle className="h-5 w-5 mr-4 text-slate-400 group-hover:text-amber-600 transition-colors" />
-                         <div className="text-left">
-                             <p className="text-sm font-bold text-slate-900">Relatório de Baixo Estoque</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">12 produtos atingiram nível de alerta</p>
-                         </div>
+                    <Button variant="outline" className="w-full justify-start h-10 rounded border-slate-200 hover:bg-slate-50 transition-all group px-4">
+                         <AlertTriangle className="h-4 w-4 mr-3 text-slate-400 group-hover:text-red-600" />
+                         <span className="text-xs font-semibold text-slate-700">Produtos em Alerta Crítico (12)</span>
                     </Button>
                 </div>
               </CardContent>

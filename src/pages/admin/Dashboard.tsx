@@ -33,90 +33,79 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">Dashboard</h1>
-        <p className="text-slate-500">Bem-vinda, Mara. Aqui está o resumo operacional da sua ótica hoje.</p>
+        <h1 className="text-xl font-semibold text-slate-900">Visão Geral</h1>
+        <p className="text-xs text-slate-500">Resumo operacional da unidade Ótica Melissa - São Paulo.</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {DASHBOARD_STATS.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
-                <h3 className={`text-xl font-black tracking-tight ${stat.color || "text-slate-900"}`}>
-                  {stat.value}
-                </h3>
+          <div key={stat.label}>
+            <Card className="rounded border-slate-200 shadow-none">
+              <CardContent className="p-4">
+                <p className="text-[11px] font-medium text-slate-500 mb-1">{stat.label}</p>
+                <div className="flex items-baseline gap-2">
+                    <h3 className={`text-lg font-bold ${stat.color && stat.color.includes('red') ? "text-red-600" : "text-slate-900"}`}>
+                        {stat.value}
+                    </h3>
+                </div>
                 {stat.change && (
-                  <div className="flex items-center gap-1 mt-2">
-                    {stat.trend === "up" ? (
-                      <TrendingUp className="h-3 w-3 text-emerald-500" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={`text-[10px] font-bold ${stat.trend === "up" ? "text-emerald-500" : "text-red-500"}`}>
-                      {stat.change} em relação a ontem
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className={`text-[10px] font-medium ${stat.trend === "up" ? "text-emerald-600" : "text-red-600"}`}>
+                      {stat.change}
                     </span>
+                    <span className="text-[10px] text-slate-400 capitalize">vs ontem</span>
                   </div>
                 )}
                 {stat.urgent && (
-                  <div className="flex items-center gap-1 mt-2 text-red-600">
+                  <div className="flex items-center gap-1 mt-1 text-red-600">
                     <AlertTriangle className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Reposição Crítica</span>
+                    <span className="text-[10px] font-semibold uppercase">Reposição Crítica</span>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Sales Chart */}
-        <Card className="lg:col-span-8 border-none shadow-sm overflow-hidden">
-          <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Fluxo de Vendas (30 dias)</CardTitle>
-            <div className="flex gap-2">
-                <span className="flex items-center gap-1.5 text-[10px] font-bold text-primary italic uppercase">
-                    <TrendingUp className="h-3 w-3" /> Meta Mensal: 85%
-                </span>
-            </div>
+        <Card className="lg:col-span-8 rounded border-slate-200 shadow-none">
+          <CardHeader className="px-6 py-4 border-b border-slate-100 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fluxo de Vendas Mensal</CardTitle>
+            <Badge variant="outline" className="text-[10px] font-medium border-slate-200 text-slate-500">Últimos 30 dias</Badge>
           </CardHeader>
-          <CardContent className="p-8 h-[350px]">
+          <CardContent className="p-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={SALES_CHART_DATA}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
                     dataKey="day" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}}
+                    tick={{fontSize: 10, fill: '#94a3b8'}}
                     dy={10}
                 />
                 <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}}
-                    tickFormatter={(value) => `R$ ${value}`}
+                    tick={{fontSize: 10, fill: '#94a3b8'}}
+                    tickFormatter={(value) => `R$${value}`}
                 />
                 <Tooltip 
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 700}}
+                    contentStyle={{borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: 'none', fontSize: '12px'}}
                 />
                 <Line 
                     type="monotone" 
                     dataKey="sales" 
-                    stroke="#c4121a" 
-                    strokeWidth={4} 
-                    dot={{ r: 4, fill: '#c4121a', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 8, fill: '#c4121a' }}
+                    stroke="#0f172a" 
+                    strokeWidth={2} 
+                    dot={{ r: 3, fill: '#0f172a', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#0f172a' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -124,34 +113,34 @@ export default function Dashboard() {
         </Card>
 
         {/* Payment Methods Chart */}
-        <Card className="lg:col-span-4 border-none shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Formas de Pagamento</CardTitle>
+        <Card className="lg:col-span-4 rounded border-slate-200 shadow-none">
+            <CardHeader className="px-6 py-4 border-b border-slate-100 italic">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Distribuição Financeira</CardTitle>
             </CardHeader>
-            <CardContent className="p-8 flex flex-col items-center justify-center h-[350px]">
-                <div className="h-48 w-full">
+            <CardContent className="p-6 flex flex-col items-center justify-center h-[300px]">
+                <div className="h-40 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
                                 data={PAYMENT_METHODS_DATA}
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={8}
+                                innerRadius={50}
+                                outerRadius={70}
+                                paddingAngle={4}
                                 dataKey="value"
                             >
                                 {PAYMENT_METHODS_DATA.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#0f172a' : index === 1 ? '#334155' : index === 2 ? '#64748b' : '#94a3b8'} />
                                 ))}
                             </Pie>
                             <Tooltip />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
-                <div className="grid grid-cols-2 gap-4 w-full mt-4">
-                    {PAYMENT_METHODS_DATA.map((item) => (
+                <div className="grid grid-cols-2 gap-3 w-full mt-4">
+                    {PAYMENT_METHODS_DATA.map((item, index) => (
                         <div key={item.name} className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: item.color}} />
-                            <span className="text-[10px] font-bold text-slate-600 uppercase truncate">{item.name}</span>
+                            <div className="w-2 h-2 rounded-sm" style={{backgroundColor: index === 0 ? '#0f172a' : index === 1 ? '#334155' : index === 2 ? '#64748b' : '#94a3b8'}} />
+                            <span className="text-[10px] font-medium text-slate-600 truncate">{item.name}</span>
                         </div>
                     ))}
                 </div>
@@ -159,33 +148,33 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Top Selling Products */}
-        <Card className="lg:col-span-7 border-none shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Produtos Mais Vendidos</CardTitle>
+        <Card className="lg:col-span-7 rounded border-slate-200 shadow-none">
+            <CardHeader className="px-6 py-4 border-b border-slate-100">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ranking de Produtos</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
                 <table className="w-full text-left">
-                    <thead className="bg-[#F8F9FC] text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">
+                    <thead className="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100">
                         <tr>
-                            <th className="px-8 py-4">Produto</th>
-                            <th className="px-8 py-4">Categoria</th>
-                            <th className="px-8 py-4 text-center">Vendas</th>
-                            <th className="px-8 py-4 text-right">Faturamento</th>
+                            <th className="px-6 py-3 font-semibold">Produto</th>
+                            <th className="px-6 py-3 font-semibold">Categoria</th>
+                            <th className="px-6 py-3 text-center font-semibold">Volume</th>
+                            <th className="px-6 py-3 text-right font-semibold">Receita</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100 text-[13px]">
                         {TOP_PRODUCTS.map((product) => (
                             <tr key={product.name} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-8 py-4 font-bold text-sm text-slate-900">{product.name}</td>
-                                <td className="px-8 py-4">
-                                    <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-tighter rounded-full">
+                                <td className="px-6 py-3 font-semibold text-slate-900">{product.name}</td>
+                                <td className="px-6 py-3">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-slate-50 border border-slate-100 text-slate-600 rounded">
                                         {product.category}
-                                    </Badge>
+                                    </span>
                                 </td>
-                                <td className="px-8 py-4 text-center font-bold text-slate-600">{product.sales}</td>
-                                <td className="px-8 py-4 text-right font-black text-slate-900">{product.revenue}</td>
+                                <td className="px-6 py-3 text-center text-slate-600">{product.sales}</td>
+                                <td className="px-6 py-3 text-right font-bold text-slate-900">{product.revenue}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -194,27 +183,27 @@ export default function Dashboard() {
         </Card>
 
         {/* Alerts and Reminders */}
-        <Card className="lg:col-span-5 border-none shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50/50 px-8 py-6 border-b border-slate-100">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Alertas e Notificações</CardTitle>
+        <Card className="lg:col-span-5 rounded border-slate-200 shadow-none">
+            <CardHeader className="px-6 py-4 border-b border-slate-100">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Eventos do Sistema</CardTitle>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-6 space-y-5">
                 {RECENT_ALERTS.map((alert) => (
-                    <div key={alert.id} className="flex gap-4 group cursor-pointer">
-                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                            alert.type === 'vencimento' ? 'bg-red-50 text-red-600' :
-                            alert.type === 'aniversario' ? 'bg-emerald-50 text-emerald-600' : 'bg-primary/10 text-primary'
+                    <div key={alert.id} className="flex gap-3">
+                        <div className={`h-9 w-9 rounded border flex items-center justify-center shrink-0 ${
+                            alert.type === 'vencimento' ? 'bg-red-50 border-red-100 text-red-600' :
+                            alert.type === 'aniversario' ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-slate-900 text-white'
                         }`}>
-                            {alert.type === 'vencimento' && <Clock className="h-6 w-6" />}
-                            {alert.type === 'aniversario' && <Users className="h-6 w-6" />}
-                            {alert.type === 'pedido' && <CheckCircle2 className="h-6 w-6" />}
+                            {alert.type === 'vencimento' && <Clock className="h-4 w-4" />}
+                            {alert.type === 'aniversario' && <Users className="h-4 w-4" />}
+                            {alert.type === 'pedido' && <CheckCircle2 className="h-4 w-4" />}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
-                                <h4 className="font-bold text-slate-900 group-hover:text-primary transition-colors">{alert.title}</h4>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">{alert.time}</span>
+                                <h4 className="text-[13px] font-semibold text-slate-900 truncate">{alert.title}</h4>
+                                <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">{alert.time}</span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">{alert.text}</p>
+                            <p className="text-[12px] text-slate-500 mt-0.5 line-clamp-1">{alert.text}</p>
                         </div>
                     </div>
                 ))}

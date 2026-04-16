@@ -60,134 +60,113 @@ export default function Clients() {
   );
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">Gestão de Clientes</h1>
-          <p className="text-slate-500">Visualize, cadastre e gerencie o histórico de todos os seus clientes.</p>
+          <h1 className="text-xl font-semibold text-slate-900">Gestão de Clientes</h1>
+          <p className="text-xs text-slate-500">Registro completo e histórico de atendimentos.</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger render={<Button className="rounded-full px-6 font-bold h-12 shadow-lg shadow-primary/20 flex items-center gap-2" />}>
-            <Plus className="h-5 w-5" /> NOVO CLIENTE
+          <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
+            <Plus className="h-4 w-4" /> NOVO CLIENTE
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl sm:rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-            <DialogHeader className="bg-primary p-8 text-white">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                <Users className="h-6 w-6" /> Cadastro de Novo Cliente
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
+            <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
+              <DialogTitle className="text-lg font-semibold flex items-center gap-3">
+                <Users className="h-5 w-5" /> Cadastro de Novo Cliente
               </DialogTitle>
-              <p className="text-white/70 text-sm font-medium">Preencha os dados abaixo com atenção para criar um registro completo.</p>
+              <p className="text-slate-400 text-xs font-medium">Preencha os dados cadastrais da unidade.</p>
             </DialogHeader>
             
             <div className="p-0">
               <Tabs defaultValue="pessoais" className="w-full">
-                <TabsList className="w-full justify-start h-14 bg-slate-50 border-b border-slate-100 rounded-none px-8 gap-8">
-                  <TabsTrigger value="pessoais" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none h-full px-0 font-bold text-xs uppercase tracking-widest text-slate-400">
+                <TabsList className="w-full justify-start h-10 bg-slate-50 border-b border-slate-100 rounded-none px-6 gap-6">
+                  <TabsTrigger value="pessoais" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
                     Dados Pessoais
                   </TabsTrigger>
-                  <TabsTrigger value="endereco" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none h-full px-0 font-bold text-xs uppercase tracking-widest text-slate-400">
+                  <TabsTrigger value="endereco" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
                     Endereço
                   </TabsTrigger>
-                  <TabsTrigger value="clinicos" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none h-full px-0 font-bold text-xs uppercase tracking-widest text-slate-400">
-                    Informações Clínicas
-                  </TabsTrigger>
-                  <TabsTrigger value="documentos" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none h-full px-0 font-bold text-xs uppercase tracking-widest text-slate-400">
-                    Documentos
+                  <TabsTrigger value="clinicos" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
+                    Clínico
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="p-8">
-                  <TabsContent value="pessoais" className="space-y-6 m-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nome Completo *</Label>
-                        <Input id="name" placeholder="Ex: João da Silva Santos" className="rounded-xl border-slate-200 h-11" />
+                <div className="p-6">
+                  <TabsContent value="pessoais" className="space-y-5 m-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome Completo</Label>
+                        <Input id="name" placeholder="Ex: João da Silva Santos" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cpf" className="text-[10px] font-black uppercase tracking-widest text-slate-500">CPF *</Label>
-                        <Input id="cpf" placeholder="000.000.000-00" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cpf" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CPF</Label>
+                        <Input id="cpf" placeholder="000.000.000-00" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="birth" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Data de Nascimento *</Label>
-                        <Input id="birth" type="date" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="phone" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Celular (WhatsApp)</Label>
+                        <Input id="phone" placeholder="(11) 90000-0000" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Celular (WhatsApp) *</Label>
-                        <Input id="phone" placeholder="(11) 90000-0000" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="birth" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data de Nascimento</Label>
+                        <Input id="birth" type="date" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email *</Label>
-                        <Input id="email" type="email" placeholder="cliente@exemplo.com" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Email de Contato</Label>
+                        <Input id="email" type="email" placeholder="cliente@email.com" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="profession" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Profissão</Label>
-                        <Input id="profession" className="rounded-xl border-slate-200 h-11" />
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="endereco" className="space-y-6 m-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="cep" className="text-[10px] font-black uppercase tracking-widest text-slate-500">CEP</Label>
-                        <div className="flex gap-2">
-                           <Input id="cep" placeholder="00000-000" className="rounded-xl border-slate-200 h-11" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Logradouro</Label>
-                        <Input id="address" placeholder="Av. Principal, Rua Exemplo..." className="rounded-xl border-slate-200 h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="number" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Número</Label>
-                        <Input id="number" className="rounded-xl border-slate-200 h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bairro" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Bairro</Label>
-                        <Input id="bairro" className="rounded-xl border-slate-200 h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cidade</Label>
-                        <Input id="city" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="profession" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Profissão / Ocupação</Label>
+                        <Input id="profession" placeholder="Ex: Engenheiro" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="clinicos" className="space-y-6 m-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="space-y-2">
-                        <Label htmlFor="consultation" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Última Consulta Oftalmológica</Label>
-                        <Input id="consultation" type="date" className="rounded-xl border-slate-200 h-11" />
+                  <TabsContent value="endereco" className="space-y-5 m-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cep" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CEP</Label>
+                        <Input id="cep" placeholder="00000-000" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="doctor" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Médico de Confiança</Label>
-                        <Input id="doctor" placeholder="Dr. Nome do Médico" className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="address" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Logradouro / Rua</Label>
+                        <Input id="address" placeholder="Av. Principal..." className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="allergies" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Alergias a Materiais</Label>
-                        <Input id="allergies" placeholder="Ex: Níquel, Silicone..." className="rounded-xl border-slate-200 h-11" />
+                      <div className="space-y-1.5">
+                        <Label htmlFor="number" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Número</Label>
+                        <Input id="number" placeholder="123" className="rounded border-slate-200 h-9 text-sm" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bairro" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Bairro</Label>
+                        <Input id="bairro" placeholder="Centro" className="rounded border-slate-200 h-9 text-sm" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cidade / UF</Label>
+                        <Input id="city" placeholder="São Paulo - SP" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="documentos" className="space-y-6 m-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/50 transition-colors cursor-pointer group">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary flex items-center justify-center transition-colors">
-                            <Upload className="h-7 w-7" />
-                        </div>
-                        <div>
-                            <p className="font-bold text-slate-700">Foto do Cliente</p>
-                            <p className="text-xs text-slate-400 mt-1">Clique para fazer upload (PNG, JPG)</p>
-                        </div>
+                  <TabsContent value="clinicos" className="space-y-5 m-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <div className="space-y-1.5">
+                        <Label htmlFor="consultation" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Última Consulta Oftalmológica</Label>
+                        <Input id="consultation" type="date" className="rounded border-slate-200 h-9 text-sm" />
                       </div>
-                      <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/50 transition-colors cursor-pointer group">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary flex items-center justify-center transition-colors">
-                            <FileText className="h-7 w-7" />
-                        </div>
-                        <div>
-                            <p className="font-bold text-slate-700">Receita Médica</p>
-                            <p className="text-xs text-slate-400 mt-1">Anexar imagem ou PDF da receita</p>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="doctor" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Médico de Confiança</Label>
+                        <Input id="doctor" placeholder="Dr. Nome do Médico" className="rounded border-slate-200 h-9 text-sm" />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="allergies" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Alergias / Restrições</Label>
+                        <Input id="allergies" placeholder="Ex: Alergia a Níquel" className="rounded border-slate-200 h-9 text-sm" />
+                      </div>
+                       <div className="space-y-1.5 md:col-span-2">
+                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Anexos (Foto / Receita)</Label>
+                        <div className="border border-dashed border-slate-200 rounded p-4 flex flex-col items-center justify-center text-slate-400 gap-2 hover:bg-slate-50 transition-colors cursor-pointer">
+                            <Upload className="h-5 w-5" />
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">Clique para Upload</span>
                         </div>
                       </div>
                     </div>
@@ -196,39 +175,36 @@ export default function Clients() {
               </Tabs>
             </div>
             
-            <DialogFooter className="bg-slate-50 p-8 flex flex-row items-center justify-between">
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Preencha todos os campos obrigatórios (*)</p>
-              <div className="flex gap-4">
-                <Button variant="ghost" className="rounded-full px-6 font-bold" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
-                <Button className="rounded-full px-8 font-bold shadow-lg shadow-primary/20" onClick={() => setIsDialogOpen(false)}>SALVAR CLIENTE</Button>
-              </div>
+            <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
+                <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9" onClick={() => setIsDialogOpen(false)}>SALVAR CLIENTE</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Filters & Table */}
-      <Card className="border-none shadow-sm overflow-hidden">
-        <div className="p-6 bg-white flex flex-col md:flex-row md:items-center gap-4 border-b border-slate-100">
+      <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+        <div className="p-4 flex flex-col md:flex-row md:items-center gap-3 border-b border-slate-100">
            <div className="relative flex-1 group">
             <Input
               type="search"
               placeholder="Buscar por nome ou CPF..."
-              className="pl-11 h-12 bg-slate-50 border-none rounded-2xl text-sm focus:ring-1 focus:ring-primary/20 transition-all"
+              className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold border-slate-200 flex items-center gap-2">
-              <Filter className="h-4 w-4" /> FILTROS
+            <Button variant="outline" className="rounded h-9 px-4 font-semibold text-xs border-slate-200 text-slate-600 flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5" /> FILTROS
             </Button>
              <Select defaultValue="todos">
-              <SelectTrigger className="w-[180px] rounded-2xl h-12 border-slate-200 font-bold text-slate-600">
+              <SelectTrigger className="w-[160px] rounded h-9 border-slate-200 font-medium text-xs text-slate-600">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border-none shadow-2xl">
+              <SelectContent className="rounded border-slate-200 shadow-xl text-xs">
                 <SelectItem value="todos">Todos Status</SelectItem>
                 <SelectItem value="ativo">Ativos</SelectItem>
                 <SelectItem value="inativo">Inativos</SelectItem>
@@ -241,65 +217,59 @@ export default function Clients() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-slate-100 hover:bg-transparent">
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Cliente</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Contato / CPF</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Status Crédito</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Última Visita</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Saldo Devedor</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Ações</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cliente</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Contato / CPF</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Status Crédito</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Última Visita</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">Saldo Devedor</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.map((client) => (
-                <TableRow key={client.id} className="border-slate-50 hover:bg-slate-50/30 transition-colors group">
-                  <TableCell className="px-8 py-4">
+                <TableRow key={client.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
+                  <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center font-bold text-[10px] shrink-0">
                         {client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">{client.name}</span>
-                        <span className="text-[10px] text-slate-400 font-black uppercase">ID: #{client.id}</span>
+                        <span className="font-semibold text-slate-900">{client.name}</span>
+                        <span className="text-[10px] text-slate-400">ID: #{client.id}</span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-sm">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Phone className="h-3 w-3 text-slate-400" /> {client.phone}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        <AlertCircle className="h-3 w-3 text-slate-300" /> CPF: {client.cpf}
-                      </div>
+                  <TableCell className="px-6 py-3">
+                    <div className="flex flex-col">
+                      <span className="text-slate-600 truncate max-w-[150px]">{client.phone}</span>
+                      <span className="text-[10px] font-medium text-slate-400">CPF: {client.cpf}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-4">
-                    <Badge className={`${
+                  <TableCell className="px-6 py-3">
+                    <Badge className={`rounded ${
                       client.creditStatus === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
                       client.creditStatus === 'Bom' ? 'bg-blue-100 text-blue-700' :
                       client.creditStatus === 'Atenção' ? 'bg-amber-100 text-amber-700' :
                       'bg-red-100 text-red-700'
-                    } text-[10px] font-black uppercase tracking-widest border-none px-3 py-1 rounded-full`}>
+                    } text-[10px] font-semibold uppercase tracking-wider border-none px-2 py-0.5 shadow-none inline-flex items-center`}>
                       {client.creditStatus}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-8 py-4">
-                     <div className="flex items-center gap-2 text-slate-500 text-sm">
-                        <Calendar className="h-4 w-4 text-slate-300" /> {client.lastVisit}
-                      </div>
+                  <TableCell className="px-6 py-3">
+                     <span className="text-slate-500">{client.lastVisit}</span>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-right">
-                    <span className={`font-black text-sm ${client.balance > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                  <TableCell className="px-6 py-3 text-right">
+                    <span className={`font-bold ${client.balance > 0 ? 'text-red-600' : 'text-slate-900'}`}>
                       {client.balance === 0 ? '-' : `R$ ${client.balance.toFixed(2)}`}
                     </span>
                   </TableCell>
-                  <TableCell className="px-8 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400 hover:text-primary hover:bg-primary/5">
-                            <FileText className="h-4 w-4" />
+                  <TableCell className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-900">
+                            <FileText className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400 hover:text-primary hover:bg-primary/5">
-                            <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100 text-slate-400">
+                            <MoreHorizontal className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                   </TableCell>
@@ -307,58 +277,28 @@ export default function Clients() {
               ))}
             </TableBody>
           </Table>
-          {filteredClients.length === 0 && (
-            <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-20 h-20 bg-slate-50 text-slate-200 flex items-center justify-center rounded-3xl">
-                    <Search className="h-10 w-10" />
-                </div>
-                <div>
-                    <p className="font-bold text-slate-900">Nenhum cliente encontrado</p>
-                    <p className="text-sm text-slate-500">Tente ajustar sua busca ou filtros.</p>
-                </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* Quick Access Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white group">
-            <CardContent className="p-6 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-all">
-                    <Calendar className="h-6 w-6" />
-                </div>
-                <div>
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-900">Aniversariantes</p>
-                    <p className="text-xs text-slate-500">8 clientes este mês</p>
-                </div>
-                <ChevronRight className="ml-auto h-5 w-5 text-slate-300" />
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white group">
-            <CardContent className="p-6 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 group-hover:bg-red-600 group-hover:text-white transition-all">
-                    <AlertCircle className="h-6 w-6" />
-                </div>
-                <div>
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-900">Inadimplentes</p>
-                    <p className="text-xs text-slate-500">12 pendências ativas</p>
-                </div>
-                <ChevronRight className="ml-auto h-5 w-5 text-slate-300" />
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white group">
-            <CardContent className="p-6 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
-                    <MapPin className="h-6 w-6" />
-                </div>
-                <div>
-                    <p className="text-sm font-black uppercase tracking-widest text-slate-900">Localização</p>
-                    <p className="text-xs text-slate-500">Mapa de densidade</p>
-                </div>
-                <ChevronRight className="ml-auto h-5 w-5 text-slate-300" />
-            </CardContent>
-          </Card>
+          {[{ label: 'Aniversariantes', sub: '8 este mês', icon: Calendar, color: 'bg-amber-50 text-amber-600' },
+            { label: 'Inadimplentes', sub: '12 pendências', icon: AlertCircle, color: 'bg-red-50 text-red-600' },
+            { label: 'Localização', sub: 'Mapa de densidade', icon: MapPin, color: 'bg-slate-50 text-slate-600' }
+          ].map((item, i) => (
+            <Card key={i} className="rounded border-slate-200 shadow-none hover:bg-slate-50/50 transition-colors cursor-pointer bg-white group border-dashed">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded border border-slate-100 flex items-center justify-center shrink-0 ${item.color}`}>
+                        <item.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-900">{item.label}</p>
+                        <p className="text-[11px] text-slate-400">{item.sub}</p>
+                    </div>
+                    <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />
+                </CardContent>
+            </Card>
+          ))}
       </div>
     </div>
   );
