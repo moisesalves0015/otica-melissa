@@ -91,14 +91,14 @@ export default function Orders() {
               <DialogTrigger render={<Button variant="outline" className="rounded border-slate-200 text-slate-700 font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
                   <Zap className="h-3.5 w-3.5" /> VENDA RÁPIDA
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
+              <DialogContent className="w-[90vw] max-w-[960px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
                 <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
                   <DialogTitle className="text-lg font-semibold flex items-center gap-3">
                     <Zap className="h-5 w-5 text-amber-400" /> Terminal de Venda Rápida
                   </DialogTitle>
                   <p className="text-slate-400 text-xs font-medium">Fluxo simplificado para vendas de pronta entrega.</p>
                 </DialogHeader>
-                <div className="p-6">
+                <div className="max-h-[65vh] overflow-y-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
@@ -167,14 +167,14 @@ export default function Orders() {
               <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
                   <Plus className="h-4 w-4" /> NOVO PEDIDO
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
+              <DialogContent className="w-[90vw] max-w-[720px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
                 <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
                   <DialogTitle className="text-lg font-semibold flex items-center gap-3">
                     <ShoppingCart className="h-5 w-5" /> Abertura de Ordem de Serviço
                   </DialogTitle>
                   <p className="text-slate-400 text-xs font-medium">Inicie um novo pedido com montagem e laboratório.</p>
                 </DialogHeader>
-                <div className="p-6 space-y-6">
+                <div className="max-h-[65vh] overflow-y-auto p-6 space-y-6">
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">

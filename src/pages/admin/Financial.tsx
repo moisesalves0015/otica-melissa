@@ -77,7 +77,7 @@ export default function Financial() {
                 <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
                     <Plus className="h-4 w-4" /> NOVA TRANSAÇÃO
                 </DialogTrigger>
-                <DialogContent className="max-w-md rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
+                <DialogContent className="w-[90vw] max-w-[600px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
                     <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
                         <DialogTitle className="text-lg font-semibold flex items-center gap-3">
                             <DollarSign className="h-5 w-5" /> Registrar Transação

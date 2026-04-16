@@ -72,111 +72,116 @@ export default function Products() {
           <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
             <Plus className="h-4 w-4" /> NOVO PRODUTO
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
-            <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
-              <DialogTitle className="text-lg font-semibold flex items-center gap-3">
+          <DialogContent className="w-[90vw] sm:max-w-none max-w-[900px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden gap-0">
+            <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800 gap-1">
+              <DialogTitle className="text-lg font-semibold flex items-center gap-3 text-white">
                 <Package className="h-5 w-5" /> Cadastrar Novo Produto
               </DialogTitle>
               <p className="text-slate-400 text-xs font-medium">Insira as especificações técnicas e de estoque do item.</p>
             </DialogHeader>
-            
-            <Tabs defaultValue="geral" className="w-full">
-              <TabsList className="w-full justify-start h-10 bg-slate-50 border-b border-slate-100 rounded-none px-6 gap-6">
-                <TabsTrigger value="geral" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
-                  Dados Gerais
-                </TabsTrigger>
-                <TabsTrigger value="precos" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
-                  Preços & Estoque
-                </TabsTrigger>
-                <TabsTrigger value="tecnico" className="data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-slate-900 rounded-none h-full px-0 font-semibold text-[10px] uppercase tracking-wider text-slate-400">
-                  Ficha Técnica
-                </TabsTrigger>
-              </TabsList>
 
-              <div className="p-6">
-                <TabsContent value="geral" className="space-y-5 m-0">
+            <div className="max-h-[70vh] overflow-y-auto">
+              <div className="p-8 space-y-8">
+
+                {/* Seção 1: Identificação */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                    <ClipboardList className="h-4 w-4 text-slate-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Identificação do Produto</span>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5 md:col-span-2">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome do Produto / Descrição Curta</Label>
-                        <Input placeholder="Ex: Ray-Ban RB3025 Aviator Gradient" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome do Produto / Descrição Curta</Label>
+                      <Input placeholder="Ex: Ray-Ban RB3025 Aviator Gradient" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</Label>
-                        <Select>
-                            <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600">
-                                <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                                <SelectItem value="armacoes">Armações</SelectItem>
-                                <SelectItem value="lentes">Lentes</SelectItem>
-                                <SelectItem value="contato">Lentes de Contato</SelectItem>
-                                <SelectItem value="prontos">Óculos Prontos</SelectItem>
-                                <SelectItem value="acessorios">Acessórios</SelectItem>
-                            </SelectContent>
-                        </Select>
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</Label>
+                      <Select>
+                        <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
+                          <SelectItem value="armacoes">Armações</SelectItem>
+                          <SelectItem value="lentes">Lentes</SelectItem>
+                          <SelectItem value="contato">Lentes de Contato</SelectItem>
+                          <SelectItem value="prontos">Óculos Prontos</SelectItem>
+                          <SelectItem value="acessorios">Acessórios</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Marca / Fabricante</Label>
-                        <Input placeholder="Ex: Ray-Ban" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Marca / Fabricante</Label>
+                      <Input placeholder="Ex: Ray-Ban" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor Principal</Label>
-                        <Input placeholder="Nome do fornecedor" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor Principal</Label>
+                      <Input placeholder="Nome do fornecedor" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">SKU / Código Interno</Label>
-                        <Input placeholder="Ex: RB3025-001" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">SKU / Código Interno</Label>
+                      <Input placeholder="Ex: RB3025-001" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="precos" className="space-y-5 m-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Seção 2: Preços e Estoque */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                    <Tag className="h-4 w-4 text-slate-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preços & Estoque</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Custo (R$)</Label>
-                        <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Custo (R$)</Label>
+                      <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Venda (R$)</Label>
-                        <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Venda (R$)</Label>
+                      <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Atual</Label>
-                        <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Atual</Label>
+                      <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Mínimo (Alerta)</Label>
-                        <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Mínimo</Label>
+                      <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="tecnico" className="space-y-5 m-0">
+                {/* Seção 3: Ficha Técnica */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                    <Glasses className="h-4 w-4 text-slate-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ficha Técnica</span>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Material</Label>
-                        <Input placeholder="Ex: Acetato" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Material</Label>
+                      <Input placeholder="Ex: Acetato" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cor</Label>
-                        <Input placeholder="Ex: Preto Fosco" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cor</Label>
+                      <Input placeholder="Ex: Preto Fosco" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tamanho/Aro</Label>
-                        <Input placeholder="Ex: 54" className="rounded border-slate-200 h-9 text-sm" />
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tamanho / Aro</Label>
+                      <Input placeholder="Ex: 54" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5 md:col-span-3">
-                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações Adicionais</Label>
-                        <textarea className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Informações extras sobre o produto..."></textarea>
+                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações Adicionais</Label>
+                      <textarea className="w-full rounded border border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:border-slate-400 font-medium resize-none" placeholder="Informações extras sobre o produto..."></textarea>
                     </div>
                   </div>
-                </TabsContent>
-              </div>
-            </Tabs>
+                </div>
 
-            <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
-                <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">SALVAR PRODUTO</Button>
+              </div>
+            </div>
+
+            <DialogFooter className="bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 p-6 -mx-0 -mb-0 rounded-none">
+              <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
+              <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">SALVAR PRODUTO</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
