@@ -102,7 +102,7 @@ const PRODUCTS = [
     originalPrice: 720,
     price: 468,
     installments: "12x de R$ 39,00",
-    image: "https://images.unsplash.com/photo-1511499767350-a15941da92bf?q=80&w=500",
+    image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?q=80&w=600",
     badge: "35% OFF",
     freeShipping: true,
   },
@@ -112,7 +112,7 @@ const PRODUCTS = [
     originalPrice: 650,
     price: 422.5,
     installments: "12x de R$ 35,20",
-    image: "https://images.unsplash.com/photo-1509100104048-ed167d736.jpg?q=80&w=500",
+    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600",
     badge: "Novidade",
     freeShipping: false,
   },
@@ -457,34 +457,34 @@ function Benefits() {
 
 function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
   return (
-    <Card className="group relative overflow-hidden border-none shadow-sm rounded-lg bg-white">
-      <CardContent className="p-3">
-        <div className="relative aspect-[16/10] overflow-hidden rounded bg-background mb-3 flex items-center justify-center text-3xl">
+    <Card className="group relative overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:border-primary/20 hover:-translate-y-1 transition-all duration-500 rounded-2xl bg-white cursor-pointer h-full flex flex-col">
+      <CardContent className="p-4 flex flex-col h-full">
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-50 mb-4 flex items-center justify-center p-4">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-sm"
           />
-          <div className="absolute top-2 left-2">
-            {product.badge && <Badge className="bg-primary text-[9px] font-bold p-1 rounded-sm scale-90 origin-left">{product.badge}</Badge>}
+          <div className="absolute top-3 left-3">
+            {product.badge && <Badge className="bg-primary text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg shadow-primary/30 origin-left">{product.badge}</Badge>}
           </div>
         </div>
-        <div className="space-y-1">
-          <h3 className="font-bold text-xs truncate text-foreground">{product.name}</h3>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground text-[10px] line-through">
+        <div className="space-y-2 flex-grow flex flex-col justify-end">
+          <h3 className="font-bold text-[13px] md:text-sm text-slate-800 leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
+          <div className="flex flex-col pt-1">
+            <span className="text-slate-400 text-[11px] line-through font-medium">
               R$ {product.originalPrice.toFixed(2)}
             </span>
-            <span className="text-sm font-black text-primary">
+            <span className="text-lg md:text-xl font-black text-slate-900 tracking-tighter">
               R$ {product.price.toFixed(2)}
             </span>
-            <span className="text-[10px] text-muted-foreground italic">
-              10x de R$ {(product.price / 10).toFixed(2)}
+            <span className="text-[10px] md:text-[11px] text-slate-500 font-medium">
+              ou {product.installments}
             </span>
           </div>
           <Button
             variant="outline"
-            className="w-full mt-2 h-8 rounded-sm border-primary text-primary hover:bg-primary/5 text-[10px] font-bold uppercase"
+            className="w-full mt-4 h-10 rounded-xl border-slate-200 text-slate-700 hover:border-primary group-hover:bg-primary group-hover:text-white transition-all text-xs font-black uppercase tracking-widest"
           >
             EXPERIMENTE
           </Button>
