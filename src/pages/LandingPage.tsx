@@ -157,9 +157,9 @@ const CATEGORIES = [
 ];
 
 const STORES = [
-  { city: "São Paulo", neighborhood: "Paraíso", address: "Av. Bernardino de Campos, 123" },
-  { city: "São Paulo", neighborhood: "Lapa", address: "Rua Doze de Outubro, 456" },
-  { city: "São Paulo", neighborhood: "Barra Funda", address: "Av. Marquês de São Vicente, 789" },
+  { city: "São Paulo", neighborhood: "Flagship Jardins", address: "Rua Oscar Freire, 850" },
+  { city: "Rio de Janeiro", neighborhood: "Boutique Ipanema", address: "Rua Garcia d'Ávila, 120" },
+  { city: "Belo Horizonte", neighborhood: "Concept Lourdes", address: "Rua Rio de Janeiro, 2100" },
 ];
 
 function AnnouncementBar() {
@@ -559,9 +559,9 @@ function StoreSection() {
       <div className="max-w-[1440px] mx-auto px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6">EXPERIÊNCIA GASSI</h2>
-            <p className="text-muted-foreground text-lg mb-8">
-              Venha conhecer a maior rede de óticas do Brasil. Tecnologia de ponta, consultores especializados e mais de 2.000 modelos exclusivos em cada loja.
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 uppercase text-slate-900 leading-[1.1]">A Maestria Melissa</h2>
+            <p className="text-slate-500 text-lg mb-8 leading-relaxed font-medium">
+              Descubra o auge da sofisticação e da precisão óptica. Trazemos até você arquitetura de luxo, laboratório digital próprio de última geração e consultores formados em visagismo para garantir que sua próxima armação seja uma verdadeira obra de arte que valoriza seus traços.
             </p>
             <div className="space-y-6 mb-8">
               {STORES.map((store) => (
