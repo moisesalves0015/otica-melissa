@@ -319,12 +319,6 @@ function Header() {
           <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted/50">
             <User className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative hover:bg-muted/50 group">
-            <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
-            <span className="absolute top-2 right-2 h-4 w-4 bg-primary text-[8px] font-black text-white rounded-full flex items-center justify-center border-2 border-white">
-              0
-            </span>
-          </Button>
         </div>
       </div>
     </header>
