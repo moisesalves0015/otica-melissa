@@ -346,13 +346,13 @@ function Hero() {
           >
             <div className="max-w-md w-full text-center md:text-left flex flex-col items-center md:items-start">
                <span className="text-primary font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-1 block">
-                Nova Coleção 2024
+                Nova Coleção 2026
                 </span>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-2 leading-[1.1] tracking-tighter text-slate-900 uppercase">
                 Estilo e <br /> Visão Única
                 </h1>
                 <p className="text-[14px] md:text-lg text-slate-500 mb-4 md:mb-6 max-w-md leading-relaxed font-medium">
-                As melhores armações com lentes de alta tecnologia. Conforto e elegância para o seu dia a dia.
+                As melhores armações com lentes de alta tecnologia.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <Button size="lg" className="rounded-full h-10 px-8 text-[10px] md:text-[11px] font-black bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 uppercase tracking-widest group">
@@ -376,37 +376,40 @@ function Hero() {
             viewport={{ once: true }}
             className="flex justify-center relative py-0"
           >
-            {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
-            {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
+            {/* Floating Badge 1 - Top Left */}
             <motion.img
               src="/selo_desc_exclu.png"
               alt="Desconto Exclusivo"
               className="absolute top-12 left-2 md:-left-4 -translate-y-1/2 w-28 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-              animate={{ 
-                y: [0, -10, 0]
-              }}
-              transition={{ 
-                duration: 3.5, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
-              }}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            {/* Floating Logo 2 - Bottom Right edge of image - EVEN CLOSER */}
+            {/* Floating Badge 2 - Bottom Right */}
             <motion.img
               src="/selo_melhores_precos.png"
               alt="Melhores Preços"
               className="absolute bottom-4 right-2 md:-right-6 w-32 md:w-48 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-              animate={{ 
-                y: [0, 10, 0]
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            />
 
-              }}
-              transition={{ 
-                duration: 4, 
-                repeat: Infinity, 
-                ease: "easeInOut",
-                delay: 0.5
-              }}
+            {/* Floating Logo 1 - Top Right */}
+            <motion.img
+              src="/logo.png"
+              alt="Logo"
+              className="absolute top-8 right-8 w-24 md:w-36 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+              animate={{ y: [0, 8, 0], rotate: [-2, 2, -2] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            />
+
+            {/* Floating Logo 2 - Bottom Left */}
+            <motion.img
+              src="/logo.png"
+              alt="Logo"
+              className="absolute bottom-12 left-8 w-24 md:w-36 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+              animate={{ y: [0, -8, 0], rotate: [2, -2, 2] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
             />
 
             <div className="relative w-full max-w-[280px] md:max-w-xs lg:max-w-sm z-10 mx-auto md:mx-0">
