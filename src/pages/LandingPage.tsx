@@ -457,50 +457,36 @@ function Benefits() {
 
 function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
   return (
-    <Card className="group relative overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:border-slate-300 hover:-translate-y-1 transition-all duration-500 rounded-2xl bg-white cursor-pointer h-full flex flex-col">
-      <CardContent className="p-5 flex flex-col h-full bg-white">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-4 flex items-center justify-center mix-blend-multiply">
+    <Card className="group relative overflow-hidden border-none shadow-sm rounded-lg bg-white">
+      <CardContent className="p-3">
+        <div className="relative aspect-[16/10] overflow-hidden rounded bg-background mb-3 flex items-center justify-center text-3xl">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-lg"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="absolute top-2 left-2 mix-blend-normal">
-            {product.badge && <Badge className="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-sm shadow-sm opacity-90">{product.badge}</Badge>}
+          <div className="absolute top-2 left-2">
+            {product.badge && <Badge className="bg-primary text-[9px] font-bold p-1 rounded-sm scale-90 origin-left">{product.badge}</Badge>}
           </div>
         </div>
-        <div className="space-y-3 flex-grow flex flex-col justify-end">
-          <h3 className="font-bold text-sm text-slate-800 leading-snug group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
-          
-          <div className="flex items-center gap-2 mb-1">
-            <span className="flex text-amber-400">
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 opacity-40"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-            </span>
-            <span className="text-[10px] text-slate-400 font-semibold">(4.8)</span>
-          </div>
-
-          <Separator className="bg-slate-100 my-1" />
-
-          <div className="flex flex-col pt-1">
-            <span className="text-slate-400 text-[11px] line-through font-medium">
+        <div className="space-y-1">
+          <h3 className="font-bold text-xs truncate text-foreground">{product.name}</h3>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground text-[10px] line-through">
               R$ {product.originalPrice.toFixed(2)}
             </span>
-            <span className="text-xl font-black text-slate-900 tracking-tighter">
+            <span className="text-sm font-black text-primary">
               R$ {product.price.toFixed(2)}
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">
-              <strong className="text-green-600 font-bold">12x</strong> de <strong className="text-slate-700">R$ {(product.price / 12).toFixed(2)}</strong> sem juros
+            <span className="text-[10px] text-muted-foreground italic">
+              10x de R$ {(product.price / 10).toFixed(2)}
             </span>
           </div>
           <Button
             variant="outline"
-            className="w-full mt-3 h-10 rounded-xl border-slate-200 text-slate-600 hover:border-slate-800 hover:bg-slate-800 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest shadow-sm"
+            className="w-full mt-2 h-8 rounded-sm border-primary text-primary hover:bg-primary/5 text-[10px] font-bold uppercase"
           >
-            Ver Detalhes
+            EXPERIMENTE
           </Button>
         </div>
       </CardContent>
