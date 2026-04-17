@@ -204,7 +204,7 @@ function Header() {
         isScrolled ? "bg-white/80 backdrop-blur-md shadow-[0_2px_20px_-10px_rgba(0,0,0,0.1)] border-b border-border/50" : "bg-white border-b border-white"
       }`}
     >
-      <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between gap-8">
+      <div className="max-w-[1440px] mx-auto h-full px-6 flex items-center justify-between gap-8">
         {/* Logo */}
         <div className="flex items-center gap-4 shrink-0">
           <Sheet>
@@ -520,7 +520,7 @@ function NewArrivals() {
 function CategoryBanners() {
   return (
     <section className="py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-10">
+      <div className="max-w-[1440px] mx-auto px-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
           {CATEGORIES.map((cat, i) => (
             <motion.div
@@ -560,7 +560,7 @@ function CategoryBanners() {
 function StoreSection() {
   return (
     <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-10">
+      <div className="max-w-[1440px] mx-auto px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6">EXPERIÊNCIA GASSI</h2>
@@ -600,7 +600,7 @@ function StoreSection() {
 function Footer() {
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 md:py-20 border-t border-slate-900 mt-auto">
-      <div className="max-w-7xl mx-auto px-6 md:px-10">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 mb-16">
           {/* Brand Column */}
           <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
@@ -695,7 +695,7 @@ function Footer() {
 function LifestyleSection() {
   return (
     <section className="py-20 bg-slate-50 border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-10">
+      <div className="max-w-[1440px] mx-auto px-10">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 order-2 lg:order-1 w-full relative">
              <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-white p-2">
@@ -735,7 +735,7 @@ export default function LandingPage() {
       <Toaster position="top-center" />
       <AnnouncementBar />
       <Header />
-      <main className="flex-1 overflow-x-hidden max-w-7xl mx-auto w-full">
+      <main className="flex-1 overflow-x-hidden max-w-[1440px] mx-auto w-full">
         <Hero />
         <Benefits />
         <NewArrivals />
