@@ -379,14 +379,14 @@ function Hero() {
             {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
             {/* Floating Logo 1 - Side of image - EVEN CLOSER */}
             <motion.img
-              src="/logo.png"
-              alt=""
-              className="absolute top-12 left-8 -translate-y-1/2 w-20 md:w-32 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              src="/selo_desc_exclu.png"
+              alt="Desconto Exclusivo"
+              className="absolute top-12 left-2 md:-left-4 -translate-y-1/2 w-28 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-xl"
               animate={{ 
                 y: [0, -10, 0]
               }}
               transition={{ 
-                duration: 3, 
+                duration: 3.5, 
                 repeat: Infinity, 
                 ease: "easeInOut" 
               }}
@@ -394,11 +394,12 @@ function Hero() {
 
             {/* Floating Logo 2 - Bottom Right edge of image - EVEN CLOSER */}
             <motion.img
-              src="/logo.png"
-              alt=""
-              className="absolute bottom-8 right-12 w-24 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-lg"
+              src="/selo_melhores_precos.png"
+              alt="Melhores Preços"
+              className="absolute bottom-4 right-2 md:-right-6 w-32 md:w-48 opacity-100 pointer-events-none z-30 drop-shadow-xl"
               animate={{ 
                 y: [0, 10, 0]
+
               }}
               transition={{ 
                 duration: 4, 
@@ -580,13 +581,12 @@ function StoreSection() {
               Ver Mais Lojas <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
-          <div className="relative aspect-square overflow-hidden rounded-3xl shadow-2xl">
+          <div className="relative aspect-square overflow-hidden rounded-3xl shadow-2xl bg-white">
             <img
-              src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?q=80&w=1000"
-              alt="Loja Gassi"
-              className="w-full h-full object-cover"
+              src="/three_people_glasses.png"
+              alt="Ótica Melissa Loja e Consultores"
+              className="w-full h-full object-cover object-top"
             />
-            <div className="absolute inset-0 bg-primary/20 backdrop-overlay" />
           </div>
         </div>
       </div>
@@ -689,6 +689,43 @@ function Footer() {
   );
 }
 
+function LifestyleSection() {
+  return (
+    <section className="py-20 bg-slate-50 border-t border-slate-100">
+      <div className="max-w-7xl mx-auto px-10">
+        <div className="flex flex-col lg:flex-row items-center gap-16">
+          <div className="flex-1 order-2 lg:order-1 w-full relative">
+             <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-white p-2">
+                 <img 
+                    src="/hero_trio_distracted_white.png" 
+                    alt="Estilo Ótica Melissa" 
+                    className="w-full h-auto object-contain rounded-2xl"
+                 />
+             </div>
+             {/* Decorative element */}
+             <div className="absolute -z-10 bg-primary/10 w-full h-full rounded-3xl top-6 -left-6" />
+          </div>
+          <div className="flex-1 order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary mb-6">
+                <Zap className="h-4 w-4" />
+                <span className="text-[10px] uppercase font-black tracking-widest">Consultoria de Imagem</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 uppercase text-slate-900 leading-[1.1]">
+              Traduza sua essência
+            </h2>
+            <p className="text-slate-500 text-lg mb-8 leading-relaxed font-medium">
+              Acreditamos que usar óculos é a moldura do seu rosto. Nossos especialistas em visagismo estão aqui para ajudar você a encontrar a armação ideal que combina não apenas com os seus traços, mas principalmente com a sua identidade e estilo de vida.
+            </p>
+            <Button size="lg" className="rounded-full px-10 h-12 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xl group">
+              Agende uma Consultoria Gratuita <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white flex flex-col">
@@ -701,6 +738,7 @@ export default function LandingPage() {
         <NewArrivals />
         <CategoryBanners />
         <StoreSection />
+        <LifestyleSection />
       </main>
       <Footer />
     </div>
