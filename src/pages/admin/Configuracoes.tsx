@@ -2,7 +2,7 @@ import * as React from "react";
 import { collection, addDoc, onSnapshot, query, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
-import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash } from "lucide-react";
+import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export default function Configuracoes() {
   const [nomeFornecedor, setNomeFornecedor] = React.useState("");
   const [cnpjFornecedor, setCnpjFornecedor] = React.useState("");
   const [contatoFornecedor, setContatoFornecedor] = React.useState("");
+  const [linkFornecedor, setLinkFornecedor] = React.useState("");
   const [savingFornecedor, setSavingFornecedor] = React.useState(false);
 
   React.useEffect(() => {
@@ -64,10 +65,11 @@ export default function Configuracoes() {
         name: nomeFornecedor.trim(),
         cnpj: cnpjFornecedor.trim(),
         contact: contatoFornecedor.trim(),
+        link: linkFornecedor.trim(),
         createdAt: new Date().toISOString(),
       });
       toast.success("Fornecedor cadastrado!");
-      setNomeFornecedor(""); setCnpjFornecedor(""); setContatoFornecedor("");
+      setNomeFornecedor(""); setCnpjFornecedor(""); setContatoFornecedor(""); setLinkFornecedor("");
     } catch (err: any) { toast.error("Erro: " + err.message); }
     finally { setSavingFornecedor(false); }
   };
@@ -221,6 +223,17 @@ export default function Configuracoes() {
                       className="rounded border-slate-200 h-9 text-sm"
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                      <ExternalLink className="h-3 w-3" /> Link do Portal / Site
+                    </Label>
+                    <Input
+                      value={linkFornecedor}
+                      onChange={e => setLinkFornecedor(e.target.value)}
+                      placeholder="https://portal.fornecedor.com"
+                      className="rounded border-slate-200 h-9 text-sm"
+                    />
+                  </div>
                   <Button
                     type="submit"
                     disabled={savingFornecedor}
@@ -259,14 +272,27 @@ export default function Configuracoes() {
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteFornecedor(f.id)}
-                          className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {f.link && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(f.link, '_blank')}
+                              className="h-8 w-8 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              title="Abrir portal do fornecedor"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteFornecedor(f.id)}
+                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

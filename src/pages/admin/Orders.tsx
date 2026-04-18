@@ -77,6 +77,9 @@ export default function Orders() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [orders, setOrders] = React.useState<any[]>([]);
   const [clients, setClients] = React.useState<any[]>([]);
+  const [atendentes, setAtendentes] = React.useState<any[]>([]);
+  const [fornecedores, setFornecedores] = React.useState<any[]>([]);
+  const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     const qOrders = query(collection(db, "orders"));
@@ -96,9 +99,24 @@ export default function Orders() {
       setClients(data);
     });
 
+    const unsubAtendentes = onSnapshot(query(collection(db, "atendentes")), (snap) => {
+      setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const unsubFornecedores = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
+      setFornecedores(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const unsubAtendimentos = onSnapshot(query(collection(db, "atendimentos")), (snap) => {
+      setAtendimentos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     return () => {
       unsubOrders();
       unsubClients();
+      unsubAtendentes();
+      unsubFornecedores();
+      unsubAtendimentos();
     };
   }, []);
 
@@ -123,6 +141,9 @@ export default function Orders() {
         total: Number(data.total) || 0,
         paymentMethod: data.paymentMethod || "Pendente",
         status: "Pendente",
+        orderCode: data.orderCode || "",
+        supplier: data.supplier || "",
+        linkedAtendimentoId: data.linkedAtendimentoId || "",
         createdAt: new Date().toISOString(),
         date: new Date().toLocaleDateString('pt-BR'),
       });
@@ -161,9 +182,8 @@ export default function Orders() {
                   <DialogTitle className="text-lg font-semibold flex items-center gap-3">
                     <ShoppingCart className="h-5 w-5" /> Abertura de Ordem de Serviço
                   </DialogTitle>
-                  <p className="text-slate-400 text-xs font-medium">Inicie um novo pedido com montagem e laboratório.</p>
                 </DialogHeader>
-                <form onSubmit={handleSave} className="flex flex-col max-h-[70vh] overflow-hidden">
+                <form onSubmit={handleSave} className="flex flex-col max-h-[85vh] overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -181,34 +201,104 @@ export default function Orders() {
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Vendedor</Label>
-                                <Input name="seller" placeholder="Selecione o vendedor" className="rounded border-slate-200 h-9 text-sm" />
+                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Vendedor / Atendente</Label>
+                                <Select name="seller" required>
+                                  <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                    <SelectValue placeholder="Selecione o vendedor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {atendentes.map(a => (
+                                      <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
+                                <Input name="orderCode" placeholder="Ex: LAB-2024-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
+                                <Select name="supplier">
+                                  <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                    <SelectValue placeholder="Selecione o fornecedor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fornecedores.map(f => (
+                                      <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço</Label>
-                            <Select name="serviceType" defaultValue="Óculos Completo">
+                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Vincular a um Atendimento (Opcional)</Label>
+                            <Select name="linkedAtendimentoId">
                               <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
-                                <SelectValue />
+                                <SelectValue placeholder="Selecione um atendimento" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Óculos Completo">Óculos Completo</SelectItem>
-                                <SelectItem value="Apenas Lentes">Apenas Lentes</SelectItem>
-                                <SelectItem value="Apenas Armação">Apenas Armação</SelectItem>
+                                <SelectItem value="nenhum">Nenhum vínculo</SelectItem>
+                                {atendimentos.slice(0, 10).map(a => (
+                                  <SelectItem key={a.id} value={a.id}>{a.date} - {a.clientName || 'Cliente'} (R$ {a.totalValue?.toFixed(2)})</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
-                            <Input name="dueDate" type="date" className="rounded border-slate-200 h-9 text-sm" required />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                              <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço</Label>
+                              <Select name="serviceType" defaultValue="Óculos Completo">
+                                <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Óculos Completo">Óculos Completo</SelectItem>
+                                  <SelectItem value="Apenas Lentes">Apenas Lentes</SelectItem>
+                                  <SelectItem value="Apenas Armação">Apenas Armação</SelectItem>
+                                </SelectContent>
+                              </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                              <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida</Label>
+                              <Input name="dueDate" type="date" className="rounded border-slate-200 h-9 text-sm" required />
+                          </div>
                         </div>
+
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor Total Estimado (R$)</Label>
-                            <Input name="total" type="number" step="0.01" className="rounded border-slate-200 h-9 text-sm" required />
+                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição dos Itens / Lentes</Label>
+                            <Input name="items" placeholder="Ex: Armação RX + Lentes Kodak Anti-Reflexo" className="rounded border-slate-200 h-9 text-sm" />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                              <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor do Pedido (R$)</Label>
+                              <Input name="total" type="number" step="0.01" className="rounded border-slate-200 h-9 text-sm font-bold" required />
+                          </div>
+                          <div className="space-y-1.5">
+                              <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Forma de Pagto</Label>
+                              <Select name="paymentMethod" defaultValue="pix">
+                                <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pix">PIX</SelectItem>
+                                  <SelectItem value="cartao">Cartão</SelectItem>
+                                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                  <SelectItem value="carne">Carnê</SelectItem>
+                                </SelectContent>
+                              </Select>
+                          </div>
+                        </div>
+
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
-                            <textarea name="notes" className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Detalhes técnicos para montagem..."></textarea>
+                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações Técnicas</Label>
+                            <textarea name="notes" className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Detalhes para o laboratório..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -272,6 +362,8 @@ export default function Orders() {
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-slate-100 hover:bg-transparent">
                 <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Pedido</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cód. / Lab</TableHead>
+                <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</TableHead>
                 <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cliente / Data</TableHead>
                 <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Itens</TableHead>
                 <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-right">Valor Total</TableHead>
@@ -287,6 +379,12 @@ export default function Orders() {
                   <TableRow key={order.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
                     <TableCell className="px-6 py-3">
                       <span className="font-semibold text-slate-900">#{order.id}</span>
+                    </TableCell>
+                    <TableCell className="px-6 py-3">
+                      <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{order.orderCode || "—"}</span>
+                    </TableCell>
+                    <TableCell className="px-6 py-3">
+                      <span className="text-[11px] font-semibold text-slate-600">{order.supplier || "—"}</span>
                     </TableCell>
                     <TableCell className="px-6 py-3">
                       <div className="flex flex-col">
@@ -325,7 +423,7 @@ export default function Orders() {
               })}
               {filteredOrders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-slate-500 font-medium">
+                  <TableCell colSpan={9} className="h-24 text-center text-slate-500 font-medium">
                     Nenhum pedido encontrado.
                   </TableCell>
                 </TableRow>
