@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   Search,
@@ -72,6 +73,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Orders() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -410,10 +412,20 @@ export default function Orders() {
                     </TableCell>
                     <TableCell className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded hover:bg-slate-100"
+                            onClick={() => navigate(`/admin/pedidos/${order.id}`)}
+                          >
                               <FileText className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-slate-100 text-slate-400">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded hover:bg-slate-100 text-slate-400"
+                            onClick={() => navigate(`/admin/pedidos/${order.id}?print=true`)}
+                          >
                               <Printer className="h-3.5 w-3.5" />
                           </Button>
                       </div>
