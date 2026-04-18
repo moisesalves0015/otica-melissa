@@ -353,7 +353,7 @@ export default function OrderDetails() {
             {/* QR CODE DE RASTREIO */}
             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
               <QRCodeSVG 
-                value={`${window.location.origin}/rastreio?id=${order.id}`} 
+                value={`https://otica-melissa.vercel.app/rastreio?id=${order.id}`} 
                 size={55} 
               />
               <p style={{fontSize: '4pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Pedido</p>
