@@ -105,13 +105,15 @@ export default function Clients() {
       
       const uniqueId = Math.floor(100000 + Math.random() * 900000).toString();
       
+      const password = data.password ? String(data.password) : String(data.cpf || "").replace(/\D/g, "").slice(-4);
+
       await setDoc(doc(db, "clients", uniqueId), {
-        name: data.name || "",
-        cpf: data.cpf || "",
-        birthDate: data.birth || "",
-        phone: data.phone || "",
-        email: data.email || "",
-        password: data.password || data.cpf.replace(/\D/g, "").slice(-4), // Padrão: 4 últimos dígitos do CPF
+        name: String(data.name || ""),
+        cpf: String(data.cpf || ""),
+        birthDate: String(data.birth || ""),
+        phone: String(data.phone || ""),
+        email: String(data.email || ""),
+        password: password, // Padrão: 4 últimos dígitos do CPF
         createdAt: new Date().toISOString(),
         creditStatus: "Em Análise",
         lastVisit: new Date().toLocaleDateString('pt-BR'),
