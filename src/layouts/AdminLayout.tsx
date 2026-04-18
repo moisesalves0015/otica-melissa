@@ -20,13 +20,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "../contexts/AuthContext";
 
 const sidebarLinks = [
   {
     group: "PRINCIPAL",
     items: [
       { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-      { name: "Venda Rápida", icon: Zap, path: "/admin/venda-rapida", highlight: true },
+      { name: "Atendimentos", icon: Zap, path: "/admin/atendimentos", highlight: true },
     ],
   },
   {
@@ -64,6 +65,7 @@ const sidebarLinks = [
 export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const location = useLocation();
+  const { logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -121,6 +123,9 @@ export default function AdminLayout() {
           <Button
             variant="ghost"
             size="sm"
+            onClick={async () => {
+              await logout();
+            }}
             className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-slate-800 px-3 h-10"
           >
             <LogOut className="h-4 w-4" />

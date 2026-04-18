@@ -47,7 +47,10 @@ export function ResponsiveSlider({
     align: 'center', 
     containScroll: false, 
     loop: false,
-    active: !isDesktop
+    active: !isDesktop,
+    breakpoints: {
+      '(min-width: 768px)': { align: 'start' }
+    }
   });
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -120,7 +123,7 @@ export function ResponsiveSlider({
             <div 
               key={index} 
               className={cn(
-                "min-w-0 flex-[0_0_85%] sm:flex-[0_0_45%] pl-4 first:pl-0 lg:pl-0 lg:flex-none",
+                "min-w-0 flex-[0_0_85%] md:flex-[0_0_45%] mr-4 last:mr-0 lg:mr-0 lg:flex-none",
                 activeBreakpoint === 'lg' ? "lg:w-full" : ""
               )}
             >

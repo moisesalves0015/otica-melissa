@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regra Global Padrão
+    match /{document=**} {
+      
+      // Qualquer usuário autenticado (incluindo clientes anônimos) pode ler os dados
+      allow read: if request.auth != null;
+      
+      // Apenas o administrador master pode criar, alterar ou deletar dados.
+      // O cliente anônimo não tem email atrelado, portanto será bloqueado aqui.
+      allow write: if request.auth != null && request.auth.token.email == 'admin@admin.com';
+      
+    }
+
+  }
+}

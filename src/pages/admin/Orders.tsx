@@ -50,8 +50,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MOCK_ORDERS } from "../../data/mockData";
-
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import { toast } from "sonner";
 const statusIcons: Record<string, any> = {
   "Pendente": Clock,
   "Em Produção": Wrench,
@@ -72,10 +73,72 @@ const statusColors: Record<string, string> = {
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [orders, setOrders] = React.useState<any[]>([]);
+  const [clients, setClients] = React.useState<any[]>([]);
 
-  const filteredOrders = MOCK_ORDERS.filter(o => 
-    o.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.id.includes(searchTerm)
+  React.useEffect(() => {
+    const qOrders = query(collection(db, "orders"));
+    const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a: any, b: any) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setOrders(data);
+    });
+
+    const qClients = query(collection(db, "clients"));
+    const unsubClients = onSnapshot(qClients, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClients(data);
+    });
+
+    return () => {
+      unsubOrders();
+      unsubClients();
+    };
+  }, []);
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const data = Object.fromEntries(formData.entries());
+      
+      const clientId = data.clientId?.toString() || "";
+      const client = clients.find(c => c.id === clientId);
+
+      await addDoc(collection(db, "orders"), {
+        clientId: clientId,
+        clientName: client ? client.name : "Cliente Avulso",
+        seller: data.seller || "",
+        serviceType: data.serviceType || "",
+        dueDate: data.dueDate || "",
+        notes: data.notes || "",
+        items: data.items || "A definir",
+        total: Number(data.total) || 0,
+        paymentMethod: data.paymentMethod || "Pendente",
+        status: "Pendente",
+        createdAt: new Date().toISOString(),
+        date: new Date().toLocaleDateString('pt-BR'),
+      });
+      
+      toast.success("Pedido criado com sucesso!");
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredOrders = orders.filter(o => 
+    o.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    o.id?.includes(searchTerm)
   );
 
   return (
@@ -87,85 +150,11 @@ export default function Orders() {
         </div>
 
         <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger render={<Button variant="outline" className="rounded border-slate-200 text-slate-700 font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
-                  <Zap className="h-3.5 w-3.5" /> VENDA RÁPIDA
-              </DialogTrigger>
-              <DialogContent className="w-[90vw] max-w-[960px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
-                <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
-                  <DialogTitle className="text-lg font-semibold flex items-center gap-3">
-                    <Zap className="h-5 w-5 text-amber-400" /> Terminal de Venda Rápida
-                  </DialogTitle>
-                  <p className="text-slate-400 text-xs font-medium">Fluxo simplificado para vendas de pronta entrega.</p>
-                </DialogHeader>
-                <div className="max-h-[65vh] overflow-y-auto p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Localizar Cliente</Label>
-                                <div className="relative group">
-                                    <Input placeholder="Nome ou CPF do cliente..." className="rounded border-slate-200 h-9 text-sm pl-9" />
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Adicionar Itens (SKU / Nome)</Label>
-                                <div className="relative group">
-                                    <Input placeholder="Buscar no estoque..." className="rounded border-slate-200 h-9 text-sm pl-9" />
-                                    <Plus className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                </div>
-                            </div>
-                            <div className="border border-slate-100 rounded bg-slate-50/50 p-4 min-h-[120px] flex flex-col items-center justify-center">
-                                <ShoppingCart className="h-6 w-6 text-slate-200 mb-2" />
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Carrinho Vazio</p>
-                            </div>
-                        </div>
-                        <div className="space-y-4 bg-slate-50 p-6 rounded border border-slate-100">
-                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-2">Resumo do Pagamento</h4>
-                            <div className="space-y-3 pt-2">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Subtotal</span>
-                                    <span className="font-semibold text-slate-900">R$ 0,00</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Descontos</span>
-                                    <span className="font-semibold text-red-600">R$ 0,00</span>
-                                </div>
-                                <Separator className="bg-slate-200" />
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-slate-900">Total</span>
-                                    <span className="font-bold text-slate-900">R$ 0,00</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5 pt-4">
-                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Forma de Pagamento</Label>
-                                <Select>
-                                    <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600 bg-white">
-                                        <SelectValue placeholder="Selecione..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                                        <SelectItem value="pix">PIX (5% desc.)</SelectItem>
-                                        <SelectItem value="cartao">Cartão de Crédito</SelectItem>
-                                        <SelectItem value="carne">Carnê Próprio</SelectItem>
-                                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                    <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
-                    <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9 flex items-center gap-2">
-                        <Zap className="h-3.5 w-3.5" /> FINALIZAR VENDA
-                    </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog>
-              <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2">
                   <Plus className="h-4 w-4" /> NOVO PEDIDO
+                </Button>
               </DialogTrigger>
               <DialogContent className="w-[90vw] max-w-[720px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
                 <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
@@ -174,40 +163,62 @@ export default function Orders() {
                   </DialogTitle>
                   <p className="text-slate-400 text-xs font-medium">Inicie um novo pedido com montagem e laboratório.</p>
                 </DialogHeader>
-                <div className="max-h-[65vh] overflow-y-auto p-6 space-y-6">
+                <form onSubmit={handleSave} className="flex flex-col max-h-[70vh] overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cliente Responsável</Label>
-                                <Input placeholder="Buscar cliente..." className="rounded border-slate-200 h-9 text-sm" />
+                                <Select name="clientId" required>
+                                  <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                    <SelectValue placeholder="Selecione o cliente" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {clients.map(c => (
+                                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Vendedor</Label>
-                                <Input placeholder="Selecione o vendedor" className="rounded border-slate-200 h-9 text-sm" />
+                                <Input name="seller" placeholder="Selecione o vendedor" className="rounded border-slate-200 h-9 text-sm" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {['Óculos Completo', 'Apenas Lentes', 'Apenas Armação'].map((opt) => (
-                                    <Button key={opt} variant="outline" className="rounded border-slate-200 h-8 text-[10px] font-bold uppercase hover:bg-slate-50">{opt}</Button>
-                                ))}
-                            </div>
+                            <Select name="serviceType" defaultValue="Óculos Completo">
+                              <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Óculos Completo">Óculos Completo</SelectItem>
+                                <SelectItem value="Apenas Lentes">Apenas Lentes</SelectItem>
+                                <SelectItem value="Apenas Armação">Apenas Armação</SelectItem>
+                              </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
-                            <Input type="date" className="rounded border-slate-200 h-9 text-sm" />
+                            <Input name="dueDate" type="date" className="rounded border-slate-200 h-9 text-sm" required />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor Total Estimado (R$)</Label>
+                            <Input name="total" type="number" step="0.01" className="rounded border-slate-200 h-9 text-sm" required />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
-                            <textarea className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Detalhes técnicos para montagem..."></textarea>
+                            <textarea name="notes" className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-0 focus:border-slate-400 font-medium" placeholder="Detalhes técnicos para montagem..."></textarea>
                         </div>
                     </div>
                 </div>
                 <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                    <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">SALVAR RASCUNHO</Button>
-                    <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">CRIAR PEDIDO</Button>
+                    <Button type="button" variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
+                    <Button type="submit" disabled={isSaving} className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">
+                      {isSaving ? "SALVANDO..." : "CRIAR PEDIDO"}
+                    </Button>
                 </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
         </div>
@@ -287,7 +298,7 @@ export default function Orders() {
                       {order.items}
                     </TableCell>
                     <TableCell className="px-6 py-3 text-right font-semibold text-slate-900">
-                      R$ {order.total.toFixed(2)}
+                      R$ {(Number(order.total) || 0).toFixed(2)}
                     </TableCell>
                     <TableCell className="px-6 py-3 text-center">
                       <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-600">
@@ -312,6 +323,13 @@ export default function Orders() {
                   </TableRow>
                 );
               })}
+              {filteredOrders.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-slate-500 font-medium">
+                    Nenhum pedido encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -22,7 +22,6 @@ import {
   Package,
 } from "lucide-react";
 import {
-  DASHBOARD_STATS,
   SALES_CHART_DATA,
   PAYMENT_METHODS_DATA,
   TOP_PRODUCTS,
@@ -30,8 +29,55 @@ import {
 } from "../../data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "../../lib/firebase";
 
 export default function Dashboard() {
+  const [stats, setStats] = React.useState({
+    vendasDia: 0,
+    vendasMes: 0,
+    ticketMedio: 0,
+    novosClientes: 0,
+    receitas: 0,
+    despesas: 0,
+  });
+
+  React.useEffect(() => {
+    const unsubOrders = onSnapshot(query(collection(db, "orders")), (snapshot) => {
+      const orders = snapshot.docs.map(doc => doc.data());
+      const totalVendasMes = orders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+      const vendasDia = orders.filter(o => o.date === new Date().toLocaleDateString('pt-BR')).reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+      const ticketMedio = orders.length > 0 ? totalVendasMes / orders.length : 0;
+      
+      setStats(s => ({ ...s, vendasDia, vendasMes: totalVendasMes, ticketMedio }));
+    });
+
+    const unsubClients = onSnapshot(query(collection(db, "clients")), (snapshot) => {
+      setStats(s => ({ ...s, novosClientes: snapshot.size }));
+    });
+
+    const unsubFin = onSnapshot(query(collection(db, "financial_transactions")), (snapshot) => {
+      const trans = snapshot.docs.map(doc => doc.data());
+      const receitas = trans.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+      const despesas = trans.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+      setStats(s => ({ ...s, receitas, despesas }));
+    });
+
+    return () => {
+      unsubOrders();
+      unsubClients();
+      unsubFin();
+    };
+  }, []);
+
+  const DYNAMIC_STATS = [
+    { label: "Vendas de Hoje", value: `R$ ${stats.vendasDia.toFixed(2)}`, trend: "up" },
+    { label: "Vendas Totais", value: `R$ ${stats.vendasMes.toFixed(2)}`, trend: "up" },
+    { label: "Ticket Médio", value: `R$ ${stats.ticketMedio.toFixed(2)}`, trend: "up" },
+    { label: "Total de Clientes", value: stats.novosClientes.toString(), trend: "up" },
+    { label: "Total Receitas", value: `R$ ${stats.receitas.toFixed(2)}`, color: "text-emerald-600" },
+    { label: "Total Despesas", value: `R$ ${stats.despesas.toFixed(2)}`, color: "text-red-600" },
+  ];
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -41,7 +87,7 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {DASHBOARD_STATS.map((stat, i) => (
+        {DYNAMIC_STATS.map((stat, i) => (
           <div key={stat.label}>
             <Card className="rounded border-slate-200 shadow-none">
               <CardContent className="p-4">

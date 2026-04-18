@@ -55,12 +55,128 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    MOCK_TRANSACTIONS,
-    MOCK_INSTALLMENTS
-} from "../../data/mockData";
+import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import { toast } from "sonner";
 
 export default function Financial() {
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [transactions, setTransactions] = React.useState<any[]>([]);
+  const [groupedInstallments, setGroupedInstallments] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    // 1. Transações (Fluxo de Caixa)
+    const qTrans = query(collection(db, "financial_transactions"));
+    const unsubTrans = onSnapshot(qTrans, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a: any, b: any) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setTransactions(data);
+    });
+
+    // 2. Parcelas (Carnês)
+    const qInst = query(collection(db, "installments"));
+    const unsubInst = onSnapshot(qInst, (snapshot) => {
+        const allInsts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Agrupar por atendimentoId
+        const groups: Record<string, any> = {};
+        allInsts.forEach((inst: any) => {
+            if (!groups[inst.atendimentoId]) {
+                groups[inst.atendimentoId] = {
+                    id: inst.atendimentoId,
+                    client: inst.clientName,
+                    installments: [],
+                    totalValue: 0,
+                    remainingValue: 0,
+                };
+            }
+            groups[inst.atendimentoId].installments.push(inst);
+            groups[inst.atendimentoId].totalValue += inst.value;
+            if (inst.status !== 'Pago') {
+                groups[inst.atendimentoId].remainingValue += inst.value;
+            }
+        });
+
+        const groupsArray = Object.values(groups).map((g: any) => {
+            // Ordenar as parcelas por número
+            g.installments.sort((a: any, b: any) => a.number - b.number);
+            return g;
+        });
+
+        setGroupedInstallments(groupsArray);
+    });
+
+    return () => {
+        unsubTrans();
+        unsubInst();
+    };
+  }, []);
+
+  const handleReceiveInstallment = async (installment: any) => {
+      try {
+          // Atualiza status da parcela
+          const docRef = doc(db, "installments", installment.id);
+          await updateDoc(docRef, { status: 'Pago' });
+
+          // Lança entrada no fluxo de caixa
+          await addDoc(collection(db, "financial_transactions"), {
+            description: `Receb. Parcela ${installment.number}/${installment.totalInstallments} - ${installment.clientName}`,
+            amount: installment.value,
+            date: new Date().toLocaleDateString('pt-BR'),
+            category: "Recebimento Carnê",
+            type: "Entrada",
+            paymentMethod: "Dinheiro/Pix",
+            createdAt: new Date().toISOString(),
+          });
+
+          toast.success("Parcela recebida e lançada no caixa!");
+      } catch (err: any) {
+          toast.error("Erro ao receber parcela: " + err.message);
+      }
+  };
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const data = Object.fromEntries(formData.entries());
+      
+      const amount = Number(data.amount) || 0;
+
+      await addDoc(collection(db, "financial_transactions"), {
+        description: data.description || "",
+        amount: amount,
+        date: data.date || new Date().toLocaleDateString('pt-BR'),
+        category: data.category || "Não definida",
+        type: data.type || "Entrada",
+        createdAt: new Date().toISOString(),
+      });
+      
+      toast.success("Transação registrada!");
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(t => 
+    t.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Dashboard calcs
+  const totalReceitas = transactions.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const totalDespesas = transactions.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const saldo = totalReceitas - totalDespesas;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -73,9 +189,11 @@ export default function Financial() {
             <Button variant="outline" className="rounded border-slate-200 text-slate-600 font-semibold text-xs h-9 px-4 flex items-center gap-2">
                 <Download className="h-4 w-4" /> EXPORTAR
             </Button>
-            <Dialog>
-                <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
-                    <Plus className="h-4 w-4" /> NOVA TRANSAÇÃO
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2">
+                        <Plus className="h-4 w-4" /> NOVA TRANSAÇÃO
+                    </Button>
                 </DialogTrigger>
                 <DialogContent className="w-[90vw] max-w-[600px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden">
                     <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
@@ -84,55 +202,59 @@ export default function Financial() {
                         </DialogTitle>
                         <p className="text-slate-400 text-xs font-medium">Lance novas receitas ou despesas no fluxo de caixa.</p>
                     </DialogHeader>
+                    <form onSubmit={handleSave}>
                     <div className="p-6 space-y-4">
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição / Título</Label>
-                            <Input placeholder="Ex: Aluguel da Loja - Abril" className="rounded border-slate-200 h-9 text-sm" />
+                            <Input name="description" placeholder="Ex: Aluguel da Loja - Abril" className="rounded border-slate-200 h-9 text-sm" required />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor (R$)</Label>
-                                <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                                <Input name="amount" type="number" step="0.01" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" required />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data do Lançamento</Label>
-                                <Input type="date" className="rounded border-slate-200 h-9 text-sm" />
+                                <Input name="date" type="date" className="rounded border-slate-200 h-9 text-sm" required />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</Label>
-                                <Select>
+                                <Select name="category" defaultValue="Venda de Produto">
                                     <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600 bg-white">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                                        <SelectItem value="venda">Venda de Produto</SelectItem>
-                                        <SelectItem value="servico">Serviço / Mão de Obra</SelectItem>
-                                        <SelectItem value="custo-fixo">Custo Fixo (Aluguel/Luz)</SelectItem>
-                                        <SelectItem value="estoque">Compra de Estoque</SelectItem>
-                                        <SelectItem value="marketing">Marketing / Ads</SelectItem>
+                                        <SelectItem value="Venda de Produto">Venda de Produto</SelectItem>
+                                        <SelectItem value="Serviço / Mão de Obra">Serviço / Mão de Obra</SelectItem>
+                                        <SelectItem value="Custo Fixo (Aluguel/Luz)">Custo Fixo (Aluguel/Luz)</SelectItem>
+                                        <SelectItem value="Compra de Estoque">Compra de Estoque</SelectItem>
+                                        <SelectItem value="Marketing / Ads">Marketing / Ads</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Fluxo</Label>
-                                <Select>
+                                <Select name="type" defaultValue="Entrada">
                                     <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600 bg-white">
                                         <SelectValue placeholder="Tipo..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                                        <SelectItem value="entrada" className="text-emerald-600 font-bold">ENTRADA (+)</SelectItem>
-                                        <SelectItem value="saida" className="text-red-600 font-bold">SAÍDA (-)</SelectItem>
+                                        <SelectItem value="Entrada" className="text-emerald-600 font-bold">ENTRADA (+)</SelectItem>
+                                        <SelectItem value="Saída" className="text-red-600 font-bold">SAÍDA (-)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
                     </div>
                     <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                        <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
-                        <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">EFETUAR LANÇAMENTO</Button>
+                        <Button type="button" variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
+                        <Button type="submit" disabled={isSaving} className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">
+                          {isSaving ? "SALVANDO..." : "EFETUAR LANÇAMENTO"}
+                        </Button>
                     </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>
@@ -146,10 +268,9 @@ export default function Financial() {
                       <div className="h-10 w-10 rounded bg-slate-50 text-emerald-600 flex items-center justify-center border border-slate-100">
                           <TrendingUp className="h-5 w-5" />
                       </div>
-                      <Badge variant="outline" className="text-emerald-600 border-emerald-100 bg-emerald-50 text-[10px] font-bold">+14%</Badge>
                   </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Recebido (Mensal)</p>
-                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ 82.300,00</h3>
+                  <p className="text-[11px] font-semibold uppercase text-slate-400">Receitas</p>
+                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ {totalReceitas.toFixed(2)}</h3>
               </CardContent>
           </Card>
 
@@ -159,10 +280,9 @@ export default function Financial() {
                       <div className="h-10 w-10 rounded bg-slate-50 text-red-600 flex items-center justify-center border border-slate-100">
                           <TrendingDown className="h-5 w-5" />
                       </div>
-                      <Badge variant="outline" className="text-red-600 border-red-100 bg-red-50 text-[10px] font-bold">-2.5%</Badge>
                   </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Despesas (Mensal)</p>
-                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ 41.150,00</h3>
+                  <p className="text-[11px] font-semibold uppercase text-slate-400">Despesas</p>
+                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ {totalDespesas.toFixed(2)}</h3>
               </CardContent>
           </Card>
 
@@ -173,9 +293,8 @@ export default function Financial() {
                           <DollarSign className="h-5 w-5" />
                       </div>
                   </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Saldo Projetado</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">R$ 56.350,20</h3>
-                  <p className="text-[10px] text-white/40 mt-2 font-medium">Incluindo recebíveis futuros</p>
+                  <p className="text-[11px] font-semibold uppercase text-slate-400">Saldo Atual</p>
+                  <h3 className="text-2xl font-bold text-white mt-1">R$ {saldo.toFixed(2)}</h3>
               </CardContent>
           </Card>
       </div>
@@ -194,6 +313,8 @@ export default function Financial() {
                         <Input
                             placeholder="Buscar transação..."
                             className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                     </div>
@@ -218,7 +339,7 @@ export default function Financial() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {MOCK_TRANSACTIONS.map((t) => (
+                            {filteredTransactions.map((t) => (
                                 <TableRow key={t.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
                                     <TableCell className="px-6 py-3 font-medium text-slate-500">{t.date}</TableCell>
                                     <TableCell className="px-6 py-3">
@@ -239,6 +360,13 @@ export default function Financial() {
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {filteredTransactions.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center text-slate-500 font-medium">
+                                  Nenhuma transação encontrada.
+                                </TableCell>
+                              </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -249,12 +377,12 @@ export default function Financial() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Installment List */}
                 <div className="lg:col-span-8 space-y-4">
-                    {MOCK_INSTALLMENTS.map((inst) => (
+                    {groupedInstallments.map((inst) => (
                         <Card key={inst.id} className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
                             <CardHeader className="px-6 py-4 border-b border-slate-100 flex flex-row items-center justify-between">
                                 <div className="flex flex-col">
                                     <CardTitle className="text-sm font-semibold text-slate-900">{inst.client}</CardTitle>
-                                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">Carnê #{inst.id} • Venda #{inst.orderId}</p>
+                                    <p className="text-[11px] text-slate-400 font-medium mt-0.5">Atendimento #{inst.id.substring(0,8).toUpperCase()}</p>
                                 </div>
                                 <div className="flex gap-1">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900">
@@ -287,36 +415,51 @@ export default function Financial() {
                                 </div>
                                 <div className="p-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                        {inst.installments.map((parc) => (
-                                            <div key={parc.number} className={`p-3 rounded border ${
-                                                parc.status === 'Pago' ? 'bg-emerald-50/30 border-emerald-100' :
-                                                parc.status === 'Vencido' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'
+                                        {inst.installments.map((parc: any) => {
+                                            // Lógica visual básica de vencimento (apenas p/ exibir vermelho se passou da data e não tá pago)
+                                            let displayStatus = parc.status;
+                                            if (displayStatus !== 'Pago') {
+                                                const hoje = new Date();
+                                                const dueDate = new Date(parc.dueDate + "T23:59:59");
+                                                if (hoje > dueDate) displayStatus = 'Vencido';
+                                            }
+
+                                            return (
+                                            <div key={parc.id} className={`p-3 rounded border ${
+                                                displayStatus === 'Pago' ? 'bg-emerald-50/30 border-emerald-100' :
+                                                displayStatus === 'Vencido' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'
                                             }`}>
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-[10px] font-semibold text-slate-500 uppercase">{parc.number}ª Parcela</span>
                                                     <Badge className={`${
-                                                        parc.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
-                                                        parc.status === 'Vencido' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'
+                                                        displayStatus === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
+                                                        displayStatus === 'Vencido' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'
                                                     } text-[9px] font-bold shadow-none border-none px-1.5 py-0`}>
-                                                        {parc.status}
+                                                        {displayStatus}
                                                     </Badge>
                                                 </div>
                                                 <p className="font-bold text-slate-900 text-[13px]">R$ {parc.value.toFixed(2)}</p>
                                                 <div className="flex items-center gap-1.5 mt-2 text-[10px] font-medium text-slate-400 uppercase">
-                                                    <Calendar className="h-3 w-3" /> {parc.dueDate}
+                                                    <Calendar className="h-3 w-3" /> {new Date(parc.dueDate + "T12:00:00").toLocaleDateString('pt-BR')}
                                                 </div>
                                                 {parc.status !== 'Pago' && (
-                                                    <Button className="w-full mt-3 h-7 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-semibold">
+                                                    <Button onClick={() => handleReceiveInstallment(parc)} className="w-full mt-3 h-7 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-semibold">
                                                         Receber
                                                     </Button>
                                                 )}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     ))}
+                    {groupedInstallments.length === 0 && (
+                        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-slate-200 rounded">
+                            Nenhum carnê ou parcelamento encontrado no sistema.
+                        </div>
+                    )}
                 </div>
 
                 {/* Performance & Filters */}

@@ -49,15 +49,75 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MOCK_PRODUCTS } from "../../data/mockData";
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import { toast } from "sonner";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [products, setProducts] = React.useState<any[]>([]);
 
-  const filteredProducts = MOCK_PRODUCTS.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchTerm.toLowerCase())
+  React.useEffect(() => {
+    const q = query(collection(db, "products"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a: any, b: any) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setProducts(data);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const data = Object.fromEntries(formData.entries());
+      
+      const stock = Number(data.stock) || 0;
+      const minStock = Number(data.minStock) || 0;
+      let status = "Em Estoque";
+      if (stock === 0) status = "Em Falta";
+      else if (stock <= minStock) status = "Baixo Estoque";
+
+      await addDoc(collection(db, "products"), {
+        name: data.name || "",
+        category: data.category || "Não definida",
+        brand: data.brand || "",
+        supplier: data.supplier || "",
+        sku: data.sku || "",
+        costPrice: Number(data.costPrice) || 0,
+        price: Number(data.price) || 0,
+        stock: stock,
+        minStock: minStock,
+        material: data.material || "",
+        color: data.color || "",
+        size: data.size || "",
+        notes: data.notes || "",
+        status: status,
+        createdAt: new Date().toISOString(),
+      });
+      
+      toast.success("Produto cadastrado com sucesso!");
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -68,9 +128,11 @@ export default function Products() {
           <p className="text-xs text-slate-500">Gestão de inventário e controle de reposição.</p>
         </div>
 
-        <Dialog>
-          <DialogTrigger render={<Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2" />}>
-            <Plus className="h-4 w-4" /> NOVO PRODUTO
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs h-9 px-4 flex items-center gap-2">
+              <Plus className="h-4 w-4" /> NOVO PRODUTO
+            </Button>
           </DialogTrigger>
           <DialogContent className="w-[90vw] sm:max-w-none max-w-[900px] rounded border-slate-200 shadow-2xl p-0 overflow-hidden gap-0">
             <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800 gap-1">
@@ -80,7 +142,8 @@ export default function Products() {
               <p className="text-slate-400 text-xs font-medium">Insira as especificações técnicas e de estoque do item.</p>
             </DialogHeader>
 
-            <div className="max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSave} className="flex flex-col max-h-[70vh] overflow-hidden">
+              <div className="flex-1 overflow-y-auto">
               <div className="p-8 space-y-8">
 
                 {/* Seção 1: Identificação */}
@@ -92,34 +155,34 @@ export default function Products() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5 md:col-span-2">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome do Produto / Descrição Curta</Label>
-                      <Input placeholder="Ex: Ray-Ban RB3025 Aviator Gradient" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="name" placeholder="Ex: Ray-Ban RB3025 Aviator Gradient" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Categoria</Label>
-                      <Select>
+                      <Select name="category">
                         <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600">
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                          <SelectItem value="armacoes">Armações</SelectItem>
-                          <SelectItem value="lentes">Lentes</SelectItem>
-                          <SelectItem value="contato">Lentes de Contato</SelectItem>
-                          <SelectItem value="prontos">Óculos Prontos</SelectItem>
-                          <SelectItem value="acessorios">Acessórios</SelectItem>
+                          <SelectItem value="Armações">Armações</SelectItem>
+                          <SelectItem value="Lentes">Lentes</SelectItem>
+                          <SelectItem value="Lentes de Contato">Lentes de Contato</SelectItem>
+                          <SelectItem value="Óculos Prontos">Óculos Prontos</SelectItem>
+                          <SelectItem value="Acessórios">Acessórios</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Marca / Fabricante</Label>
-                      <Input placeholder="Ex: Ray-Ban" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="brand" placeholder="Ex: Ray-Ban" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor Principal</Label>
-                      <Input placeholder="Nome do fornecedor" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="supplier" placeholder="Nome do fornecedor" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">SKU / Código Interno</Label>
-                      <Input placeholder="Ex: RB3025-001" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="sku" placeholder="Ex: RB3025-001" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                   </div>
                 </div>
@@ -133,19 +196,19 @@ export default function Products() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Custo (R$)</Label>
-                      <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="costPrice" type="number" step="0.01" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Preço de Venda (R$)</Label>
-                      <Input type="number" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="price" type="number" step="0.01" placeholder="0,00" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Atual</Label>
-                      <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="stock" type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Estoque Mínimo</Label>
-                      <Input type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="minStock" type="number" placeholder="0" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                   </div>
                 </div>
@@ -159,19 +222,19 @@ export default function Products() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Material</Label>
-                      <Input placeholder="Ex: Acetato" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="material" placeholder="Ex: Acetato" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cor</Label>
-                      <Input placeholder="Ex: Preto Fosco" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="color" placeholder="Ex: Preto Fosco" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tamanho / Aro</Label>
-                      <Input placeholder="Ex: 54" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input name="size" placeholder="Ex: 54" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5 md:col-span-3">
                       <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações Adicionais</Label>
-                      <textarea className="w-full rounded border border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:border-slate-400 font-medium resize-none" placeholder="Informações extras sobre o produto..."></textarea>
+                      <textarea name="notes" className="w-full rounded border border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:border-slate-400 font-medium resize-none" placeholder="Informações extras sobre o produto..."></textarea>
                     </div>
                   </div>
                 </div>
@@ -180,9 +243,12 @@ export default function Products() {
             </div>
 
             <DialogFooter className="bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 p-6 -mx-0 -mb-0 rounded-none">
-              <Button variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9">CANCELAR</Button>
-              <Button className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">SALVAR PRODUTO</Button>
+              <Button type="button" variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
+              <Button type="submit" disabled={isSaving} className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">
+                {isSaving ? "SALVANDO..." : "SALVAR PRODUTO"}
+              </Button>
             </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -256,7 +322,7 @@ export default function Products() {
                   <TableCell className="px-6 py-3">
                     <div className="flex flex-col">
                         <span className="font-semibold text-slate-900">{product.name}</span>
-                        <span className="text-[11px] text-slate-400 uppercase">#{product.id}</span>
+                        <span className="text-[11px] text-slate-400 uppercase">#{product.sku || product.id}</span>
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-3">
@@ -276,7 +342,7 @@ export default function Products() {
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-3 text-right font-semibold text-slate-900">
-                    R$ {product.price.toFixed(2)}
+                    R$ {(Number(product.price) || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="px-6 py-3 text-center">
                     <Badge className={`rounded ${
@@ -299,6 +365,13 @@ export default function Products() {
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredProducts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-slate-500 font-medium">
+                    Nenhum produto cadastrado no estoque ainda.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

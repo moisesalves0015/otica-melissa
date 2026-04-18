@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ResponsiveSlider } from "@/components/ui/ResponsiveSlider";
+import { ClientLoginModal } from "../components/ClientLoginModal";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -316,9 +317,7 @@ function Header() {
             />
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted/50">
-            <User className="h-5 w-5" />
-          </Button>
+          <ClientLoginModal />
         </div>
       </div>
     </header>
@@ -370,48 +369,48 @@ function Hero() {
             viewport={{ once: true }}
             className="flex justify-center relative py-0"
           >
-            {/* Floating Badge 1 - Top Left */}
-            <motion.img
-              src="/selo_desc_exclu.png"
-              alt="Desconto Exclusivo"
-              className="absolute top-12 left-2 md:-left-4 -translate-y-1/2 w-28 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            {/* Floating Badge 2 - Bottom Right */}
-            <motion.img
-              src="/selo_melhores_precos.png"
-              alt="Melhores Preços"
-              className="absolute bottom-4 right-2 md:-right-6 w-32 md:w-48 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            />
-
-            {/* Floating Logo 1 - Top Right */}
-            <motion.img
-              src="/logo.png"
-              alt="Logo"
-              className="absolute top-8 right-8 w-24 md:w-36 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-              animate={{ y: [0, 8, 0], rotate: [-2, 2, -2] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            />
-
-            {/* Floating Logo 2 - Bottom Left */}
-            <motion.img
-              src="/logo.png"
-              alt="Logo"
-              className="absolute bottom-12 left-8 w-24 md:w-36 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-              animate={{ y: [0, -8, 0], rotate: [2, -2, 2] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            />
-
             <div className="relative w-full max-w-[280px] md:max-w-xs lg:max-w-sm z-10 mx-auto md:mx-0">
-                <img 
-                    src="/hero_woman_no_bg.png" 
-                    alt="Ótica Melissa Collection" 
-                    className="w-full h-auto object-cover"
-                />
+              {/* Floating Badge 1 - Top Left */}
+              <motion.img
+                src="/selo_desc_exclu.png"
+                alt="Desconto Exclusivo"
+                className="absolute top-12 -left-8 md:-left-20 -translate-y-1/2 w-28 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-xl"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+              />
+
+              {/* Floating Badge 2 - Bottom Right */}
+              <motion.img
+                src="/selo_melhores_precos.png"
+                alt="Melhores Preços"
+                className="absolute bottom-2 md:bottom-4 -right-16 md:-right-32 w-32 md:w-48 opacity-100 pointer-events-none z-30 drop-shadow-xl"
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              />
+
+              {/* Floating Logo 1 - Top Right */}
+              <motion.img
+                src="/logo.png"
+                alt="Logo"
+                className="absolute top-8 -right-8 md:-right-16 w-24 md:w-32 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+                animate={{ y: [0, 8, 0], rotate: [-2, 2, -2] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              />
+
+              {/* Floating Logo 2 - Bottom Left */}
+              <motion.img
+                src="/logo.png"
+                alt="Logo"
+                className="absolute bottom-16 -left-8 md:-left-16 w-24 md:w-32 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+                animate={{ y: [0, -8, 0], rotate: [2, -2, 2] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+              />
+
+              <img 
+                  src="/hero_woman_no_bg.png" 
+                  alt="Ótica Melissa Collection" 
+                  className="w-full h-auto object-cover relative z-10"
+              />
             </div>
           </motion.div>
         </div>
@@ -423,7 +422,7 @@ function Hero() {
 function Benefits() {
   return (
     <section className="py-3 md:py-5 bg-red-600">
-      <div className="w-full md:container mx-auto px-0 md:px-6">
+      <div className="w-full mx-auto px-0 lg:max-w-[1440px] lg:px-6">
         <ResponsiveSlider autoplay={true} autoplayInterval={3500} dotClassName="bg-white/30">
           {BENEFITS.map((benefit, i) => (
             <motion.div
@@ -491,18 +490,18 @@ function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
 function NewArrivals() {
   return (
     <section className="py-16 bg-slate-50">
-      <div className="max-w-[1440px] mx-auto px-0 md:px-10">
-        <div className="flex items-center justify-between mb-8 px-6 md:px-0">
+      <div className="max-w-[1440px] mx-auto px-0 lg:px-10">
+        <div className="flex items-center justify-between mb-8 px-6 lg:px-0">
           <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Mais Procurados</h2>
           <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
             Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
 
-        <div className="px-2 md:px-0 pb-6 w-full max-w-full overflow-hidden">
-            <ResponsiveSlider>
+        <div className="pb-6 w-full max-w-full overflow-hidden">
+            <ResponsiveSlider autoplay={true} autoplayInterval={4500}>
             {PRODUCTS.map((product) => (
-                <div key={product.id} className="p-3">
+                <div key={product.id} className="py-2 px-1">
                   <ProductCard product={product} />
                 </div>
             ))}
@@ -599,7 +598,7 @@ function Footer() {
       <div className="max-w-[1440px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 mb-16">
           {/* Brand Column */}
-          <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="md:col-span-5 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex items-center gap-2 mb-6">
                 <div className="bg-white p-1.5 rounded-lg">
                     <img src="/logo.png" alt="Ótica Melissa" className="h-6 w-auto" />
@@ -623,7 +622,7 @@ function Footer() {
           </div>
 
           {/* Links Column - Category */}
-          <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="md:col-span-3 flex flex-col items-center md:items-start text-center md:text-left">
             <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Compre Por</h6>
             <ul className="space-y-4 text-[13px]">
               {["Óculos de Grau", "Óculos de Sol", "Lentes de Contato", "Acessórios", "Lançamentos"].map(link => (
@@ -633,7 +632,7 @@ function Footer() {
           </div>
 
           {/* Links Column - Support */}
-          <div className="md:col-span-3 flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
             <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Atendimento</h6>
             <ul className="space-y-4 text-[13px]">
               {["Trocas e Devoluções", "Dúvidas Frequentes", "Política de Entrega", "Cuidados com os Óculos", "Fale Conosco"].map(link => (
@@ -648,20 +647,7 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter Column */}
-          <div className="md:col-span-3">
-             <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6 text-center md:text-left">Assine Nossa News</h6>
-             <p className="text-[13px] mb-6 text-center md:text-left">Receba novidades e descontos exclusivos em primeira mão.</p>
-             <div className="flex gap-2">
-                <Input 
-                    placeholder="Seu melhor e-mail" 
-                    className="bg-slate-900 border-slate-800 text-white h-11 text-[13px] rounded-full px-6 focus:ring-primary focus:border-primary" 
-                />
-                <Button className="h-11 px-6 font-bold rounded-full text-xs uppercase tracking-widest bg-white text-slate-950 hover:bg-slate-200" onClick={() => toast.success("Inscrito!")}>
-                  OK
-                </Button>
-             </div>
-          </div>
+          {/* Newsletter Column removida conforme solicitação */}
         </div>
 
         {/* Bottom Bar */}
