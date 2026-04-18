@@ -1,5 +1,5 @@
 import * as React from "react";
-import { collection, addDoc, onSnapshot, query, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash, ExternalLink } from "lucide-react";
@@ -24,6 +24,47 @@ export default function Configuracoes() {
   const [contatoFornecedor, setContatoFornecedor] = React.useState("");
   const [linkFornecedor, setLinkFornecedor] = React.useState("");
   const [savingFornecedor, setSavingFornecedor] = React.useState(false);
+
+  // ---- Sistema ----
+  const [migrating, setMigrating] = React.useState(false);
+
+  const handleMigrateOrders = async () => {
+    if (!confirm("Isso irá atualizar o banco de dados para suportar o rastreio de pedidos antigos. Continuar?")) return;
+    setMigrating(true);
+    try {
+      const atendimentosSnap = await getDocs(collection(db, "atendimentos"));
+      let migratedCount = 0;
+      
+      for (const atendDoc of atendimentosSnap.docs) {
+        const atendData = atendDoc.data();
+        if (atendData.orders && Array.isArray(atendData.orders)) {
+          for (const order of atendData.orders) {
+            if (!order.id) continue;
+            await setDoc(doc(db, "orders", order.id), {
+              atendimentoId: atendDoc.id,
+              clientId: atendData.clientId,
+              clientName: atendData.clientName || "Cliente Avulso",
+              seller: atendData.attendant || "Administrador",
+              serviceType: order.serviceType || "Óculos",
+              dueDate: order.dueDate || null,
+              items: order.items || order.serviceType,
+              total: order.price || 0,
+              status: atendData.status || "Pendente",
+              createdAt: atendData.createdAt || new Date().toISOString(),
+              date: atendData.date || new Date().toLocaleDateString('pt-BR'),
+              isLegacy: true
+            }, { merge: true });
+            migratedCount++;
+          }
+        }
+      }
+      toast.success(`${migratedCount} pedidos migrados com sucesso!`);
+    } catch (err: any) {
+      toast.error("Erro na migração: " + err.message);
+    } finally {
+      setMigrating(false);
+    }
+  };
 
   React.useEffect(() => {
     const unsubAtend = onSnapshot(query(collection(db, "atendentes")), (snap) => {
@@ -95,6 +136,9 @@ export default function Configuracoes() {
           </TabsTrigger>
           <TabsTrigger value="fornecedores" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Truck className="h-4 w-4" /> FORNECEDORES
+          </TabsTrigger>
+          <TabsTrigger value="sistema" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+            <Settings className="h-4 w-4" /> SISTEMA
           </TabsTrigger>
         </TabsList>
 
@@ -300,6 +344,31 @@ export default function Configuracoes() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="sistema" className="m-0 space-y-6">
+          <Card className="rounded border-slate-200 shadow-none">
+            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                Manutenção do Banco de Dados
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900">Migração de Pedidos Legados</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Utilize esta ferramenta para converter pedidos antigos (feitos antes da atualização de hoje) para o novo formato de rastreio individual. Isso garantirá que o QR Code de canhotos antigos funcione corretamente na Central do Cliente.
+                </p>
+              </div>
+              <Button 
+                onClick={handleMigrateOrders} 
+                disabled={migrating}
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-widest h-10 px-6 rounded"
+              >
+                {migrating ? "MIGRANDO DADOS..." : "EXECUTAR MIGRAÇÃO AGORA"}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

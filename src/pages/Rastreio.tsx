@@ -116,16 +116,24 @@ export default function Rastreio() {
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
-      console.log("Passo 4: Validando CPF e Data...");
-      console.log("CPF (Input vs Banco):", cleanInputCpf, " | ", cleanClientCpf);
-      console.log("Data (Input vs Banco):", birthDate, " | ", clientData.birthDate);
+      // Normalizar data do banco (pode estar em YYYY-MM-DD ou DD/MM/YYYY)
+      let dbBirthDate = clientData.birthDate || "";
+      if (dbBirthDate.includes("-")) {
+         const [y, m, d] = dbBirthDate.split("-");
+         dbBirthDate = `${d}/${m}/${y}`;
+      }
 
-      if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
+      console.log("Passo 4: Validando CPF e Data (Normalizada)...");
+      console.log("CPF (Input vs Banco):", cleanInputCpf, " | ", cleanClientCpf);
+      console.log("Data (Input vs Banco):", birthDate, " | ", dbBirthDate);
+
+      if (cleanInputCpf === cleanClientCpf && birthDate === dbBirthDate) {
         console.log("Sucesso: Validação concluída!");
         setVerifiedOrder({ id: orderId, ...orderData });
         setClientName(clientData.name);
         toast.success("Acesso liberado!");
       } else {
+        console.log("Erro: CPF ou Data não conferem.");
         toast.error("CPF ou Data de Nascimento não conferem.");
       }
     } catch (err: any) {
@@ -194,7 +202,7 @@ export default function Rastreio() {
                 </div>
               </div>
 
-              <Separator className="bg-slate-50" />
+              <div className="h-px bg-slate-100 w-full" />
 
               {/* DETALHES */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
