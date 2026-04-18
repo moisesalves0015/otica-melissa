@@ -24,6 +24,8 @@ interface OrderSession {
     labNotes: string;
     price: number;
     expanded: boolean;
+    orderCode: string;
+    supplier: string;
 }
 
 export default function Atendimentos() {
@@ -33,6 +35,8 @@ export default function Atendimentos() {
   
   const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
   const [clients, setClients] = React.useState<any[]>([]);
+  const [atendentes, setAtendentes] = React.useState<any[]>([]);
+  const [fornecedores, setFornecedores] = React.useState<any[]>([]);
 
   // State for Print
   const [printData, setPrintData] = React.useState<any>(null);
@@ -68,9 +72,18 @@ export default function Atendimentos() {
       setClients(data);
     });
 
+    const unsubAtend = onSnapshot(query(collection(db, "atendentes")), (snap) => {
+      setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    const unsubForn = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
+      setFornecedores(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     return () => {
       unsubAtend();
       unsubClients();
+      unsubAtend();
+      unsubForn();
     };
   }, []);
 
@@ -86,7 +99,9 @@ export default function Atendimentos() {
           dueDate: "",
           labNotes: "",
           price: 0,
-          expanded: true
+          expanded: true,
+          orderCode: "",
+          supplier: "",
       }]);
   };
 
@@ -295,7 +310,19 @@ export default function Atendimentos() {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Atendente / Consultor *</Label>
-                                        <Input value={attendant} onChange={e => setAttendant(e.target.value)} placeholder="Seu nome" className="rounded border-slate-200 h-10 text-sm" />
+                                        <Select value={attendant} onValueChange={setAttendant}>
+                                            <SelectTrigger className="rounded border-slate-200 h-10 text-sm font-medium">
+                                                <SelectValue placeholder="Selecione o atendente" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {atendentes.length === 0 && (
+                                                <SelectItem value="_none" disabled>Nenhum atendente cadastrado</SelectItem>
+                                              )}
+                                              {atendentes.map(a => (
+                                                <SelectItem key={a.id} value={a.name}>{a.name}{a.role ? ` — ${a.role}` : ""}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
                                 
@@ -390,6 +417,28 @@ export default function Atendimentos() {
                                                 <div className="space-y-1.5">
                                                     <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição Detalhada dos Itens</Label>
                                                     <Input value={order.items} onChange={(e) => updateOrder(order.id, 'items', e.target.value)} placeholder="Ex: Armação RX5184 Preta + Lentes Kodak Anti-Reflexo" className="rounded border-slate-200 h-9 text-xs" />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
+                                                        <Input value={order.orderCode} onChange={(e) => updateOrder(order.id, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
+                                                        <Select value={order.supplier} onValueChange={(val) => updateOrder(order.id, 'supplier', val)}>
+                                                            <SelectTrigger className="rounded border-slate-200 h-9 text-xs font-medium">
+                                                                <SelectValue placeholder="Selecione o fornecedor" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                              {fornecedores.length === 0 && (
+                                                                <SelectItem value="_none" disabled>Nenhum fornecedor cadastrado</SelectItem>
+                                                              )}
+                                                              {fornecedores.map(f => (
+                                                                <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
+                                                              ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">

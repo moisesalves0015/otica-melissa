@@ -9,16 +9,10 @@ import Orders from "./pages/admin/Orders";
 import Financial from "./pages/admin/Financial";
 import Atendimentos from "./pages/admin/Atendimentos";
 import AdminLogin from "./pages/admin/Login";
+import Configuracoes from "./pages/admin/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
-// Temporary placeholder for settings
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="p-8">
-    <h1 className="text-3xl font-black tracking-tighter uppercase">{title}</h1>
-    <p className="mt-4 text-slate-500">Esta página está em desenvolvimento como parte das configurações do sistema.</p>
-  </div>
-);
 
 export default function App() {
   return (
@@ -38,7 +32,7 @@ export default function App() {
               <Route path="produtos" element={<Products />} />
               <Route path="pedidos" element={<Orders />} />
               <Route path="financeiro" element={<Financial />} />
-              <Route path="configuracoes" element={<Placeholder title="Configurações" />} />
+              <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="atendimentos" element={<Atendimentos />} />
             </Route>
           </Route>
