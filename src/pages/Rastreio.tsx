@@ -42,6 +42,11 @@ export default function Rastreio() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Iniciando verificação...");
+    console.log("ID do Pedido:", orderId);
+    console.log("CPF Informado:", cpf);
+    console.log("Data Informada:", birthDate);
+
     if (!orderId) {
       toast.error("ID do pedido não encontrado na URL.");
       return;
@@ -49,17 +54,42 @@ export default function Rastreio() {
     
     setIsVerifying(true);
     try {
-      const orderDoc = await getDoc(doc(db, "orders", orderId));
+      // 1. Tentar buscar como Pedido Individual
+      let orderDoc = await getDoc(doc(db, "orders", orderId));
+      let orderData: any = null;
+      let clientId: string = "";
+
+      if (orderDoc.exists()) {
+        console.log("Encontrado na coleção 'orders'");
+        orderData = orderDoc.data();
+        clientId = orderData.clientId;
+      } else {
+        // 2. Tentar buscar como Atendimento (PDV)
+        console.log("Não encontrado em 'orders', buscando em 'atendimentos'...");
+        const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
+        if (atendDoc.exists()) {
+          console.log("Encontrado na coleção 'atendimentos'");
+          const atendData = atendDoc.data();
+          clientId = atendData.clientId;
+          // Pega o primeiro pedido do atendimento como referência de status
+          // Ou cria um objeto sintético se não houver pedidos individuais
+          orderData = {
+            ...atendData,
+            status: atendData.status || "Pendente",
+            items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
+            dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
+          };
+        }
+      }
       
-      if (!orderDoc.exists()) {
+      if (!orderData) {
+        console.log("Pedido/Atendimento não encontrado em nenhuma coleção.");
         toast.error("Pedido não encontrado.");
         setIsVerifying(false);
         return;
       }
 
-      const orderData = orderDoc.data();
-      const clientId = orderData.clientId;
-
+      console.log("Buscando dados do cliente:", clientId);
       if (!clientId) {
         toast.error("Este pedido não possui um cliente vinculado.");
         setIsVerifying(false);
@@ -68,25 +98,31 @@ export default function Rastreio() {
 
       const clientDoc = await getDoc(doc(db, "clients", clientId));
       if (!clientDoc.exists()) {
-        toast.error("Dados do cliente não encontrados.");
+        toast.error("Dados do cliente não encontrados no sistema.");
         setIsVerifying(false);
         return;
       }
 
       const clientData = clientDoc.data();
+      console.log("Dados do cliente encontrados:", clientData.name);
       
       // Limpar CPF para comparação (apenas números)
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
+      console.log("Comparando CPF:", cleanInputCpf, "vs", cleanClientCpf);
+      console.log("Comparando Data:", birthDate, "vs", clientData.birthDate);
+
       if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
-        setVerifiedOrder({ id: orderDoc.id, ...orderData });
+        setVerifiedOrder({ id: orderId, ...orderData });
         setClientName(clientData.name);
         toast.success("Acesso liberado!");
       } else {
+        console.log("Falha na validação de CPF ou Data.");
         toast.error("CPF ou Data de Nascimento não conferem.");
       }
     } catch (err: any) {
+      console.error("Erro completo na verificação:", err);
       toast.error("Erro na verificação: " + err.message);
     } finally {
       setIsVerifying(false);
