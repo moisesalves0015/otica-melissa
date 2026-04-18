@@ -72,72 +72,38 @@ export default function Rastreio() {
       let orderData: any = null;
       let clientId: string = "";
 
-      // 1. Tentar buscar pelo ID do documento em 'orders'
-      console.log("1. Tentando ID direto em 'orders'...");
-      let orderDoc = await getDoc(doc(db, "orders", orderId));
+      // 1. Tentar buscar pelo ID direto em 'orders'
+      console.log("Buscando pedido...");
+      const orderDoc = await getDoc(doc(db, "orders", orderId));
+      
       if (orderDoc.exists()) {
-        console.log("Sucesso: Encontrado ID direto em 'orders'");
         orderData = orderDoc.data();
         clientId = orderData.clientId;
       } else {
-        // 2. Tentar buscar pelo campo 'externalId' em 'orders'
-        console.log("2. Tentando externalId em 'orders'...");
-        const qExternal = query(collection(db, "orders"), where("externalId", "==", orderId));
-        const qSnap = await getDocs(qExternal);
-        if (!qSnap.empty) {
-          console.log("Sucesso: Encontrado por externalId em 'orders'");
-          orderData = qSnap.docs[0].data();
-          clientId = orderData.clientId;
-        } else {
-          // 3. Tentar buscar pelo ID do documento em 'atendimentos'
-          console.log("3. Tentando ID direto em 'atendimentos'...");
-          const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
-          if (atendDoc.exists()) {
-            console.log("Sucesso: Encontrado ID direto em 'atendimentos'");
-            const atendData = atendDoc.data();
-            clientId = atendData.clientId;
-            orderData = {
-              ...atendData,
-              status: atendData.status || "Pendente",
-              items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
-              dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
-            };
-          } else {
-            // 4. BUSCA PROFUNDA: Procurar o ID dentro do array de pedidos de TODOS os atendimentos
-            console.log("4. BUSCA PROFUNDA: Varrendo todos os atendimentos...");
-            const allAtendSnap = await getDocs(collection(db, "atendimentos"));
-            for (const docSnap of allAtendSnap.docs) {
-               const data = docSnap.data();
-               if (data.orders && Array.isArray(data.orders)) {
-                  const foundOrder = data.orders.find((o: any) => o.id === orderId);
-                  if (foundOrder) {
-                     console.log("Sucesso: ID encontrado dentro de um atendimento antigo!");
-                     clientId = data.clientId;
-                     orderData = {
-                        ...data,
-                        status: data.status || "Pendente",
-                        items: foundOrder.serviceType || "Óculos",
-                        dueDate: foundOrder.dueDate || null
-                     };
-                     break;
-                  }
-               }
-            }
-          }
+        // 2. Tentar buscar pelo ID direto em 'atendimentos'
+        const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
+        if (atendDoc.exists()) {
+          const atendData = atendDoc.data();
+          clientId = atendData.clientId;
+          orderData = {
+            ...atendData,
+            status: atendData.status || "Pendente",
+            items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
+            dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
+          };
         }
       }
       
       if (!orderData) {
-        console.log("ERRO: Pedido não encontrado após busca profunda.");
-        toast.error("Pedido não encontrado. Verifique se o código está correto.");
+        toast.error("Pedido não encontrado.");
         setIsVerifying(false);
         return;
       }
 
-      console.log("Buscando cliente:", clientId);
+      console.log("Verificando cliente...");
       const clientDoc = await getDoc(doc(db, "clients", clientId));
       if (!clientDoc.exists()) {
-        toast.error("Dados do cliente não encontrados.");
+        toast.error("Dados de segurança não encontrados.");
         setIsVerifying(false);
         return;
       }

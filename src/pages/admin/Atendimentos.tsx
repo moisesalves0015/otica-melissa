@@ -173,9 +173,8 @@ export default function Atendimentos() {
 
       // 2. Gravar os Pedidos Individuais na coleção `orders`
       for (const order of sessionOrders) {
-          await addDoc(collection(db, "orders"), {
+          await setDoc(doc(db, "orders", order.id), {
             atendimentoId: atendimentoDoc.id,
-            externalId: order.id, // Salvando o ID gerado na sessão (ex: viu3iigwy)
             clientId: selectedClientId,
             clientName: client ? client.name : "Cliente Avulso",
             seller: attendant,
