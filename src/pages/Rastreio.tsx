@@ -72,16 +72,19 @@ export default function Rastreio() {
       let clientId: string = "";
 
       // 1. Tentar buscar pelo ID direto em 'orders'
-      console.log("Buscando pedido...");
+      console.log("Passo 1: Buscando documento em 'orders' com ID:", orderId);
       const orderDoc = await getDoc(doc(db, "orders", orderId));
       
       if (orderDoc.exists()) {
+        console.log("Sucesso: Documento encontrado em 'orders'");
         orderData = orderDoc.data();
         clientId = orderData.clientId;
       } else {
+        console.log("Não encontrado em 'orders'. Passo 2: Buscando em 'atendimentos'...");
         // 2. Tentar buscar pelo ID direto em 'atendimentos'
         const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
         if (atendDoc.exists()) {
+          console.log("Sucesso: Documento encontrado em 'atendimentos'");
           const atendData = atendDoc.data();
           clientId = atendData.clientId;
           orderData = {
@@ -94,14 +97,16 @@ export default function Rastreio() {
       }
       
       if (!orderData) {
-        toast.error("Pedido não encontrado.");
+        console.log("Erro: Pedido não encontrado em nenhuma das coleções.");
+        toast.error("Pedido não encontrado. Verifique o código no seu canhoto.");
         setIsVerifying(false);
         return;
       }
 
-      console.log("Verificando cliente...");
+      console.log("Passo 3: Buscando dados do cliente ID:", clientId);
       const clientDoc = await getDoc(doc(db, "clients", clientId));
       if (!clientDoc.exists()) {
+        console.log("Erro: Cliente não encontrado no banco.");
         toast.error("Dados de segurança não encontrados.");
         setIsVerifying(false);
         return;
@@ -111,11 +116,12 @@ export default function Rastreio() {
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
-      console.log("Validando Identidade...");
-      console.log("CPF Informado:", cleanInputCpf, "| Banco:", cleanClientCpf);
-      console.log("Data Informada:", birthDate, "| Banco:", clientData.birthDate);
+      console.log("Passo 4: Validando CPF e Data...");
+      console.log("CPF (Input vs Banco):", cleanInputCpf, " | ", cleanClientCpf);
+      console.log("Data (Input vs Banco):", birthDate, " | ", clientData.birthDate);
 
       if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
+        console.log("Sucesso: Validação concluída!");
         setVerifiedOrder({ id: orderId, ...orderData });
         setClientName(clientData.name);
         toast.success("Acesso liberado!");
