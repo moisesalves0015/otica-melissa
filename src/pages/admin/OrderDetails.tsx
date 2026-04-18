@@ -1,4 +1,5 @@
 import * as React from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { doc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -348,10 +349,21 @@ export default function OrderDetails() {
               <p style={{fontSize: '9pt', fontWeight: '400', color: '#0f172a', margin: 0}}>Via da Loja / Operacional</p>
             </div>
           </div>
-          <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
-            <p style={{fontSize: '13pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{order.id.slice(0, 8).toUpperCase()}</p>
-            <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Data: {order.date}</p>
+          <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
+            {/* QR CODE DE RASTREIO */}
+            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
+              <QRCodeSVG 
+                value={`${window.location.origin}/rastreio?id=${order.id}`} 
+                size={55} 
+              />
+              <p style={{fontSize: '4pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Pedido</p>
+            </div>
+            
+            <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px'}}>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
+              <p style={{fontSize: '13pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{order.id.slice(0, 8).toUpperCase()}</p>
+              <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Data: {order.date}</p>
+            </div>
           </div>
         </div>
 

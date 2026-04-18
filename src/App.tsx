@@ -12,6 +12,7 @@ import OrderDetails from "./pages/admin/OrderDetails";
 import AdminLogin from "./pages/admin/Login";
 import Configuracoes from "./pages/admin/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Rastreio from "./pages/Rastreio";
 import { AuthProvider } from "./contexts/AuthContext";
 
 
@@ -38,6 +39,7 @@ export default function App() {
               <Route path="atendimentos" element={<Atendimentos />} />
             </Route>
           </Route>
+          <Route path="/rastreio" element={<Rastreio />} />
         </Routes>
       </Router>
     </AuthProvider>

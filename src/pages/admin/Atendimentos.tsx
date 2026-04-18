@@ -1,4 +1,5 @@
 import * as React from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { collection, addDoc, onSnapshot, query, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
@@ -723,20 +724,31 @@ export default function Atendimentos() {
                       {printData.isCarne && <p style={{margin: 0, color: '#dc2626', fontWeight: '700'}}>⚠ CARNÊ — Verificar pendências antes da entrega</p>}
                     </div>
                   </div>
-                  <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm'}}>
-                    <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
-                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{printData.id.substring(0, 8).toUpperCase()}</p>
-                    <table style={{marginTop: '2mm', fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
-                      <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
-                      <tbody>
-                        {printData.orders.map((o: any, i: number) => (
-                          <tr key={i} style={{borderBottom: '1px solid #f1f5f9'}}>
-                            <td style={{padding: '1mm 2mm', fontWeight: '600'}}>{o.serviceType}</td>
-                            <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{o.dueDate ? new Date(o.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : "Pronta Entrega"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
+                    {/* QR CODE DE RASTREIO */}
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
+                      <QRCodeSVG 
+                        value={`${window.location.origin}/rastreio?id=${printData.orders?.[0]?.id || printData.id}`} 
+                        size={60} 
+                      />
+                      <p style={{fontSize: '4.5pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Online</p>
+                    </div>
+
+                    <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm', minWidth: '45mm'}}>
+                      <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
+                      <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{printData.id.substring(0, 8).toUpperCase()}</p>
+                      <table style={{fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
+                        <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
+                        <tbody>
+                          {printData.orders.map((o: any, i: number) => (
+                            <tr key={i} style={{borderBottom: '1px solid #f1f5f9'}}>
+                              <td style={{padding: '1mm 2mm', fontWeight: '600'}}>{o.serviceType}</td>
+                              <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{o.dueDate ? new Date(o.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : "Retirada"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
