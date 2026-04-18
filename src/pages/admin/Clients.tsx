@@ -111,6 +111,7 @@ export default function Clients() {
         birthDate: data.birth || "",
         phone: data.phone || "",
         email: data.email || "",
+        password: data.password || data.cpf.replace(/\D/g, "").slice(-4), // Padrão: 4 últimos dígitos do CPF
         createdAt: new Date().toISOString(),
         creditStatus: "Em Análise",
         lastVisit: new Date().toLocaleDateString('pt-BR'),
@@ -183,7 +184,12 @@ export default function Clients() {
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label htmlFor="c-profession" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Profissão / Ocupação</Label>
-                      <Input id="c-profession" placeholder="Ex: Engenheiro" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-profession" name="profession" placeholder="Ex: Engenheiro" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label htmlFor="c-password" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Senha de Acesso (Área do Cliente)</Label>
+                      <Input id="c-password" name="password" type="password" placeholder="Mínimo 4 dígitos" className="rounded border-slate-200 h-9 text-sm" />
+                      <p className="text-[9px] text-slate-400 italic">* Se vazio, será os 4 últimos dígitos do CPF.</p>
                     </div>
                   </div>
                 </div>

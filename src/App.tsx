@@ -13,6 +13,8 @@ import AdminLogin from "./pages/admin/Login";
 import Configuracoes from "./pages/admin/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Rastreio from "./pages/Rastreio";
+import ClientLogin from "./pages/ClientLogin";
+import ClientDashboard from "./pages/ClientDashboard";
 import { AuthProvider } from "./contexts/AuthContext";
 
 
@@ -24,6 +26,8 @@ export default function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/cliente/login" element={<ClientLogin />} />
+          <Route path="/cliente/dashboard" element={<ClientDashboard />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute />}>
