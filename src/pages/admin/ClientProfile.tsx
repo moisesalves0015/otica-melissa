@@ -110,7 +110,9 @@ export default function ClientProfile() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Data de Nascimento</p>
-                <p className="font-medium text-slate-700">{client.birthDate ? new Date(client.birthDate).toLocaleDateString('pt-BR') : "Não informado"}</p>
+                <p className="font-medium text-slate-700">
+                  {client.birthDate ? (client.birthDate.includes('-') ? new Date(client.birthDate + 'T12:00:00').toLocaleDateString('pt-BR') : client.birthDate) : "Não informado"}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone / WhatsApp</p>
@@ -122,7 +124,9 @@ export default function ClientProfile() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Calendar className="h-3 w-3" /> Cliente Desde</p>
-                <p className="font-medium text-slate-700">{new Date(client.createdAt).toLocaleDateString('pt-BR')}</p>
+                <p className="font-medium text-slate-700">
+                  {client.createdAt ? (client.createdAt.includes('/') ? client.createdAt : new Date(client.createdAt).toLocaleDateString('pt-BR')) : "Não informado"}
+                </p>
               </div>
             </div>
           </CardContent>
