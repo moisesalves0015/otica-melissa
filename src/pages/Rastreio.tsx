@@ -59,8 +59,7 @@ export default function Rastreio() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("--- INICIANDO BUSCA PROFUNDA ---");
-    console.log("Buscando por ID:", orderId);
+    console.log("Iniciando verificação de pedido...");
 
     if (!orderId) {
       toast.error("ID do pedido não encontrado na URL.");
