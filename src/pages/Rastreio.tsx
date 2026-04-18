@@ -40,12 +40,27 @@ export default function Rastreio() {
   const [verifiedOrder, setVerifiedOrder] = React.useState<any>(null);
   const [clientName, setClientName] = React.useState("");
 
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    return numbers
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+      .replace(/(-\d{2})\d+?$/, "$1");
+  };
+
+  const formatDate = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    return numbers
+      .replace(/(\d{2})(\d)/, "$1/$2")
+      .replace(/(\d{2})(\d)/, "$1/$2")
+      .replace(/(\d{4})\d+?$/, "$1");
+  };
+
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Iniciando verificação...");
-    console.log("ID do Pedido (URL):", orderId);
-    console.log("CPF Informado:", cpf);
-    console.log("Data Informada:", birthDate);
+    console.log("--- INICIANDO BUSCA PROFUNDA ---");
+    console.log("Buscando por ID:", orderId);
 
     if (!orderId) {
       toast.error("ID do pedido não encontrado na URL.");
@@ -57,29 +72,28 @@ export default function Rastreio() {
       let orderData: any = null;
       let clientId: string = "";
 
-      // 1. Tentar buscar pelo ID do documento (padrão Firestore)
+      // 1. Tentar buscar pelo ID do documento em 'orders'
+      console.log("1. Tentando ID direto em 'orders'...");
       let orderDoc = await getDoc(doc(db, "orders", orderId));
-      
       if (orderDoc.exists()) {
-        console.log("Encontrado pelo ID do documento em 'orders'");
+        console.log("Sucesso: Encontrado ID direto em 'orders'");
         orderData = orderDoc.data();
         clientId = orderData.clientId;
       } else {
-        // 2. Tentar buscar pelo campo 'externalId' (ex: viu3iigwy)
-        console.log("Buscando por externalId em 'orders'...");
+        // 2. Tentar buscar pelo campo 'externalId' em 'orders'
+        console.log("2. Tentando externalId em 'orders'...");
         const qExternal = query(collection(db, "orders"), where("externalId", "==", orderId));
         const qSnap = await getDocs(qExternal);
-        
         if (!qSnap.empty) {
-          console.log("Encontrado por externalId em 'orders'");
+          console.log("Sucesso: Encontrado por externalId em 'orders'");
           orderData = qSnap.docs[0].data();
           clientId = orderData.clientId;
         } else {
-          // 3. Tentar buscar em Atendimentos
-          console.log("Buscando em 'atendimentos'...");
+          // 3. Tentar buscar pelo ID do documento em 'atendimentos'
+          console.log("3. Tentando ID direto em 'atendimentos'...");
           const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
           if (atendDoc.exists()) {
-            console.log("Encontrado em 'atendimentos'");
+            console.log("Sucesso: Encontrado ID direto em 'atendimentos'");
             const atendData = atendDoc.data();
             clientId = atendData.clientId;
             orderData = {
@@ -88,13 +102,34 @@ export default function Rastreio() {
               items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
               dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
             };
+          } else {
+            // 4. BUSCA PROFUNDA: Procurar o ID dentro do array de pedidos de TODOS os atendimentos
+            console.log("4. BUSCA PROFUNDA: Varrendo todos os atendimentos...");
+            const allAtendSnap = await getDocs(collection(db, "atendimentos"));
+            for (const docSnap of allAtendSnap.docs) {
+               const data = docSnap.data();
+               if (data.orders && Array.isArray(data.orders)) {
+                  const foundOrder = data.orders.find((o: any) => o.id === orderId);
+                  if (foundOrder) {
+                     console.log("Sucesso: ID encontrado dentro de um atendimento antigo!");
+                     clientId = data.clientId;
+                     orderData = {
+                        ...data,
+                        status: data.status || "Pendente",
+                        items: foundOrder.serviceType || "Óculos",
+                        dueDate: foundOrder.dueDate || null
+                     };
+                     break;
+                  }
+               }
+            }
           }
         }
       }
       
       if (!orderData) {
-        console.log("Pedido/Atendimento não encontrado.");
-        toast.error("Pedido não encontrado.");
+        console.log("ERRO: Pedido não encontrado após busca profunda.");
+        toast.error("Pedido não encontrado. Verifique se o código está correto.");
         setIsVerifying(false);
         return;
       }
@@ -102,20 +137,18 @@ export default function Rastreio() {
       console.log("Buscando cliente:", clientId);
       const clientDoc = await getDoc(doc(db, "clients", clientId));
       if (!clientDoc.exists()) {
-        toast.error("Cliente não encontrado.");
+        toast.error("Dados do cliente não encontrados.");
         setIsVerifying(false);
         return;
       }
 
       const clientData = clientDoc.data();
-      console.log("Cliente encontrado:", clientData.name);
-      
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
-      // Comparação direta de string (ambas devem estar em DD/MM/YYYY)
-      console.log("Comparando CPF:", cleanInputCpf, "vs", cleanClientCpf);
-      console.log("Comparando Data:", birthDate, "vs", clientData.birthDate);
+      console.log("Validando Identidade...");
+      console.log("CPF Informado:", cleanInputCpf, "| Banco:", cleanClientCpf);
+      console.log("Data Informada:", birthDate, "| Banco:", clientData.birthDate);
 
       if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
         setVerifiedOrder({ id: orderId, ...orderData });
@@ -125,8 +158,8 @@ export default function Rastreio() {
         toast.error("CPF ou Data de Nascimento não conferem.");
       }
     } catch (err: any) {
-      console.error("Erro:", err);
-      toast.error("Erro na verificação.");
+      console.error("Erro na busca:", err);
+      toast.error("Erro na comunicação com o servidor.");
     } finally {
       setIsVerifying(false);
     }
@@ -274,7 +307,8 @@ export default function Rastreio() {
                     type="text" 
                     placeholder="000.000.000-00" 
                     value={cpf}
-                    onChange={e => setCpf(e.target.value)}
+                    onChange={e => setCpf(formatCPF(e.target.value))}
+                    maxLength={14}
                     className="rounded-xl border-slate-100 h-12 text-base font-bold pl-11 focus:ring-slate-900 focus:border-slate-900 transition-all bg-slate-50/50"
                     required
                   />
@@ -289,7 +323,8 @@ export default function Rastreio() {
                     type="text" 
                     placeholder="DD/MM/YYYY"
                     value={birthDate}
-                    onChange={e => setBirthDate(e.target.value)}
+                    onChange={e => setBirthDate(formatDate(e.target.value))}
+                    maxLength={10}
                     className="rounded-xl border-slate-100 h-12 text-base font-bold pl-11 focus:ring-slate-900 focus:border-slate-900 transition-all bg-slate-50/50 text-slate-600"
                     required
                   />

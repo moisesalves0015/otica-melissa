@@ -54,6 +54,33 @@ export default function Clients() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [clients, setClients] = React.useState<any[]>([]);
 
+  // Estados para os campos com máscara
+  const [cpfValue, setCpfValue] = React.useState("");
+  const [phoneValue, setPhoneValue] = React.useState("");
+  const [birthValue, setBirthValue] = React.useState("");
+
+  const formatCPF = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 11) v = v.slice(0, 11);
+    return v.replace(/(\d{3})(\d)/, "$1.$2")
+            .replace(/(\d{3})(\d)/, "$1.$2")
+            .replace(/(\d{3})(\d{1,2})/, "$1-$2");
+  };
+
+  const formatPhone = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 11) v = v.slice(0, 11);
+    return v.replace(/(\d{2})(\d)/, "($1) $2")
+            .replace(/(\d{5})(\d)/, "$1-$2");
+  };
+
+  const formatDate = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    return v.replace(/(\d{2})(\d)/, "$1/$2")
+            .replace(/(\d{2})(\d)/, "$1/$2");
+  };
+
   React.useEffect(() => {
     const q = query(collection(db, "clients")); // Temporarily remove orderBy if index is not created
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -138,18 +165,18 @@ export default function Clients() {
                       <Label htmlFor="c-name" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome Completo</Label>
                       <Input id="c-name" name="name" placeholder="Ex: João da Silva Santos" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="c-cpf" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CPF</Label>
-                      <Input id="c-cpf" name="cpf" placeholder="000.000.000-00" className="rounded border-slate-200 h-9 text-sm" required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="c-birth" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data de Nascimento</Label>
-                      <Input id="c-birth" name="birth" type="text" placeholder="DD/MM/YYYY" className="rounded border-slate-200 h-9 text-sm" required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="c-phone" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Celular (WhatsApp)</Label>
-                      <Input id="c-phone" name="phone" placeholder="(11) 90000-0000" className="rounded border-slate-200 h-9 text-sm" />
-                    </div>
+                     <div className="space-y-1.5">
+                       <Label htmlFor="c-cpf" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CPF</Label>
+                       <Input id="c-cpf" name="cpf" value={cpfValue} onChange={e => setCpfValue(formatCPF(e.target.value))} placeholder="000.000.000-00" className="rounded border-slate-200 h-9 text-sm" required />
+                     </div>
+                     <div className="space-y-1.5">
+                       <Label htmlFor="c-birth" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data de Nascimento</Label>
+                       <Input id="c-birth" name="birth" value={birthValue} onChange={e => setBirthValue(formatDate(e.target.value))} type="text" placeholder="DD/MM/YYYY" className="rounded border-slate-200 h-9 text-sm" required />
+                     </div>
+                     <div className="space-y-1.5">
+                       <Label htmlFor="c-phone" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Celular (WhatsApp)</Label>
+                       <Input id="c-phone" name="phone" value={phoneValue} onChange={e => setPhoneValue(formatPhone(e.target.value))} placeholder="(00) 00000-0000" className="rounded border-slate-200 h-9 text-sm" />
+                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="c-email" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Email de Contato</Label>
                       <Input id="c-email" name="email" type="email" placeholder="cliente@email.com" className="rounded border-slate-200 h-9 text-sm" />

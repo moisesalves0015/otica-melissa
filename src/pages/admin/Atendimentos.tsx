@@ -88,6 +88,13 @@ export default function Atendimentos() {
     };
   }, []);
 
+  const formatDate = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    return v.replace(/(\d{2})(\d)/, "$1/$2")
+            .replace(/(\d{2})(\d)/, "$1/$2");
+  };
+
   const totalGeral = sessionOrders.reduce((acc, curr) => acc + curr.price, 0);
   const saldoDevedor = Math.max(0, totalGeral - entrada);
   const isCarne = paymentMethod === "carne";
@@ -450,7 +457,7 @@ export default function Atendimentos() {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
-                                                        <Input type="text" placeholder="DD/MM/YYYY" value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', e.target.value)} className="rounded border-slate-200 h-9 text-xs text-slate-600" />
+                                                        <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', formatDate(e.target.value))} className="rounded border-slate-200 h-9 text-xs text-slate-600" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
@@ -518,7 +525,7 @@ export default function Atendimentos() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Data da 1ª Parcela</Label>
-                                                    <Input type="text" placeholder="DD/MM/YYYY" value={firstDueDate} onChange={(e) => setFirstDueDate(e.target.value)} className="rounded border-emerald-200 bg-white h-9 text-xs text-slate-700" />
+                                                    <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={firstDueDate} onChange={(e) => setFirstDueDate(formatDate(e.target.value))} className="rounded border-emerald-200 bg-white h-9 text-xs text-slate-700" />
                                                 </div>
                                                 
                                                 <div className="mt-4 pt-3 border-t border-emerald-100 text-center">
