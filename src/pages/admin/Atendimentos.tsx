@@ -728,7 +728,7 @@ export default function Atendimentos() {
                     {/* QR CODE DE RASTREIO */}
                     <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
                       <QRCodeSVG 
-                        value={`https://otica-melissa.vercel.app/rastreio?id=${printData.orders?.[0]?.id || printData.id}`} 
+                        value={`https://otica-melissa.vercel.app/rastreio?id=${printData.id}`} 
                         size={60} 
                       />
                       <p style={{fontSize: '4.5pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Online</p>

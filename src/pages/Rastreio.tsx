@@ -110,10 +110,21 @@ export default function Rastreio() {
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
-      console.log("Comparando CPF:", cleanInputCpf, "vs", cleanClientCpf);
-      console.log("Comparando Data:", birthDate, "vs", clientData.birthDate);
+      // Normalizar Datas para comparação
+      // inputDate é YYYY-MM-DD
+      const inputDate = birthDate; 
+      let clientDate = clientData.birthDate || "";
 
-      if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
+      // Se a data do cliente estiver no formato DD/MM/YYYY, converter para YYYY-MM-DD
+      if (clientDate.includes("/")) {
+        const [day, month, year] = clientDate.split("/");
+        clientDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+
+      console.log("Comparando CPF:", cleanInputCpf, "vs", cleanClientCpf);
+      console.log("Comparando Data:", inputDate, "vs", clientDate);
+
+      if (cleanInputCpf === cleanClientCpf && inputDate === clientDate) {
         setVerifiedOrder({ id: orderId, ...orderData });
         setClientName(clientData.name);
         toast.success("Acesso liberado!");
