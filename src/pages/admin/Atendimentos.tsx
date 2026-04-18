@@ -72,7 +72,7 @@ export default function Atendimentos() {
       setClients(data);
     });
 
-    const unsubAtend = onSnapshot(query(collection(db, "atendentes")), (snap) => {
+    const unsubAtendentes = onSnapshot(query(collection(db, "atendentes")), (snap) => {
       setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     const unsubForn = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
@@ -82,7 +82,7 @@ export default function Atendimentos() {
     return () => {
       unsubAtend();
       unsubClients();
-      unsubAtend();
+      unsubAtendentes();
       unsubForn();
     };
   }, []);
