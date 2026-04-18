@@ -241,7 +241,7 @@ export default function OrderDetails() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida</Label>
-                  <Input name="dueDate" type="date" defaultValue={order.dueDate} className="h-9 rounded border-slate-200 text-sm" />
+                  <Input name="dueDate" type="text" placeholder="DD/MM/YYYY" defaultValue={order.dueDate} className="h-9 rounded border-slate-200 text-sm" />
                 </div>
               </div>
 

@@ -144,7 +144,7 @@ export default function Clients() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="c-birth" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data de Nascimento</Label>
-                      <Input id="c-birth" name="birth" type="date" className="rounded border-slate-200 h-9 text-sm" required />
+                      <Input id="c-birth" name="birth" type="text" placeholder="DD/MM/YYYY" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="c-phone" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Celular (WhatsApp)</Label>

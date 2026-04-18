@@ -168,6 +168,7 @@ export default function Atendimentos() {
       for (const order of sessionOrders) {
           await addDoc(collection(db, "orders"), {
             atendimentoId: atendimentoDoc.id,
+            externalId: order.id, // Salvando o ID gerado na sessão (ex: viu3iigwy)
             clientId: selectedClientId,
             clientName: client ? client.name : "Cliente Avulso",
             seller: attendant,
@@ -216,11 +217,16 @@ export default function Atendimentos() {
               // 3.2. Gerar parcelas na coleção `installments`
               const valorParcela = saldoDevedor / installmentsCount;
               
-              // Helper para somar meses a uma data
+              // Helper para somar meses a uma data (espera e retorna DD/MM/YYYY)
               const addMonths = (dateStr: string, months: number) => {
-                  const d = new Date(dateStr + "T12:00:00"); // Fix timezoning issue
+                  const [day, month, year] = dateStr.split("/").map(Number);
+                  const d = new Date(year, month - 1, day, 12, 0, 0);
                   d.setMonth(d.getMonth() + months);
-                  return d.toISOString().split('T')[0];
+                  
+                  const dOut = d.getDate().toString().padStart(2, '0');
+                  const mOut = (d.getMonth() + 1).toString().padStart(2, '0');
+                  const yOut = d.getFullYear();
+                  return `${dOut}/${mOut}/${yOut}`;
               };
 
               let currentDueDate = firstDueDate;
@@ -444,7 +450,7 @@ export default function Atendimentos() {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
-                                                        <Input type="date" value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', e.target.value)} className="rounded border-slate-200 h-9 text-xs text-slate-600" />
+                                                        <Input type="text" placeholder="DD/MM/YYYY" value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', e.target.value)} className="rounded border-slate-200 h-9 text-xs text-slate-600" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
@@ -512,7 +518,7 @@ export default function Atendimentos() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Data da 1ª Parcela</Label>
-                                                    <Input type="date" value={firstDueDate} onChange={(e) => setFirstDueDate(e.target.value)} className="rounded border-emerald-200 bg-white h-9 text-xs text-slate-700" />
+                                                    <Input type="text" placeholder="DD/MM/YYYY" value={firstDueDate} onChange={(e) => setFirstDueDate(e.target.value)} className="rounded border-emerald-200 bg-white h-9 text-xs text-slate-700" />
                                                 </div>
                                                 
                                                 <div className="mt-4 pt-3 border-t border-emerald-100 text-center">

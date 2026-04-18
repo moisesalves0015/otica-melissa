@@ -43,7 +43,7 @@ export default function Rastreio() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Iniciando verificação...");
-    console.log("ID do Pedido:", orderId);
+    console.log("ID do Pedido (URL):", orderId);
     console.log("CPF Informado:", cpf);
     console.log("Data Informada:", birthDate);
 
@@ -54,87 +54,79 @@ export default function Rastreio() {
     
     setIsVerifying(true);
     try {
-      // 1. Tentar buscar como Pedido Individual
-      let orderDoc = await getDoc(doc(db, "orders", orderId));
       let orderData: any = null;
       let clientId: string = "";
 
+      // 1. Tentar buscar pelo ID do documento (padrão Firestore)
+      let orderDoc = await getDoc(doc(db, "orders", orderId));
+      
       if (orderDoc.exists()) {
-        console.log("Encontrado na coleção 'orders'");
+        console.log("Encontrado pelo ID do documento em 'orders'");
         orderData = orderDoc.data();
         clientId = orderData.clientId;
       } else {
-        // 2. Tentar buscar como Atendimento (PDV)
-        console.log("Não encontrado em 'orders', buscando em 'atendimentos'...");
-        const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
-        if (atendDoc.exists()) {
-          console.log("Encontrado na coleção 'atendimentos'");
-          const atendData = atendDoc.data();
-          clientId = atendData.clientId;
-          // Pega o primeiro pedido do atendimento como referência de status
-          // Ou cria um objeto sintético se não houver pedidos individuais
-          orderData = {
-            ...atendData,
-            status: atendData.status || "Pendente",
-            items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
-            dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
-          };
+        // 2. Tentar buscar pelo campo 'externalId' (ex: viu3iigwy)
+        console.log("Buscando por externalId em 'orders'...");
+        const qExternal = query(collection(db, "orders"), where("externalId", "==", orderId));
+        const qSnap = await getDocs(qExternal);
+        
+        if (!qSnap.empty) {
+          console.log("Encontrado por externalId em 'orders'");
+          orderData = qSnap.docs[0].data();
+          clientId = orderData.clientId;
+        } else {
+          // 3. Tentar buscar em Atendimentos
+          console.log("Buscando em 'atendimentos'...");
+          const atendDoc = await getDoc(doc(db, "atendimentos", orderId));
+          if (atendDoc.exists()) {
+            console.log("Encontrado em 'atendimentos'");
+            const atendData = atendDoc.data();
+            clientId = atendData.clientId;
+            orderData = {
+              ...atendData,
+              status: atendData.status || "Pendente",
+              items: atendData.orders ? atendData.orders.map((o: any) => o.serviceType).join(", ") : "Óculos",
+              dueDate: atendData.orders ? atendData.orders[0]?.dueDate : null
+            };
+          }
         }
       }
       
       if (!orderData) {
-        console.log("Pedido/Atendimento não encontrado em nenhuma coleção.");
+        console.log("Pedido/Atendimento não encontrado.");
         toast.error("Pedido não encontrado.");
         setIsVerifying(false);
         return;
       }
 
-      console.log("Buscando dados do cliente:", clientId);
-      if (!clientId) {
-        toast.error("Este pedido não possui um cliente vinculado.");
-        setIsVerifying(false);
-        return;
-      }
-
+      console.log("Buscando cliente:", clientId);
       const clientDoc = await getDoc(doc(db, "clients", clientId));
       if (!clientDoc.exists()) {
-        toast.error("Dados do cliente não encontrados no sistema.");
+        toast.error("Cliente não encontrado.");
         setIsVerifying(false);
         return;
       }
 
       const clientData = clientDoc.data();
-      console.log("Dados do cliente encontrados:", clientData.name);
+      console.log("Cliente encontrado:", clientData.name);
       
-      // Limpar CPF para comparação (apenas números)
       const cleanInputCpf = cpf.replace(/\D/g, "");
       const cleanClientCpf = (clientData.cpf || "").replace(/\D/g, "");
 
-      // Normalizar Datas para comparação
-      // inputDate é YYYY-MM-DD
-      const inputDate = birthDate; 
-      let clientDate = clientData.birthDate || "";
-
-      // Se a data do cliente estiver no formato DD/MM/YYYY, converter para YYYY-MM-DD
-      if (clientDate.includes("/")) {
-        const [day, month, year] = clientDate.split("/");
-        clientDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
-
+      // Comparação direta de string (ambas devem estar em DD/MM/YYYY)
       console.log("Comparando CPF:", cleanInputCpf, "vs", cleanClientCpf);
-      console.log("Comparando Data:", inputDate, "vs", clientDate);
+      console.log("Comparando Data:", birthDate, "vs", clientData.birthDate);
 
-      if (cleanInputCpf === cleanClientCpf && inputDate === clientDate) {
+      if (cleanInputCpf === cleanClientCpf && birthDate === clientData.birthDate) {
         setVerifiedOrder({ id: orderId, ...orderData });
         setClientName(clientData.name);
         toast.success("Acesso liberado!");
       } else {
-        console.log("Falha na validação de CPF ou Data.");
         toast.error("CPF ou Data de Nascimento não conferem.");
       }
     } catch (err: any) {
-      console.error("Erro completo na verificação:", err);
-      toast.error("Erro na verificação: " + err.message);
+      console.error("Erro:", err);
+      toast.error("Erro na verificação.");
     } finally {
       setIsVerifying(false);
     }
@@ -219,7 +211,7 @@ export default function Rastreio() {
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Previsão de Entrega</p>
                       <p className="text-sm font-black text-emerald-600">
-                        {verifiedOrder.dueDate ? new Date(verifiedOrder.dueDate).toLocaleDateString('pt-BR') : "A confirmar"}
+                        {verifiedOrder.dueDate || "A confirmar"}
                       </p>
                     </div>
                   </div>
@@ -294,7 +286,8 @@ export default function Rastreio() {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Data de Nascimento</Label>
                 <div className="relative group">
                   <Input 
-                    type="date" 
+                    type="text" 
+                    placeholder="DD/MM/YYYY"
                     value={birthDate}
                     onChange={e => setBirthDate(e.target.value)}
                     className="rounded-xl border-slate-100 h-12 text-base font-bold pl-11 focus:ring-slate-900 focus:border-slate-900 transition-all bg-slate-50/50 text-slate-600"
