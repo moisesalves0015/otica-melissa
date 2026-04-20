@@ -1,6 +1,6 @@
 
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
-import { db } from "./src/lib/firebase";
+import { db } from "../src/lib/firebase";
 
 async function migrateOrders() {
   console.log("Iniciando migração de pedidos legados...");

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { collection, addDoc, onSnapshot, query, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
@@ -271,6 +271,21 @@ export default function Atendimentos() {
     setTimeout(() => {
         window.print();
     }, 500);
+  };
+
+  const handleWhatsAppReceipt = (atend: any) => {
+    const client = clients.find(c => c.id === atend.clientId);
+    const phone = client?.phone?.replace(/\D/g, "") || "";
+    if (!phone) {
+        toast.error("Telefone do cliente não cadastrado.");
+        return;
+    }
+    const message = `Olá, ${atend.clientName}! Aqui é da Ótica Melissa. 
+Acabamos de registrar seu atendimento #${atend.id.substring(0, 8).toUpperCase()}.
+Total: R$ ${atend.totalValue.toFixed(2)}
+${atend.isCarne ? 'Seu carnê já está disponível no portal.' : ''}
+Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.app/rastreio?id=${atend.id}`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredAtendimentos = atendimentos.filter(a => 
@@ -596,9 +611,14 @@ export default function Atendimentos() {
                             {atend.isCarne && <span className="block text-[9px] text-amber-600 uppercase">Carnê</span>}
                         </TableCell>
                         <TableCell className="px-6 py-3 text-right">
-                            <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold rounded text-slate-600 hover:bg-slate-100" onClick={() => handlePrint(atend)}>
-                                <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR A4
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold rounded text-emerald-600 hover:bg-emerald-50" onClick={() => handleWhatsAppReceipt(atend)}>
+                                    <Activity className="h-3.5 w-3.5 mr-2" /> WHATSAPP
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold rounded text-slate-600 hover:bg-slate-100" onClick={() => handlePrint(atend)}>
+                                    <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR A4
+                                </Button>
+                            </div>
                         </TableCell>
                         </TableRow>
                     ))}

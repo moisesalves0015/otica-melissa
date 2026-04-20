@@ -1,9 +1,9 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { toast } from "sonner";
-import { User, Lock, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { User, Calendar, ArrowRight, ShieldCheck, Sparkles, ChevronLeft, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 
 export default function ClientLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cpf, setCpf] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [birthDate, setBirthDate] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
   const formatCPF = (v: string) => {
@@ -23,36 +24,65 @@ export default function ClientLogin() {
             .replace(/(\d{3})(\d{1,2})/, "$1-$2");
   };
 
+  const formatDate = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    return v.replace(/(\d{2})(\d)/, "$1/$2")
+            .replace(/(\d{2})(\d)/, "$1/$2");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Tentativa de login iniciada para o CPF:", cpf);
+    
+    if (!cpf || !birthDate) {
+        toast.error("Preencha CPF e Data de Nascimento.");
+        return;
+    }
+
     setIsLoading(true);
 
     try {
-      const cleanCpf = cpf.replace(/\D/g, "");
-      const q = query(collection(db, "clients"), where("cpf", "==", cpf)); // Comparing with formatted CPF as stored
+      const cleanInputCpf = cpf.replace(/\D/g, "");
+      const cleanInputBirth = birthDate.replace(/\D/g, "");
+      
+      console.log("Buscando clientes no banco...");
+      const q = query(collection(db, "clients"));
       const querySnapshot = await getDocs(q);
 
-      if (querySnapshot.empty) {
+      let foundClient: any = null;
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const dbCpf = (data.cpf || "").replace(/\D/g, "");
+        if (dbCpf === cleanInputCpf) {
+          foundClient = { id: doc.id, ...data };
+        }
+      });
+
+      if (!foundClient) {
         toast.error("Cliente não encontrado.");
         setIsLoading(false);
         return;
       }
 
-      const clientDoc = querySnapshot.docs[0];
-      const clientData = clientDoc.data();
+      const dbBirth = (foundClient.birthDate || "").replace(/\D/g, "");
 
-      if (clientData.password === password) {
+      if (dbBirth === cleanInputBirth) {
         localStorage.setItem("otica_client_session", JSON.stringify({
-          id: clientDoc.id,
-          name: clientData.name,
-          cpf: clientData.cpf
+          id: foundClient.id,
+          name: foundClient.name,
+          cpf: foundClient.cpf
         }));
-        toast.success(`Bem-vindo, ${clientData.name}!`);
-        navigate("/cliente/dashboard");
+        
+        toast.success(`Bem-vindo, ${foundClient.name}!`);
+        
+        const redirect = searchParams.get("redirect") || "/cliente/dashboard";
+        navigate(redirect);
       } else {
-        toast.error("Senha incorreta.");
+        toast.error("Data de nascimento não confere.");
       }
     } catch (error: any) {
+      console.error("Erro no login:", error);
       toast.error("Erro ao realizar login.");
     } finally {
       setIsLoading(false);
@@ -60,31 +90,39 @@ export default function ClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-emerald-500 rounded-full blur-[120px]" />
-      </div>
+    <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+      {/* Elementos Decorativos Suaves */}
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-slate-50/50 skew-x-12 translate-x-1/4 -z-10" />
+      <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
 
-      <div className="max-w-md w-full space-y-8 relative z-10">
-        <div className="text-center space-y-4">
-          <div className="inline-flex p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm mb-2">
-            <img src="/logo.png" alt="Ótica Melissa" className="h-12 object-contain" />
+      <div className="max-w-md w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center space-y-6">
+          <div 
+            className="inline-flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => navigate("/")}
+          >
+            <img src="/logo.png" alt="Ótica Melissa" className="h-16 w-auto object-contain" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic flex items-center justify-center gap-2">
-              Área do Cliente <Sparkles className="h-5 w-5 text-amber-400" />
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+              Acesse sua Conta
             </h1>
-            <p className="text-slate-400 text-sm font-medium">Acesse seu histórico, receitas e acompanhe seus pedidos.</p>
+            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-3">
+              Valide seus dados para entrar
+            </p>
           </div>
         </div>
 
-        <Card className="rounded-[32px] border-white/10 shadow-2xl overflow-hidden bg-white/5 backdrop-blur-xl">
-          <CardContent className="p-8 space-y-6">
-            <form onSubmit={handleLogin} className="space-y-5">
+        <Card className="rounded-[2.5rem] border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden bg-white relative">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
+          
+          <CardContent className="p-10 md:p-12 space-y-8">
+            <form 
+              onSubmit={handleLogin} 
+              className="space-y-6"
+            >
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Seu CPF</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-2">CPF Cadastrado</Label>
                 <div className="relative group">
                   <Input 
                     type="text" 
@@ -92,50 +130,60 @@ export default function ClientLogin() {
                     value={cpf}
                     onChange={e => setCpf(formatCPF(e.target.value))}
                     maxLength={14}
-                    className="rounded-2xl border-white/10 h-14 text-base font-bold pl-12 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white/5 text-white placeholder:text-slate-600"
-                    required
+                    className="rounded-2xl border-slate-100 h-14 text-base font-bold pl-12 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50/50 text-slate-900 placeholder:text-slate-400"
                   />
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-primary transition-colors" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Sua Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-2">Data de Nascimento</Label>
                 <div className="relative group">
                   <Input 
-                    type="password" 
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="rounded-2xl border-white/10 h-14 text-base font-bold pl-12 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white/5 text-white placeholder:text-slate-600"
-                    required
+                    type="text" 
+                    placeholder="DD/MM/AAAA"
+                    value={birthDate}
+                    onChange={e => setBirthDate(formatDate(e.target.value))}
+                    maxLength={10}
+                    className="rounded-2xl border-slate-100 h-14 text-base font-bold pl-12 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50/50 text-slate-900 placeholder:text-slate-400"
                   />
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-primary transition-colors" />
                 </div>
               </div>
 
               <Button 
                 type="submit" 
                 disabled={isLoading} 
-                className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full h-16 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-[0.15em] text-xs shadow-2xl shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                {isLoading ? "Entrando..." : (
-                  <>Acessar Minha Conta <ArrowRight className="h-4 w-4" /></>
+                {isLoading ? "Validando..." : (
+                  <>Acessar Painel <ArrowRight className="h-5 w-5" /></>
                 )}
               </Button>
             </form>
 
-            <div className="pt-4 border-t border-white/5 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500/50" />
-                Acesso Seguro e Criptografado
+            <div className="flex flex-col items-center gap-6">
+              <div className="h-px bg-slate-100 w-full" />
+              
+              <div className="flex flex-col items-center gap-3">
+                 <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  Conexão Segura Ótica Melissa
+                </div>
+                <Button 
+                  variant="ghost"
+                  onClick={() => navigate("/")}
+                  className="text-[10px] font-bold text-slate-400 hover:text-slate-900 hover:bg-slate-50 uppercase transition-all flex items-center gap-2 rounded-full h-8"
+                >
+                  <ChevronLeft className="h-3 w-3" /> Voltar ao Início
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <p className="text-center text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-          © 2024 Ótica Melissa • Sua visão em primeiro lugar
+        <p className="text-center text-slate-300 text-[10px] uppercase font-bold tracking-[0.3em]">
+          © 2024 Ótica Melissa
         </p>
       </div>
     </div>

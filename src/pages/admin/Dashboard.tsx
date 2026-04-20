@@ -22,9 +22,6 @@ import {
   Package,
 } from "lucide-react";
 import {
-  SALES_CHART_DATA,
-  PAYMENT_METHODS_DATA,
-  TOP_PRODUCTS,
   RECENT_ALERTS,
 } from "../../data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,14 +39,66 @@ export default function Dashboard() {
     despesas: 0,
   });
 
+  const [salesChartData, setSalesChartData] = React.useState<any[]>([]);
+  const [paymentMethodsData, setPaymentMethodsData] = React.useState<any[]>([]);
+  const [topProducts, setTopProducts] = React.useState<any[]>([]);
+
   React.useEffect(() => {
     const unsubOrders = onSnapshot(query(collection(db, "orders")), (snapshot) => {
       const orders = snapshot.docs.map(doc => doc.data());
-      const totalVendasMes = orders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
-      const vendasDia = orders.filter(o => o.date === new Date().toLocaleDateString('pt-BR')).reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
-      const ticketMedio = orders.length > 0 ? totalVendasMes / orders.length : 0;
       
+      // Basic Stats
+      const totalVendasMes = orders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+      const todayStr = new Date().toLocaleDateString('pt-BR');
+      const vendasDia = orders.filter(o => o.date === todayStr).reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+      const ticketMedio = orders.length > 0 ? totalVendasMes / orders.length : 0;
       setStats(s => ({ ...s, vendasDia, vendasMes: totalVendasMes, ticketMedio }));
+
+      // Process Sales Chart Data (Last 7 days for better visualization)
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toLocaleDateString('pt-BR');
+      }).reverse();
+
+      const chartData = last7Days.map(date => {
+        const dayTotal = orders
+          .filter(o => o.date === date)
+          .reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+        return { day: date.split('/')[0] + '/' + date.split('/')[1], sales: dayTotal };
+      });
+      setSalesChartData(chartData);
+
+      // Process Payment Methods Data
+      const methods: Record<string, number> = {};
+      orders.forEach(o => {
+        const m = o.paymentMethod || "Outros";
+        methods[m] = (methods[m] || 0) + 1;
+      });
+      const pieData = Object.entries(methods).map(([name, value]) => ({ 
+        name: name.replace('_', ' ').toUpperCase(), 
+        value 
+      }));
+      setPaymentMethodsData(pieData);
+
+      // Process Top Products
+      const products: Record<string, { count: number, revenue: number, category: string }> = {};
+      orders.forEach(o => {
+        const name = o.serviceType || "Diversos";
+        if (!products[name]) products[name] = { count: 0, revenue: 0, category: "Serviço" };
+        products[name].count += 1;
+        products[name].revenue += (Number(o.total) || 0);
+      });
+      const topData = Object.entries(products)
+        .map(([name, data]) => ({
+          name,
+          category: data.category,
+          sales: data.count,
+          revenue: `R$ ${data.revenue.toFixed(2)}`
+        }))
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 5);
+      setTopProducts(topData);
     });
 
     const unsubClients = onSnapshot(query(collection(db, "clients")), (snapshot) => {
@@ -70,7 +119,16 @@ export default function Dashboard() {
     };
   }, []);
 
-  const DYNAMIC_STATS = [
+  interface StatItem {
+    label: string;
+    value: string;
+    trend?: "up" | "down";
+    color?: string;
+    change?: string;
+    urgent?: boolean;
+  }
+
+  const DYNAMIC_STATS: StatItem[] = [
     { label: "Vendas de Hoje", value: `R$ ${stats.vendasDia.toFixed(2)}`, trend: "up" },
     { label: "Vendas Totais", value: `R$ ${stats.vendasMes.toFixed(2)}`, trend: "up" },
     { label: "Ticket Médio", value: `R$ ${stats.ticketMedio.toFixed(2)}`, trend: "up" },
@@ -127,7 +185,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-6 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={SALES_CHART_DATA}>
+              <LineChart data={salesChartData.length > 0 ? salesChartData : [{day: '...', sales: 0}]}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
                     dataKey="day" 
@@ -168,13 +226,13 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
-                                data={PAYMENT_METHODS_DATA}
+                                data={paymentMethodsData.length > 0 ? paymentMethodsData : [{name: 'Sem dados', value: 1}]}
                                 innerRadius={50}
                                 outerRadius={70}
                                 paddingAngle={4}
                                 dataKey="value"
                             >
-                                {PAYMENT_METHODS_DATA.map((entry, index) => (
+                                {(paymentMethodsData.length > 0 ? paymentMethodsData : [{name: '...', value: 1}]).map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={index === 0 ? '#0f172a' : index === 1 ? '#334155' : index === 2 ? '#64748b' : '#94a3b8'} />
                                 ))}
                             </Pie>
@@ -183,7 +241,7 @@ export default function Dashboard() {
                     </ResponsiveContainer>
                 </div>
                 <div className="grid grid-cols-2 gap-3 w-full mt-4">
-                    {PAYMENT_METHODS_DATA.map((item, index) => (
+                    {paymentMethodsData.map((item, index) => (
                         <div key={item.name} className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-sm" style={{backgroundColor: index === 0 ? '#0f172a' : index === 1 ? '#334155' : index === 2 ? '#64748b' : '#94a3b8'}} />
                             <span className="text-[10px] font-medium text-slate-600 truncate">{item.name}</span>
@@ -211,7 +269,7 @@ export default function Dashboard() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-[13px]">
-                        {TOP_PRODUCTS.map((product) => (
+                        {topProducts.map((product) => (
                             <tr key={product.name} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-6 py-3 font-semibold text-slate-900">{product.name}</td>
                                 <td className="px-6 py-3">
