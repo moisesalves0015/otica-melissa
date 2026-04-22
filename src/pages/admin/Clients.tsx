@@ -107,6 +107,12 @@ export default function Clients() {
       
       const password = data.password ? String(data.password) : String(data.cpf || "").replace(/\D/g, "").slice(-4);
 
+      let lastConsultDate = data.lastConsultation ? String(data.lastConsultation) : "";
+      if (lastConsultDate.includes("-") && lastConsultDate.split("-")[0].length === 4) {
+          const [y, m, d] = lastConsultDate.split("-");
+          lastConsultDate = `${d}/${m}/${y}`;
+      }
+
       await setDoc(doc(db, "clients", uniqueId), {
         name: String(data.name || ""),
         cpf: String(data.cpf || ""),
@@ -114,6 +120,7 @@ export default function Clients() {
         phone: String(data.phone || ""),
         email: String(data.email || ""),
         password: password, // Padrão: 4 últimos dígitos do CPF
+        lastConsultation: lastConsultDate,
         createdAt: new Date().toISOString(),
         creditStatus: "Em Análise",
         lastVisit: new Date().toLocaleDateString('pt-BR'),
@@ -233,7 +240,7 @@ export default function Clients() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <Label htmlFor="c-consultation" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Última Consulta Oftalmológica</Label>
-                      <Input id="c-consultation" type="date" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-consultation" name="lastConsultation" type="date" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="c-doctor" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Médico de ConfianÃ§a</Label>

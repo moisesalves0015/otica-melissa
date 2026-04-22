@@ -80,9 +80,21 @@ export default function Rastreio() {
         }
 
         // Fetch installments
-        const qInst = query(collection(db, "installments"), where("clientId", "==", cId), orderBy("dueDate", "asc"));
+        const qInst = query(collection(db, "installments"), where("clientId", "==", cId));
         const instSnap = await getDocs(qInst);
-        setInstallments(instSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const instList = instSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        const parseDate = (s: string) => {
+            if (!s) return 0;
+            if (s.includes("/")) {
+                const [d, m, y] = s.split("/").map(Number);
+                return new Date(y, m - 1, d).getTime();
+            }
+            return new Date(s).getTime();
+        };
+
+        instList.sort((a: any, b: any) => parseDate(a.dueDate) - parseDate(b.dueDate));
+        setInstallments(instList);
 
         // Fetch prescriptions
         const qAtend = query(collection(db, "atendimentos"), where("clientId", "==", cId), orderBy("createdAt", "desc"));
@@ -103,14 +115,18 @@ export default function Rastreio() {
   const handleCreateAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const date = formData.get("date") as string;
+    let apptDate = formData.get("date") as string;
+    if (apptDate.includes("-") && apptDate.split("-")[0].length === 4) {
+        const [y, m, d] = apptDate.split("-");
+        apptDate = `${d}/${m}/${y}`;
+    }
     const period = formData.get("period") as string;
 
     try {
       await addDoc(collection(db, "appointments"), {
         clientId: clientId,
         clientName: clientName,
-        date,
+        date: apptDate,
         period,
         status: "Pendente",
         createdAt: new Date().toISOString()
@@ -205,7 +221,14 @@ export default function Rastreio() {
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Previsão de Entrega</p>
                       <p className="text-sm font-black text-emerald-600">
-                        {verifiedOrder.dueDate || "A confirmar"}
+                        {(() => {
+                            const dd = verifiedOrder.dueDate || "A confirmar";
+                            if (dd.includes("-") && dd.split("-")[0].length === 4) {
+                                const [y, m, d] = dd.split("-");
+                                return `${d}/${m}/${y}`;
+                            }
+                            return dd;
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -256,10 +279,17 @@ export default function Rastreio() {
                    ) : (
                       installments.filter(i => i.status !== "Pago").slice(0, 3).map(inst => (
                          <div key={inst.id} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-emerald-200 transition-colors">
-                            <div>
-                               <p className="text-sm font-black text-slate-900">R$ {inst.value.toFixed(2)}</p>
-                               <p className="text-[10px] font-bold text-slate-500 uppercase">Parc. {inst.number} • Vence {inst.dueDate}</p>
-                            </div>
+                             <div>
+                                <p className="text-sm font-black text-slate-900">R$ {inst.value.toFixed(2)}</p>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">Parc. {inst.number} • Vence {(() => {
+                                    const dd = inst.dueDate || "---";
+                                    if (dd.includes("-") && dd.split("-")[0].length === 4) {
+                                        const [y, m, d] = dd.split("-");
+                                        return `${d}/${m}/${y}`;
+                                    }
+                                    return dd;
+                                })()}</p>
+                             </div>
                             <Button variant="ghost" size="sm" className="h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[9px] font-black uppercase text-emerald-600" onClick={() => window.open(getWhatsAppLink(`Olá! Quero pagar minha parcela de R$ ${inst.value.toFixed(2)} do pedido #${verifiedOrder.id.substring(0,8).toUpperCase()}`), '_blank')}>
                                PIX
                             </Button>

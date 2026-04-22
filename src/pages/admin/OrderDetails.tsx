@@ -368,66 +368,95 @@ export default function OrderDetails() {
         </div>
 
         {/* DADOS DO CLIENTE E ATENDIMENTO */}
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm'}}>
-          <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6mm', marginBottom: '2mm'}}>
+          <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Cliente Responsável</p>
             <p style={{fontSize: '11pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{order.clientName}</p>
           </div>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
+          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Vendedor / Atendente</p>
             <p style={{fontSize: '10pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.seller}</p>
           </div>
         </div>
 
         {/* DETALHES TÉCNICOS E LAB */}
-        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden'}}>
-          <div style={{backgroundColor: '#0f172a', color: 'white', padding: '2mm 4mm'}}>
+        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '2mm'}}>
+          <div style={{backgroundColor: '#0f172a', color: 'white', padding: '2.5mm 5mm'}}>
             <p style={{fontSize: '7pt', fontWeight: '800', textTransform: 'uppercase', margin: 0, letterSpacing: '1px'}}>Especificações de Laboratório</p>
           </div>
-          <div style={{padding: '4mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6mm'}}>
+          <div style={{padding: '5mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8mm'}}>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Código / Lab</p>
-              <p style={{fontSize: '10pt', fontWeight: '800', color: '#0f172a', margin: '0 0 3mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código / Lab</p>
+              <p style={{fontSize: '10pt', fontWeight: '800', color: '#0f172a', margin: '0 0 4mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
               
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Fornecedor</p>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Fornecedor</p>
               <p style={{fontSize: '9pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.supplier || "NÃO INFORMADO"}</p>
             </div>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Tipo de Serviço</p>
-              <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: '0 0 3mm'}}>{order.serviceType}</p>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Tipo de Serviço</p>
+              <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: '0 0 4mm'}}>{order.serviceType}</p>
               
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Data Prometida</p>
-              <p style={{fontSize: '10pt', fontWeight: '800', color: '#dc2626', margin: 0}}>{new Date(order.dueDate).toLocaleDateString('pt-BR')}</p>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Data Prometida</p>
+              <p style={{fontSize: '10pt', fontWeight: '800', color: '#dc2626', margin: 0}}>{(() => {
+                if (!order.dueDate) return "Imediata";
+                if (order.dueDate.includes("/")) {
+                    const [d, m, y] = order.dueDate.split("/").map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                }
+                return new Date(order.dueDate).toLocaleDateString('pt-BR');
+              })()}</p>
             </div>
           </div>
-          <div style={{padding: '4mm', borderTop: '1px solid #e2e8f0', backgroundColor: '#fafafa'}}>
+          <div style={{padding: '5mm', borderTop: '1px solid #e2e8f0', backgroundColor: '#fafafa'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Descrição dos Itens / Lentes</p>
             <p style={{fontSize: '9pt', color: '#334155', fontWeight: '500', margin: 0, lineHeight: '1.4'}}>{order.items}</p>
           </div>
         </div>
 
         {/* OBSERVAÇÕES TÉCNICAS */}
-        <div style={{flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
+        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm', marginBottom: '2mm'}}>
           <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '1mm'}}>Observações Técnicas</p>
           <p style={{fontSize: '9pt', color: '#475569', lineHeight: '1.5', margin: 0}}>{order.notes || "Sem observações adicionais."}</p>
         </div>
 
-        {/* FINANCEIRO */}
-        <div style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '4mm'}}>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
+        {/* FINANCEIRO E PAGAMENTO */}
+        <div style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '6mm', marginBottom: '2mm'}}>
+          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Forma de Pagamento</p>
             <p style={{fontSize: '9pt', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', margin: 0}}>{order.paymentMethod}</p>
           </div>
-          <div style={{backgroundColor: '#0f172a', borderRadius: '8px', padding: '4mm', color: 'white', textAlign: 'right'}}>
+          <div style={{backgroundColor: '#0f172a', borderRadius: '8px', padding: '5mm', color: 'white', textAlign: 'right'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Valor Total</p>
             <p style={{fontSize: '16pt', fontWeight: '900', margin: 0}}>R$ {(Number(order.total) || 0).toFixed(2)}</p>
           </div>
         </div>
 
-        {/* STATUS E TIMELINE SIMPLIFICADA NO PRINT */}
-        <div style={{fontSize: '7pt', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '3mm', display: 'flex', justifyContent: 'space-between'}}>
-          <p style={{margin: 0}}>Status do Pedido: <strong>{order.status.toUpperCase()}</strong></p>
-          <p style={{margin: 0}}>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+        {/* LINHA DO TEMPO (HISTÓRICO) NO PRINT */}
+        <div style={{flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
+          <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 3mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '1mm'}}>Histórico da Linha do Tempo</p>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '3mm'}}>
+            {order.history && order.history.slice().reverse().map((item: any, idx: number) => (
+              <div key={idx} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #e2e8f0', paddingLeft: '3mm'}}>
+                <div>
+                  <p style={{fontSize: '8pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{item.action}</p>
+                  <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0, textTransform: 'uppercase'}}>Por: {item.user}</p>
+                </div>
+                <p style={{fontSize: '7pt', color: '#64748b', margin: 0, whiteSpace: 'nowrap'}}>
+                  {new Date(item.date).toLocaleDateString('pt-BR')} {new Date(item.date).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}
+                </p>
+              </div>
+            ))}
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #0f172a', paddingLeft: '3mm'}}>
+              <p style={{fontSize: '8pt', fontWeight: '700', color: '#0f172a', margin: 0}}>Pedido Criado no Sistema</p>
+              <p style={{fontSize: '7pt', color: '#64748b', margin: 0}}>{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* STATUS E RODAPÉ */}
+        <div style={{fontSize: '7pt', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <p style={{margin: 0}}>Status Atual: <strong style={{color: '#0f172a'}}>{order.status.toUpperCase()}</strong></p>
+          <p style={{margin: 0, fontStyle: 'italic'}}>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
         </div>
       </div>
 

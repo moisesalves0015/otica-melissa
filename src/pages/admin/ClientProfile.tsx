@@ -32,7 +32,15 @@ export default function ClientProfile() {
         const records = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         
         // Ordenar localmente por data (mais recente primeiro)
-        records.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const parseDate = (s: string) => {
+            if (!s) return 0;
+            if (s.includes("/")) {
+                const [d, m, y] = s.split("/").map(Number);
+                return new Date(y, m - 1, d).getTime();
+            }
+            return new Date(s).getTime();
+        };
+        records.sort((a: any, b: any) => parseDate(b.date) - parseDate(a.date));
         setHistory(records);
       } catch (error) {
         console.error("Erro ao buscar histórico", error);
@@ -125,7 +133,12 @@ export default function ClientProfile() {
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Calendar className="h-3 w-3" /> Cliente Desde</p>
                 <p className="font-medium text-slate-700">
-                  {client.createdAt ? (client.createdAt.includes('/') ? client.createdAt : new Date(client.createdAt).toLocaleDateString('pt-BR')) : "Não informado"}
+                  {(() => {
+                      if (!client.createdAt) return "Não informado";
+                      const d = client.createdAt;
+                      if (d.includes("/")) return d;
+                      return new Date(d).toLocaleDateString('pt-BR');
+                  })()}
                 </p>
               </div>
             </div>
@@ -256,7 +269,11 @@ export default function ClientProfile() {
           <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº da Ficha</p>
             <p style={{fontSize: '13pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{client.id.length > 8 ? client.id.slice(0,6).toUpperCase() : client.id}</p>
-            <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Cliente desde {new Date(client.createdAt).toLocaleDateString('pt-BR')}</p>
+            <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Cliente desde {(() => {
+                if (!client.createdAt) return "---";
+                if (client.createdAt.includes("/")) return client.createdAt;
+                return new Date(client.createdAt).toLocaleDateString('pt-BR');
+            })()}</p>
           </div>
         </div>
 
@@ -266,7 +283,11 @@ export default function ClientProfile() {
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4mm'}}>
             <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Nome Completo</p><p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{client.name}</p></div>
             <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>CPF</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.cpf || "—"}</p></div>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Data de Nascimento</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.birthDate ? new Date(client.birthDate).toLocaleDateString('pt-BR') : "—"}</p></div>
+            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Data de Nascimento</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{(() => {
+                if (!client.birthDate) return "—";
+                if (client.birthDate.includes("/")) return client.birthDate;
+                return new Date(client.birthDate).toLocaleDateString('pt-BR');
+            })()}</p></div>
             <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Telefone</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.phone || "—"}</p></div>
             <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Email</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.email || "—"}</p></div>
             <div>

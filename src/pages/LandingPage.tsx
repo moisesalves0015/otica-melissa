@@ -49,32 +49,8 @@ const ANNOUNCEMENTS = [
 ];
 
 const NAV_MENU_DATA = [
-  {
-    name: "Óculos de Grau",
-    href: "#",
-    categories: [
-      { title: "Por Gênero", links: ["Feminino", "Masculino", "Infantil", "Unissex"] },
-      { title: "Por Formato", links: ["Redondo", "Quadrado", "Gatinho", "Retangular", "Aviador"] },
-      { title: "Por Material", links: ["Acetato", "Metal", "Titanium", "Injetado"] },
-    ],
-    featured: {
-      title: "Tendência Grau 2024",
-      image: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=400",
-    }
-  },
-  {
-    name: "Óculos de Sol",
-    href: "#",
-    categories: [
-      { title: "Por Estilo", links: ["Clássicos", "Esportivos", "Modernos", "Retrô"] },
-      { title: "Lentes", links: ["Polarizados", "Espelhados", "Degradê", "Fotocromáticas"] },
-      { title: "Ofertas Sol", links: ["Até 30% OFF", "Outlet Sol", "Combos Sol"] },
-    ],
-    featured: {
-      title: "Sol Verão 2024",
-      image: "https://images.unsplash.com/photo-1511499767350-a15941da92bf?q=80&w=400",
-    }
-  },
+  { name: "Óculos de Grau", href: "#" },
+  { name: "Óculos de Sol", href: "#" },
   { name: "Lentes", href: "#" },
   { name: "Lançamentos", href: "#", badge: "Novo" },
 ];

@@ -7,6 +7,7 @@ import {
     Search, User, Printer, Clock, Activity, ShoppingCart, 
     DollarSign, FileText, Plus, Trash2, ChevronDown, ChevronUp, Scissors
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export default function Atendimentos() {
   const [clients, setClients] = React.useState<any[]>([]);
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
   const [fornecedores, setFornecedores] = React.useState<any[]>([]);
+  const [categorias, setCategorias] = React.useState<any[]>([]);
 
   // State for Print
   const [printData, setPrintData] = React.useState<any>(null);
@@ -48,6 +50,14 @@ export default function Atendimentos() {
   const [prescription, setPrescription] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [sessionOrders, setSessionOrders] = React.useState<OrderSession[]>([]);
+
+  // Tabela de Receita (Rx)
+  const [rxData, setRxData] = React.useState({
+    longe_od_esf: "", longe_od_cil: "", longe_od_eixo: "", longe_od_dp: "",
+    longe_oe_esf: "", longe_oe_cil: "", longe_oe_eixo: "", longe_oe_dp: "",
+    perto_od_esf: "", perto_od_cil: "", perto_od_eixo: "", perto_od_dp: "",
+    perto_oe_esf: "", perto_oe_cil: "", perto_oe_eixo: "", perto_oe_dp: "",
+  });
 
   // --- PAYMENT STATE ---
   const [paymentMethod, setPaymentMethod] = React.useState("pix");
@@ -79,12 +89,16 @@ export default function Atendimentos() {
     const unsubForn = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
       setFornecedores(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
+    const unsubCat = onSnapshot(query(collection(db, "categorias")), (snap) => {
+      setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
 
     return () => {
       unsubAtend();
       unsubClients();
       unsubAtendentes();
       unsubForn();
+      unsubCat();
     };
   }, []);
 
@@ -131,6 +145,12 @@ export default function Atendimentos() {
       setPrescription("");
       setNotes("");
       setSessionOrders([]);
+      setRxData({
+        longe_od_esf: "", longe_od_cil: "", longe_od_eixo: "", longe_od_dp: "",
+        longe_oe_esf: "", longe_oe_cil: "", longe_oe_eixo: "", longe_oe_dp: "",
+        perto_od_esf: "", perto_od_cil: "", perto_od_eixo: "", perto_od_dp: "",
+        perto_oe_esf: "", perto_oe_cil: "", perto_oe_eixo: "", perto_oe_dp: "",
+      });
       setPaymentMethod("pix");
       setEntrada(0);
       setInstallmentsCount(1);
@@ -162,6 +182,7 @@ export default function Atendimentos() {
         attendant: attendant,
         notes: notes,
         prescription: prescription,
+        rxData: rxData, // Salvando a tabela completa
         totalValue: totalGeral,
         paymentMethod: paymentMethod,
         isCarne: isCarne,
@@ -301,32 +322,34 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full print:hidden">
-          <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start rounded-none gap-8 mb-6">
-            <TabsTrigger value="novo" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-                <Activity className="h-4 w-4" /> SESSÃO DE ATENDIMENTO
-            </TabsTrigger>
-            <TabsTrigger value="historico" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-                <FileText className="h-4 w-4" /> HISTÓRICO E FICHAS
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-start mb-6">
+            <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-8">
+              <TabsTrigger value="novo" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+                  <Activity className="h-4 w-4" /> SESSÃO DE ATENDIMENTO
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> HISTÓRICO E FICHAS
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="novo" className="m-0 focus-visible:outline-none focus-visible:ring-0">
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
                     
                     {/* COLUNA ESQUERDA: DADOS CLÍNICOS E PEDIDOS */}
                     <div className="xl:col-span-8 space-y-6">
-                        <Card className="rounded border-slate-200 shadow-none overflow-hidden">
-                            <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80">
+                        <Card className="!rounded-none border-slate-200 shadow-none overflow-hidden !p-0 !gap-0">
+                            <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 !rounded-none">
                                 <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800">
                                     <User className="h-4 w-4 text-slate-500" /> Identificação e Dados Clínicos
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                            <CardContent className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Paciente / Cliente *</Label>
                                         <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                                            <SelectTrigger className="rounded border-slate-200 h-10 text-sm font-medium">
+                                            <SelectTrigger className="!rounded-none border-slate-200 h-10 text-sm font-medium">
                                                 <SelectValue placeholder="Busque ou selecione o cliente" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -339,7 +362,7 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Atendente / Consultor *</Label>
                                         <Select value={attendant} onValueChange={setAttendant}>
-                                            <SelectTrigger className="rounded border-slate-200 h-10 text-sm font-medium">
+                                            <SelectTrigger className="!rounded-none border-slate-200 h-10 text-sm font-medium">
                                                 <SelectValue placeholder="Selecione o atendente" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -354,16 +377,65 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                     </div>
                                 </div>
                                 
-                                <Separator className="bg-slate-100 mb-6" />
+                                <Separator className="bg-slate-100" />
                                 
                                 <div className="space-y-5">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Prescrição / Receita Atualizada</Label>
-                                        <Input value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Ex: OD -1.00 Esf / OE -1.50 Esf -0.50 Cil 180°" className="rounded border-slate-200 h-10 text-sm font-medium" />
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Receita Óptica (Grau)</Label>
+                                        <div className="!rounded-none border border-slate-200 overflow-hidden bg-white">
+                                            <table className="w-full text-xs text-center border-collapse">
+                                            <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500">
+                                                <tr>
+                                                <th className="p-2 border-r border-slate-200 w-16"></th>
+                                                <th className="p-2 border-r border-slate-200 w-12"></th>
+                                                <th className="p-2 border-r border-slate-200">ESFÉRICO</th>
+                                                <th className="p-2 border-r border-slate-200">CILÍNDRICO</th>
+                                                <th className="p-2 border-r border-slate-200">EIXO</th>
+                                                <th className="p-2 w-16">D.P.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {/* Longe OD */}
+                                                <tr className="border-b border-slate-200">
+                                                <td rowSpan={2} className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">PARA<br/>LONGE</td>
+                                                <td className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">O.D.</td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_od_esf} onChange={e => setRxData({...rxData, longe_od_esf: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="+0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_od_cil} onChange={e => setRxData({...rxData, longe_od_cil: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="-0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_od_eixo} onChange={e => setRxData({...rxData, longe_od_eixo: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="0°" /></td>
+                                                <td className="p-1"><Input value={rxData.longe_od_dp} onChange={e => setRxData({...rxData, longe_od_dp: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" /></td>
+                                                </tr>
+                                                {/* Longe OE */}
+                                                <tr className="border-b border-slate-200">
+                                                <td className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">O.E.</td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_oe_esf} onChange={e => setRxData({...rxData, longe_oe_esf: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="+0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_oe_cil} onChange={e => setRxData({...rxData, longe_oe_cil: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="-0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.longe_oe_eixo} onChange={e => setRxData({...rxData, longe_oe_eixo: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="0°" /></td>
+                                                <td className="p-1"><Input value={rxData.longe_oe_dp} onChange={e => setRxData({...rxData, longe_oe_dp: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="m.m." /></td>
+                                                </tr>
+                                                {/* Perto OD */}
+                                                <tr className="border-b border-slate-200">
+                                                <td rowSpan={2} className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">PARA<br/>PERTO</td>
+                                                <td className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">O.D.</td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_od_esf} onChange={e => setRxData({...rxData, perto_od_esf: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="+0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_od_cil} onChange={e => setRxData({...rxData, perto_od_cil: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="-0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_od_eixo} onChange={e => setRxData({...rxData, perto_od_eixo: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="0°" /></td>
+                                                <td className="p-1"><Input value={rxData.perto_od_dp} onChange={e => setRxData({...rxData, perto_od_dp: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" /></td>
+                                                </tr>
+                                                {/* Perto OE */}
+                                                <tr>
+                                                <td className="p-2 border-r border-slate-200 font-bold text-[10px] bg-slate-50 text-slate-500">O.E.</td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_oe_esf} onChange={e => setRxData({...rxData, perto_oe_esf: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="+0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_oe_cil} onChange={e => setRxData({...rxData, perto_oe_cil: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="-0.00" /></td>
+                                                <td className="p-1 border-r border-slate-200"><Input value={rxData.perto_oe_eixo} onChange={e => setRxData({...rxData, perto_oe_eixo: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="0°" /></td>
+                                                <td className="p-1"><Input value={rxData.perto_oe_dp} onChange={e => setRxData({...rxData, perto_oe_dp: e.target.value})} className="h-7 text-xs text-center border-0 focus-visible:ring-1 !rounded-none-sm shadow-none" placeholder="m.m." /></td>
+                                                </tr>
+                                            </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Anotações da Consulta (Histórico, Queixas)</Label>
-                                        <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full rounded border-slate-200 text-sm p-3 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" placeholder="O que foi conversado com o paciente..."></textarea>
+                                        <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full !rounded-none border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" placeholder="O que foi conversado com o paciente..."></textarea>
                                     </div>
                                 </div>
                             </CardContent>
@@ -375,14 +447,14 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                                     <ShoppingCart className="h-4 w-4" /> Itens do Atendimento
                                 </h3>
-                                <Button onClick={handleAddOrder} variant="outline" className="h-9 rounded border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                                <Button onClick={handleAddOrder} variant="outline" className="h-9 !rounded-none-none border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
                                     <Plus className="h-3.5 w-3.5 mr-1" /> ADICIONAR SERVIÇO / PRODUTO
                                 </Button>
                             </div>
 
                             {sessionOrders.length === 0 && (
-                                <div className="p-8 border-2 border-dashed border-slate-200 rounded text-center text-slate-500 bg-slate-50/50">
-                                    <div className="h-10 w-10 mx-auto bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                                <div className="p-8 border-2 border-dashed border-slate-200 !rounded-none-none text-center text-slate-500 bg-slate-50/50">
+                                    <div className="h-10 w-10 mx-auto bg-slate-100 text-slate-400 !rounded-none-full flex items-center justify-center mb-3">
                                         <ShoppingCart className="h-4 w-4" />
                                     </div>
                                     <p className="text-sm font-medium">Nenhum pedido ou produto adicionado.</p>
@@ -392,13 +464,13 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
 
                             <div className="space-y-3">
                                 {sessionOrders.map((order, index) => (
-                                    <Card key={order.id} className="rounded border-slate-200 shadow-sm overflow-hidden bg-white transition-all">
+                                    <Card key={order.id} className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white transition-all !p-0 !gap-0">
                                         <div 
                                             className={`p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors ${order.expanded ? 'bg-slate-50 border-b border-slate-100' : ''}`}
                                             onClick={() => toggleOrderExpansion(order.id)}
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="h-6 w-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
+                                                <div className="h-6 w-6 !rounded-none bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
                                                     {index + 1}
                                                 </div>
                                                 <div className="flex flex-col">
@@ -409,7 +481,7 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                             <div className="flex items-center gap-6">
                                                 <span className="text-sm font-black text-emerald-600">R$ {order.price.toFixed(2)}</span>
                                                 <div className="flex items-center gap-1 border-l border-slate-200 pl-4">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" onClick={(e) => { e.stopPropagation(); removeOrder(order.id); }}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none" onClick={(e) => { e.stopPropagation(); removeOrder(order.id); }}>
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                     <div className="h-7 w-7 flex items-center justify-center text-slate-400">
@@ -425,36 +497,40 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço / Categoria</Label>
                                                         <Select value={order.serviceType} onValueChange={(val) => updateOrder(order.id, 'serviceType', val)}>
-                                                            <SelectTrigger className="rounded border-slate-200 h-9 text-xs font-medium">
+                                                            <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="Óculos Completo">Óculos Completo</SelectItem>
-                                                                <SelectItem value="Apenas Lentes">Apenas Lentes</SelectItem>
-                                                                <SelectItem value="Apenas Armação">Apenas Armação</SelectItem>
-                                                                <SelectItem value="Conserto / Manutenção">Conserto / Manutenção</SelectItem>
-                                                                <SelectItem value="Pronta Entrega">Produto Pronta Entrega</SelectItem>
+                                                              {categorias.length === 0 ? (
+                                                                <SelectItem value={order.serviceType || "Serviço"}>
+                                                                  {order.serviceType || "Cadastre categorias em Configurações"}
+                                                                </SelectItem>
+                                                              ) : (
+                                                                categorias.map(cat => (
+                                                                  <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                                                ))
+                                                              )}
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor Deste Item (R$)</Label>
-                                                        <Input type="number" step="0.01" value={order.price || ''} onChange={(e) => updateOrder(order.id, 'price', Number(e.target.value))} className="rounded border-slate-200 h-9 text-sm font-bold" />
+                                                        <Input type="number" step="0.01" value={order.price || ''} onChange={(e) => updateOrder(order.id, 'price', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição Detalhada dos Itens</Label>
-                                                    <Input value={order.items} onChange={(e) => updateOrder(order.id, 'items', e.target.value)} placeholder="Ex: Armação RX5184 Preta + Lentes Kodak Anti-Reflexo" className="rounded border-slate-200 h-9 text-xs" />
+                                                    <Input value={order.items} onChange={(e) => updateOrder(order.id, 'items', e.target.value)} placeholder="Ex: Armação RX5184 Preta + Lentes Kodak Anti-Reflexo" className="!rounded-none border-slate-200 h-9 text-xs" />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
-                                                        <Input value={order.orderCode} onChange={(e) => updateOrder(order.id, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                                        <Input value={order.orderCode} onChange={(e) => updateOrder(order.id, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
                                                         <Select value={order.supplier} onValueChange={(val) => updateOrder(order.id, 'supplier', val)}>
-                                                            <SelectTrigger className="rounded border-slate-200 h-9 text-xs font-medium">
+                                                            <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
                                                                 <SelectValue placeholder="Selecione o fornecedor" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -471,11 +547,11 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
-                                                        <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', formatDate(e.target.value))} className="rounded border-slate-200 h-9 text-xs text-slate-600" />
+                                                        <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={order.dueDate} onChange={(e) => updateOrder(order.id, 'dueDate', formatDate(e.target.value))} className="!rounded-none border-slate-200 h-9 text-xs text-slate-600" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
-                                                        <Input value={order.labNotes} onChange={(e) => updateOrder(order.id, 'labNotes', e.target.value)} placeholder="Ex: Montagem nylon cuidadosa..." className="rounded border-slate-200 h-9 text-xs" />
+                                                        <Input value={order.labNotes} onChange={(e) => updateOrder(order.id, 'labNotes', e.target.value)} placeholder="Ex: Montagem nylon cuidadosa..." className="!rounded-none border-slate-200 h-9 text-xs" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -489,30 +565,52 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                     {/* COLUNA DIREITA: RESUMO FINANCEIRO (STICKY) */}
                     <div className="xl:col-span-4">
                         <div className="sticky top-6">
-                            <Card className="rounded border-slate-200 shadow-sm overflow-hidden bg-white">
-                                <CardHeader className="p-5 border-b border-slate-100 bg-slate-900 text-white">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                            <DollarSign className="h-4 w-4 text-emerald-400" /> Resumo Financeiro
-                                        </CardTitle>
-                                    </div>
+                            <Card className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white !p-0 !gap-0">
+                                <CardHeader className="p-5 border-b border-slate-100 bg-slate-900 text-white !rounded-none">
+                                    <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
+                                        <DollarSign className="h-4 w-4 text-emerald-400" /> Resumo do Atendimento
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
-                                    {/* Totalizador */}
-                                    <div className="p-6 bg-slate-50 border-b border-slate-100 flex flex-col items-center justify-center text-center">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Total a Pagar</p>
-                                        <p className="text-3xl font-black text-slate-900 tracking-tight">
-                                            <span className="text-lg font-bold text-slate-400 mr-1">R$</span>
-                                            {totalGeral.toFixed(2)}
-                                        </p>
+                                    {/* Lista de Itens */}
+                                    <div className="p-5 space-y-3 max-h-[250px] overflow-y-auto bg-slate-50/50 border-b border-slate-100">
+                                        {sessionOrders.length === 0 ? (
+                                            <p className="text-[10px] font-semibold text-slate-400 uppercase text-center py-2">Nenhum item adicionado</p>
+                                        ) : (
+                                            sessionOrders.map((item, idx) => (
+                                                <div key={item.id} className="flex justify-between items-start text-[11px]">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-900">{idx + 1}. {item.serviceType}</span>
+                                                        <span className="text-slate-500 truncate max-w-[140px]">{item.items || "Sem descrição"}</span>
+                                                    </div>
+                                                    <span className="font-bold text-slate-900 whitespace-nowrap ml-2">R$ {item.price.toFixed(2)}</span>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
 
-                                    {/* Formulário de Pagamento */}
-                                    <div className="p-6 space-y-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Condição de Pagamento</Label>
+                                    {/* Totais */}
+                                    <div className="p-5 space-y-3 bg-white">
+                                        <div className="flex justify-between items-center text-slate-500">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Subtotal</span>
+                                            <span className="text-sm font-bold">R$ {totalGeral.toFixed(2)}</span>
+                                        </div>
+                                        <Separator className="bg-slate-100" />
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-900 uppercase">Total Geral</span>
+                                            <span className="text-2xl font-black text-slate-900 tracking-tight">
+                                                <span className="text-sm font-bold text-slate-400 mr-1">R$</span>
+                                                {totalGeral.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Pagamento */}
+                                    <div className="p-5 pt-0 space-y-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Método de Pagamento</Label>
                                             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                                <SelectTrigger className="rounded border-slate-200 h-10 text-sm font-semibold bg-white">
+                                                <SelectTrigger className="!rounded-none border-slate-200 h-10 text-sm font-semibold bg-white">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -525,27 +623,27 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                         </div>
 
                                         {isCarne && (
-                                            <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded space-y-4">
+                                            <div className="p-4 bg-emerald-50/50 border border-emerald-100 !rounded-none-none space-y-4">
                                                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 border-b border-emerald-100 pb-2">Configuração do Carnê</h4>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Entrada (R$)</Label>
-                                                        <Input type="number" step="0.01" value={entrada || ''} onChange={(e) => setEntrada(Number(e.target.value))} className="rounded border-emerald-200 bg-white h-9 text-xs font-semibold" />
+                                                        <Input type="number" step="0.01" value={entrada || ''} onChange={(e) => setEntrada(Number(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs font-semibold" />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Nº de Parcelas</Label>
-                                                        <Input type="number" min="1" max="24" value={installmentsCount || ''} onChange={(e) => setInstallmentsCount(Number(e.target.value))} className="rounded border-emerald-200 bg-white h-9 text-xs font-semibold text-center" />
+                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Parcelas</Label>
+                                                        <Input type="number" min="1" max="24" value={installmentsCount || ''} onChange={(e) => setInstallmentsCount(Number(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs font-semibold text-center" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Data da 1ª Parcela</Label>
-                                                    <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={firstDueDate} onChange={(e) => setFirstDueDate(formatDate(e.target.value))} className="rounded border-emerald-200 bg-white h-9 text-xs text-slate-700" />
+                                                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">1º Vencimento</Label>
+                                                    <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={firstDueDate} onChange={(e) => setFirstDueDate(formatDate(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs text-slate-700" />
                                                 </div>
                                                 
                                                 <div className="mt-4 pt-3 border-t border-emerald-100 text-center">
-                                                    <p className="text-[11px] text-emerald-600 font-medium">Restante a parcelar: <strong className="text-emerald-800">R$ {saldoDevedor.toFixed(2)}</strong></p>
-                                                    {installmentsCount > 0 && saldoDevedor > 0 && firstDueDate && (
-                                                        <p className="text-sm font-black text-emerald-700 mt-1">
+                                                    <p className="text-[11px] text-emerald-600 font-medium">Restante: <strong className="text-emerald-800">R$ {saldoDevedor.toFixed(2)}</strong></p>
+                                                    {installmentsCount > 0 && saldoDevedor > 0 && (
+                                                        <p className="text-lg font-black text-emerald-700 mt-1">
                                                             {installmentsCount}x de R$ {(saldoDevedor / installmentsCount).toFixed(2)}
                                                         </p>
                                                     )}
@@ -553,8 +651,8 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                             </div>
                                         )}
 
-                                        <Button onClick={handleSave} disabled={isSaving || sessionOrders.length === 0} className="w-full h-12 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-widest mt-2 shadow-lg shadow-emerald-600/20">
-                                            {isSaving ? "PROCESSANDO..." : "FINALIZAR SESSÃO"}
+                                        <Button onClick={handleSave} disabled={isSaving || (selectedClientId === "")} className="w-full h-11 !rounded-none-none bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-xs tracking-wider shadow-lg shadow-slate-900/10">
+                                            {isSaving ? "PROCESSANDO..." : "FINALIZAR ATENDIMENTO"}
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -565,12 +663,12 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
           </TabsContent>
 
           <TabsContent value="historico" className="m-0 space-y-4 focus-visible:outline-none focus-visible:ring-0">
-             <Card className="rounded border-slate-200 shadow-none bg-white print:hidden">
+             <Card className="!rounded-none border-slate-200 shadow-none bg-white print:hidden">
                 <div className="p-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="relative flex-1 group max-w-md">
                     <Input
                         placeholder="Buscar por cliente ou atendente..."
-                        className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
+                        className="pl-9 h-9 bg-slate-50 border-slate-200 !rounded-none text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -612,10 +710,10 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                         </TableCell>
                         <TableCell className="px-6 py-3 text-right">
                             <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold rounded text-emerald-600 hover:bg-emerald-50" onClick={() => handleWhatsAppReceipt(atend)}>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold !rounded-none text-emerald-600 hover:bg-emerald-50" onClick={() => handleWhatsAppReceipt(atend)}>
                                     <Activity className="h-3.5 w-3.5 mr-2" /> WHATSAPP
                                 </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold rounded text-slate-600 hover:bg-slate-100" onClick={() => handlePrint(atend)}>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold !rounded-none text-slate-600 hover:bg-slate-100" onClick={() => handlePrint(atend)}>
                                     <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR A4
                                 </Button>
                             </div>
@@ -675,14 +773,65 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
               </div>
             </div>
 
-            {/* PRESCRIÇÃO */}
-            {(printData.prescription || printData.notes) && (
-              <div style={{border: '1px solid #e2e8f0', borderLeft: '4px solid #c4121a', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
-                <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Prescrição & Anotações Clínicas</p>
-                {printData.prescription && <p style={{fontSize: '9pt', fontWeight: '600', color: '#0f172a', margin: '0 0 1mm'}}><span style={{color: '#c4121a'}}>RX:</span> {printData.prescription}</p>}
-                {printData.notes && <p style={{fontSize: '9pt', color: '#475569', margin: 0}}>{printData.notes}</p>}
-              </div>
-            )}
+            {/* PRESCRIÇÃO E ANOTAÇÕES */}
+            <div style={{display: 'grid', gridTemplateColumns: printData.rxData ? '1.5fr 1fr' : '1fr', gap: '4mm', marginBottom: '4mm'}}>
+              {printData.rxData && (
+                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden'}}>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', padding: '2mm 3mm', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', margin: 0}}>Prescrição Óptica (Rx)</p>
+                  <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8pt', textAlign: 'center'}}>
+                    <thead style={{backgroundColor: '#f1f5f9', fontSize: '6.5pt', fontWeight: '700', color: '#64748b'}}>
+                      <tr>
+                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}></th>
+                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}></th>
+                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>ESF.</th>
+                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>CIL.</th>
+                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>EIXO</th>
+                        <th style={{padding: '1.5mm'}}>D.P.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
+                        <td rowSpan={2} style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>LONGE</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_od_esf || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_od_cil || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_od_eixo || "—"}</td>
+                        <td style={{padding: '1.5mm'}}>{printData.rxData.longe_od_dp || "—"}</td>
+                      </tr>
+                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_oe_esf || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_oe_cil || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.longe_oe_eixo || "—"}</td>
+                        <td style={{padding: '1.5mm'}}>{printData.rxData.longe_oe_dp || "—"}</td>
+                      </tr>
+                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
+                        <td rowSpan={2} style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>PERTO</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_od_esf || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_od_cil || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_od_eixo || "—"}</td>
+                        <td style={{padding: '1.5mm'}}>{printData.rxData.perto_od_dp || "—"}</td>
+                      </tr>
+                      <tr>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_oe_esf || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_oe_cil || "—"}</td>
+                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{printData.rxData.perto_oe_eixo || "—"}</td>
+                        <td style={{padding: '1.5mm'}}>{printData.rxData.perto_oe_dp || "—"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {printData.notes && (
+                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', backgroundColor: '#fff', display: 'flex', flexDirection: 'column'}}>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Anotações Clínicas</p>
+                  <p style={{fontSize: '8.5pt', color: '#334155', margin: 0, whiteSpace: 'pre-wrap'}}>{printData.notes}</p>
+                </div>
+              )}
+            </div>
 
             {/* TABELA DE PEDIDOS */}
             <div style={{marginBottom: '4mm', flex: 1}}>
@@ -701,7 +850,14 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                     <tr key={i} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
                       <td style={{padding: '3mm 4mm', fontWeight: '700', color: '#0f172a'}}>{o.serviceType}</td>
                       <td style={{padding: '3mm 4mm', color: '#64748b'}}>{o.items || "—"}</td>
-                      <td style={{padding: '3mm 4mm', textAlign: 'center', color: '#475569'}}>{o.dueDate ? new Date(o.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : "Imediata"}</td>
+                      <td style={{padding: '3mm 4mm', textAlign: 'center', color: '#475569'}}>{(() => {
+                        if (!o.dueDate) return "Imediata";
+                        if (o.dueDate.includes("/")) {
+                            const [d, m, y] = o.dueDate.split("/").map(Number);
+                            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                        }
+                        return new Date(o.dueDate).toLocaleDateString('pt-BR');
+                      })()}</td>
                       <td style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(o.price || 0).toFixed(2)}</td>
                     </tr>
                   ))}
@@ -775,7 +931,14 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                           {printData.orders.map((o: any, i: number) => (
                             <tr key={i} style={{borderBottom: '1px solid #f1f5f9'}}>
                               <td style={{padding: '1mm 2mm', fontWeight: '600'}}>{o.serviceType}</td>
-                              <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{o.dueDate ? new Date(o.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : "Retirada"}</td>
+                              <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{(() => {
+                                if (!o.dueDate) return "Retirada";
+                                if (o.dueDate.includes("/")) {
+                                    const [d, m, y] = o.dueDate.split("/").map(Number);
+                                    return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                                }
+                                return new Date(o.dueDate).toLocaleDateString('pt-BR');
+                              })()}</td>
                             </tr>
                           ))}
                         </tbody>

@@ -58,6 +58,7 @@ export default function Products() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [products, setProducts] = React.useState<any[]>([]);
+  const [categorias, setCategorias] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     const q = query(collection(db, "products"));
@@ -70,7 +71,10 @@ export default function Products() {
       });
       setProducts(data);
     });
-    return () => unsubscribe();
+    const unsubCat = onSnapshot(query(collection(db, "categorias")), (snap) => {
+      setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unsubscribe(); unsubCat(); };
   }, []);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -164,11 +168,13 @@ export default function Products() {
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
-                          <SelectItem value="Armações">Armações</SelectItem>
-                          <SelectItem value="Lentes">Lentes</SelectItem>
-                          <SelectItem value="Lentes de Contato">Lentes de Contato</SelectItem>
-                          <SelectItem value="Óculos Prontos">Óculos Prontos</SelectItem>
-                          <SelectItem value="Acessórios">Acessórios</SelectItem>
+                          {categorias.length === 0 ? (
+                            <SelectItem value="Outros">Cadastre categorias em Configurações</SelectItem>
+                          ) : (
+                            categorias.map(cat => (
+                              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -255,10 +261,11 @@ export default function Products() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[{ icon: Glasses, label: 'Total Armações', value: '428', color: 'text-slate-900' },
-            { icon: Eye, label: 'Pares de Lentes', value: '1.250', color: 'text-slate-900' },
-            { icon: AlertTriangle, label: 'Baixo Estoque', value: '12', color: 'text-red-600' },
-            { icon: Tag, label: 'Gasto Médio', value: 'R$ 380', color: 'text-slate-900' }
+          {[
+            { icon: Glasses, label: 'Total Produtos', value: products.length.toString(), color: 'text-slate-900' },
+            { icon: Eye, label: 'Em Estoque', value: products.filter(p => p.status === 'Em Estoque').length.toString(), color: 'text-emerald-600' },
+            { icon: AlertTriangle, label: 'Baixo Estoque', value: products.filter(p => p.status === 'Baixo Estoque').length.toString(), color: 'text-amber-600' },
+            { icon: Tag, label: 'Em Falta', value: products.filter(p => p.status === 'Em Falta').length.toString(), color: 'text-red-600' },
           ].map((card, i) => (
             <Card key={i} className="rounded border-slate-200 shadow-none bg-white">
                 <CardContent className="p-4 flex items-center gap-4">

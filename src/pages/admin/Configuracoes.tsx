@@ -2,7 +2,7 @@ import * as React from "react";
 import { collection, addDoc, onSnapshot, query, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
-import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash, ExternalLink } from "lucide-react";
+import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash, ExternalLink, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,12 @@ export default function Configuracoes() {
   const [contatoFornecedor, setContatoFornecedor] = React.useState("");
   const [linkFornecedor, setLinkFornecedor] = React.useState("");
   const [savingFornecedor, setSavingFornecedor] = React.useState(false);
+
+  // ---- Categorias ----
+  const [categorias, setCategorias] = React.useState<any[]>([]);
+  const [nomeCategoria, setNomeCategoria] = React.useState("");
+  const [descCategoria, setDescCategoria] = React.useState("");
+  const [savingCategoria, setSavingCategoria] = React.useState(false);
 
   // ---- Sistema ----
   const [migrating, setMigrating] = React.useState(false);
@@ -73,7 +79,10 @@ export default function Configuracoes() {
     const unsubForn = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
       setFornecedores(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
-    return () => { unsubAtend(); unsubForn(); };
+    const unsubCat = onSnapshot(query(collection(db, "categorias")), (snap) => {
+      setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unsubAtend(); unsubForn(); unsubCat(); };
   }, []);
 
   const handleSaveAtendente = async (e: React.FormEvent) => {
@@ -120,6 +129,27 @@ export default function Configuracoes() {
     toast.success("Fornecedor removido.");
   };
 
+  const handleSaveCategoria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nomeCategoria.trim()) { toast.error("Informe o nome da categoria."); return; }
+    setSavingCategoria(true);
+    try {
+      await addDoc(collection(db, "categorias"), {
+        name: nomeCategoria.trim(),
+        description: descCategoria.trim(),
+        createdAt: new Date().toISOString(),
+      });
+      toast.success("Categoria cadastrada!");
+      setNomeCategoria(""); setDescCategoria("");
+    } catch (err: any) { toast.error("Erro: " + err.message); }
+    finally { setSavingCategoria(false); }
+  };
+
+  const handleDeleteCategoria = async (id: string) => {
+    await deleteDoc(doc(db, "categorias", id));
+    toast.success("Categoria removida.");
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-col gap-1">
@@ -129,15 +159,18 @@ export default function Configuracoes() {
         <p className="text-xs text-slate-500">Gerencie atendentes, fornecedores e preferências da loja.</p>
       </div>
 
-      <Tabs defaultValue="atendentes" className="w-full">
-        <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start rounded-none gap-8 mb-6">
-          <TabsTrigger value="atendentes" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+      <Tabs defaultValue="atendentes" className="w-fit">
+        <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-8 mb-6">
+          <TabsTrigger value="atendentes" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Users className="h-4 w-4" /> ATENDENTES
           </TabsTrigger>
-          <TabsTrigger value="fornecedores" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+          <TabsTrigger value="fornecedores" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Truck className="h-4 w-4" /> FORNECEDORES
           </TabsTrigger>
-          <TabsTrigger value="sistema" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+          <TabsTrigger value="categorias" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+            <Tag className="h-4 w-4" /> CATEGORIAS
+          </TabsTrigger>
+          <TabsTrigger value="sistema" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Settings className="h-4 w-4" /> SISTEMA
           </TabsTrigger>
         </TabsList>
@@ -146,7 +179,7 @@ export default function Configuracoes() {
         <TabsContent value="atendentes" className="m-0 space-y-6 focus-visible:outline-none">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
             {/* Formulário */}
-            <Card className="lg:col-span-2 border-slate-200 shadow-none rounded">
+            <Card className="lg:col-span-2 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
               <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80">
                 <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-slate-500" /> Novo Atendente
@@ -160,7 +193,7 @@ export default function Configuracoes() {
                       value={nomeAtendente}
                       onChange={e => setNomeAtendente(e.target.value)}
                       placeholder="Ex: João Silva"
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -169,13 +202,13 @@ export default function Configuracoes() {
                       value={cargoAtendente}
                       onChange={e => setCargoAtendente(e.target.value)}
                       placeholder="Ex: Vendedor, Optometrista..."
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={savingAtendente}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase text-xs tracking-wider h-9"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white !rounded-none font-bold uppercase text-xs tracking-wider h-9"
                   >
                     {savingAtendente ? "SALVANDO..." : "CADASTRAR ATENDENTE"}
                   </Button>
@@ -184,7 +217,7 @@ export default function Configuracoes() {
             </Card>
 
             {/* Lista */}
-            <Card className="lg:col-span-3 border-slate-200 shadow-none rounded">
+            <Card className="lg:col-span-3 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
               <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                   <Users className="h-4 w-4 text-slate-500" /> Atendentes Cadastrados
@@ -199,7 +232,7 @@ export default function Configuracoes() {
                     {atendentes.map(a => (
                       <div key={a.id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                          <div className="w-9 h-9 !!rounded-none-none bg-slate-900 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
                             {a.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
@@ -211,7 +244,7 @@ export default function Configuracoes() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteAtendente(a.id)}
-                          className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                          className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -228,7 +261,7 @@ export default function Configuracoes() {
         <TabsContent value="fornecedores" className="m-0 space-y-6 focus-visible:outline-none">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
             {/* Formulário */}
-            <Card className="lg:col-span-2 border-slate-200 shadow-none rounded">
+            <Card className="lg:col-span-2 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
               <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80">
                 <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-slate-500" /> Novo Fornecedor
@@ -242,7 +275,7 @@ export default function Configuracoes() {
                       value={nomeFornecedor}
                       onChange={e => setNomeFornecedor(e.target.value)}
                       placeholder="Ex: Óticas Brasil Ltda"
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -253,7 +286,7 @@ export default function Configuracoes() {
                       value={cnpjFornecedor}
                       onChange={e => setCnpjFornecedor(e.target.value)}
                       placeholder="00.000.000/0000-00"
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -264,7 +297,7 @@ export default function Configuracoes() {
                       value={contatoFornecedor}
                       onChange={e => setContatoFornecedor(e.target.value)}
                       placeholder="(21) 99999-0000"
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -275,13 +308,13 @@ export default function Configuracoes() {
                       value={linkFornecedor}
                       onChange={e => setLinkFornecedor(e.target.value)}
                       placeholder="https://portal.fornecedor.com"
-                      className="rounded border-slate-200 h-9 text-sm"
+                      className="!rounded-none border-slate-200 h-9 text-sm"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={savingFornecedor}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase text-xs tracking-wider h-9"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white !rounded-none font-bold uppercase text-xs tracking-wider h-9"
                   >
                     {savingFornecedor ? "SALVANDO..." : "CADASTRAR FORNECEDOR"}
                   </Button>
@@ -290,7 +323,7 @@ export default function Configuracoes() {
             </Card>
 
             {/* Lista */}
-            <Card className="lg:col-span-3 border-slate-200 shadow-none rounded">
+            <Card className="lg:col-span-3 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
               <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-slate-500" /> Fornecedores Cadastrados
@@ -305,7 +338,7 @@ export default function Configuracoes() {
                     {fornecedores.map(f => (
                       <div key={f.id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 !rounded-none bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                             <Truck className="h-4 w-4 text-blue-500" />
                           </div>
                           <div>
@@ -322,7 +355,7 @@ export default function Configuracoes() {
                               variant="ghost"
                               size="icon"
                               onClick={() => window.open(f.link, '_blank')}
-                              className="h-8 w-8 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              className="h-8 w-8 text-blue-400 hover:text-blue-600 hover:bg-blue-50 !rounded-none"
                               title="Abrir portal do fornecedor"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
@@ -332,7 +365,7 @@ export default function Configuracoes() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteFornecedor(f.id)}
-                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -346,8 +379,69 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
+        {/* ===== ABA CATEGORIAS ===== */}
+        <TabsContent value="categorias" className="m-0 space-y-6 focus-visible:outline-none">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+            <Card className="lg:col-span-2 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
+              <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-slate-500" /> Nova Categoria
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-5">
+                <form onSubmit={handleSaveCategoria} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome da Categoria *</Label>
+                    <Input value={nomeCategoria} onChange={e => setNomeCategoria(e.target.value)} placeholder="Ex: Óculos Completo" className="!rounded-none border-slate-200 h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição (opcional)</Label>
+                    <Input value={descCategoria} onChange={e => setDescCategoria(e.target.value)} placeholder="Breve descrição..." className="!rounded-none border-slate-200 h-9 text-sm" />
+                  </div>
+                  <Button type="submit" disabled={savingCategoria} className="w-full bg-slate-900 hover:bg-slate-800 text-white !rounded-none font-bold uppercase text-xs tracking-wider h-9">
+                    {savingCategoria ? "SALVANDO..." : "CADASTRAR CATEGORIA"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-3 border-slate-200 shadow-none !rounded-none !p-0 !gap-0">
+              <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-slate-500" /> Categorias Cadastradas
+                </CardTitle>
+                <Badge variant="secondary" className="text-xs font-bold">{categorias.length} cadastrada(s)</Badge>
+              </CardHeader>
+              <CardContent className="p-0">
+                {categorias.length === 0 ? (
+                  <div className="p-10 text-center text-slate-400 text-sm">Nenhuma categoria cadastrada ainda.<br/><span className="text-xs text-slate-300">Adicione categorias para usá-las nos atendimentos e pedidos.</span></div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {categorias.map(cat => (
+                      <div key={cat.id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 !rounded-none bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                            <Tag className="h-4 w-4 text-slate-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">{cat.name}</p>
+                            {cat.description && <p className="text-[11px] text-slate-400">{cat.description}</p>}
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteCategoria(cat.id)} className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="sistema" className="m-0 space-y-6">
-          <Card className="rounded border-slate-200 shadow-none">
+          <Card className="!rounded-none border-slate-200 shadow-none !p-0 !gap-0">
             <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
               <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                 Manutenção do Banco de Dados
@@ -363,7 +457,7 @@ export default function Configuracoes() {
               <Button 
                 onClick={handleMigrateOrders} 
                 disabled={migrating}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-widest h-10 px-6 rounded"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-widest h-10 px-6 !rounded-none"
               >
                 {migrating ? "MIGRANDO DADOS..." : "EXECUTAR MIGRAÇÃO AGORA"}
               </Button>

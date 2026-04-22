@@ -82,6 +82,7 @@ export default function Orders() {
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
   const [fornecedores, setFornecedores] = React.useState<any[]>([]);
   const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
+  const [categorias, setCategorias] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     const qOrders = query(collection(db, "orders"));
@@ -112,6 +113,9 @@ export default function Orders() {
     const unsubAtendimentos = onSnapshot(query(collection(db, "atendimentos")), (snap) => {
       setAtendimentos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
+    const unsubCat = onSnapshot(query(collection(db, "categorias")), (snap) => {
+      setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
 
     return () => {
       unsubOrders();
@@ -119,6 +123,7 @@ export default function Orders() {
       unsubAtendentes();
       unsubFornecedores();
       unsubAtendimentos();
+      unsubCat();
     };
   }, []);
 
@@ -132,12 +137,18 @@ export default function Orders() {
       const clientId = data.clientId?.toString() || "";
       const client = clients.find(c => c.id === clientId);
 
+      let orderDueDate = data.dueDate ? String(data.dueDate) : "";
+      if (orderDueDate.includes("-") && orderDueDate.split("-")[0].length === 4) {
+          const [y, m, d] = orderDueDate.split("-");
+          orderDueDate = `${d}/${m}/${y}`;
+      }
+
       await addDoc(collection(db, "orders"), {
         clientId: clientId,
         clientName: client ? client.name : "Cliente Avulso",
         seller: data.seller || "",
         serviceType: data.serviceType || "",
-        dueDate: data.dueDate || "",
+        dueDate: orderDueDate,
         notes: data.notes || "",
         items: data.items || "A definir",
         total: Number(data.total) || 0,
@@ -255,14 +266,18 @@ export default function Orders() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1.5">
                               <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço</Label>
-                              <Select name="serviceType" defaultValue="Óculos Completo">
+                              <Select name="serviceType" defaultValue={categorias[0]?.name || ""}>
                                 <SelectTrigger className="rounded border-slate-200 h-9 text-sm">
-                                  <SelectValue />
+                                  <SelectValue placeholder="Selecione a categoria" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Óculos Completo">Óculos Completo</SelectItem>
-                                  <SelectItem value="Apenas Lentes">Apenas Lentes</SelectItem>
-                                  <SelectItem value="Apenas Armação">Apenas Armação</SelectItem>
+                                  {categorias.length === 0 ? (
+                                    <SelectItem value="Serviço">Cadastre categorias em Configurações</SelectItem>
+                                  ) : (
+                                    categorias.map(cat => (
+                                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                    ))
+                                  )}
                                 </SelectContent>
                               </Select>
                           </div>

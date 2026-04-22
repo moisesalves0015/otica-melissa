@@ -63,11 +63,17 @@ export default function ClientDashboard() {
       const qInst = query(collection(db, "installments"), where("clientId", "==", clientId));
       const instSnap = await getDocs(qInst);
       const instList = instSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      instList.sort((a: any, b: any) => {
-        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-        return dateA - dateB;
-      });
+      
+      const parseDate = (s: string) => {
+          if (!s) return 0;
+          if (s.includes("/")) {
+              const [d, m, y] = s.split("/").map(Number);
+              return new Date(y, m - 1, d).getTime();
+          }
+          return new Date(s).getTime();
+      };
+
+      instList.sort((a: any, b: any) => parseDate(a.dueDate) - parseDate(b.dueDate));
       setInstallments(instList);
 
     } catch (error: any) {
@@ -91,14 +97,18 @@ export default function ClientDashboard() {
   const handleCreateAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const date = formData.get("date") as string;
+    let apptDate = formData.get("date") as string;
+    if (apptDate.includes("-") && apptDate.split("-")[0].length === 4) {
+        const [y, m, d] = apptDate.split("-");
+        apptDate = `${d}/${m}/${y}`;
+    }
     const period = formData.get("period") as string;
 
     try {
       await addDoc(collection(db, "appointments"), {
         clientId: client.id,
         clientName: client.name,
-        date,
+        date: apptDate,
         period,
         status: "Pendente",
         createdAt: new Date().toISOString()
@@ -253,10 +263,24 @@ export default function ClientDashboard() {
                              <p className={`text-2xl font-black ${inst.status === "Pago" ? "text-emerald-700" : "text-slate-900"}`}>
                                 R$ {Number(inst.value || 0).toFixed(2)}
                              </p>
-                             <p className="text-[10px] font-bold text-slate-500 mt-1 flex items-center gap-1 uppercase tracking-tighter">
-                                <Calendar className="h-3.5 w-3.5" /> 
-                                {inst.status === "Pago" ? `Pago em ${inst.paymentDate || "---"}` : `Vence em ${inst.dueDate}`}
-                             </p>
+                              <p className="text-[10px] font-bold text-slate-500 mt-1 flex items-center gap-1 uppercase tracking-tighter">
+                                 <Calendar className="h-3.5 w-3.5" /> 
+                                 {inst.status === "Pago" ? `Pago em ${(() => {
+                                     const pd = inst.paymentDate || "---";
+                                     if (pd.includes("-") && pd.split("-")[0].length === 4) {
+                                         const [y, m, d] = pd.split("-");
+                                         return `${d}/${m}/${y}`;
+                                     }
+                                     return pd;
+                                 })()}` : `Vence em ${(() => {
+                                     const dd = inst.dueDate || "---";
+                                     if (dd.includes("-") && dd.split("-")[0].length === 4) {
+                                         const [y, m, d] = dd.split("-");
+                                         return `${d}/${m}/${y}`;
+                                     }
+                                     return dd;
+                                 })()}`}
+                              </p>
                           </div>
 
                           {inst.status !== "Pago" && (

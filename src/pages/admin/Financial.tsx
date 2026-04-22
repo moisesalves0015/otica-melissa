@@ -149,11 +149,18 @@ export default function Financial() {
       const data = Object.fromEntries(formData.entries());
       
       const amount = Number(data.amount) || 0;
+      let transactionDate = data.date ? String(data.date) : new Date().toISOString().split('T')[0];
+      
+      // Se a data vier no formato YYYY-MM-DD do input type="date", converter para DD/MM/YYYY
+      if (transactionDate.includes("-") && transactionDate.split("-")[0].length === 4) {
+        const [y, m, d] = transactionDate.split("-");
+        transactionDate = `${d}/${m}/${y}`;
+      }
 
       await addDoc(collection(db, "financial_transactions"), {
         description: data.description || "",
         amount: amount,
-        date: data.date || new Date().toLocaleDateString('pt-BR'),
+        date: transactionDate,
         category: data.category || "Não definida",
         type: data.type || "Entrada",
         createdAt: new Date().toISOString(),
@@ -341,7 +348,16 @@ export default function Financial() {
                         <TableBody>
                             {filteredTransactions.map((t) => (
                                 <TableRow key={t.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
-                                    <TableCell className="px-6 py-3 font-medium text-slate-500">{t.date}</TableCell>
+                                    <TableCell className="px-6 py-4">
+                                        <span className="text-slate-500">{(() => {
+                                            if (!t.date) return "---";
+                                            if (t.date.includes("-") && t.date.split("-")[0].length === 4) {
+                                                const [y, m, d] = t.date.split("-");
+                                                return `${d}/${m}/${y}`;
+                                            }
+                                            return t.date;
+                                        })()}</span>
+                                    </TableCell>
                                     <TableCell className="px-6 py-3">
                                         <span className="font-semibold text-slate-900 group-hover:text-slate-600 transition-colors">{t.description}</span>
                                     </TableCell>
@@ -418,9 +434,16 @@ export default function Financial() {
                                         {inst.installments.map((parc: any) => {
                                             // Lógica visual básica de vencimento (apenas p/ exibir vermelho se passou da data e não tá pago)
                                             let displayStatus = parc.status;
-                                            if (displayStatus !== 'Pago') {
+                                            if (displayStatus !== 'Pago' && parc.dueDate) {
                                                 const hoje = new Date();
-                                                const dueDate = new Date(parc.dueDate + "T23:59:59");
+                                                hoje.setHours(0,0,0,0);
+                                                let dueDate: Date;
+                                                if (parc.dueDate.includes("/")) {
+                                                    const [d, m, y] = parc.dueDate.split("/").map(Number);
+                                                    dueDate = new Date(y, m - 1, d);
+                                                } else {
+                                                    dueDate = new Date(parc.dueDate);
+                                                }
                                                 if (hoje > dueDate) displayStatus = 'Vencido';
                                             }
 
@@ -440,7 +463,14 @@ export default function Financial() {
                                                 </div>
                                                 <p className="font-bold text-slate-900 text-[13px]">R$ {parc.value.toFixed(2)}</p>
                                                 <div className="flex items-center gap-1.5 mt-2 text-[10px] font-medium text-slate-400 uppercase">
-                                                    <Calendar className="h-3 w-3" /> {new Date(parc.dueDate + "T12:00:00").toLocaleDateString('pt-BR')}
+                                                    <Calendar className="h-3 w-3" /> {(() => {
+                                                        if (!parc.dueDate) return "---";
+                                                        if (parc.dueDate.includes("/")) {
+                                                            const [d, m, y] = parc.dueDate.split("/").map(Number);
+                                                            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                                                        }
+                                                        return new Date(parc.dueDate).toLocaleDateString('pt-BR');
+                                                    })()}
                                                 </div>
                                                 {parc.status !== 'Pago' && (
                                                     <Button onClick={() => handleReceiveInstallment(parc)} className="w-full mt-3 h-7 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-semibold">
