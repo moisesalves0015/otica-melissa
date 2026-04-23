@@ -1,11 +1,13 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { collection, addDoc, onSnapshot, query, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
     Search, User, Printer, Clock, Activity, ShoppingCart, 
-    DollarSign, FileText, Plus, Trash2, ChevronDown, ChevronUp, Scissors
+    DollarSign, FileText, Plus, Trash2, ChevronDown, ChevronUp, Scissors,
+    MessageCircle, Eye
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +33,7 @@ interface OrderSession {
 }
 
 export default function Atendimentos() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState("novo");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
@@ -46,6 +49,8 @@ export default function Atendimentos() {
 
   // --- SESSION STATE ---
   const [selectedClientId, setSelectedClientId] = React.useState<string>("");
+  const [clientSearch, setClientSearch] = React.useState("");
+  const [isClientListOpen, setIsClientListOpen] = React.useState(false);
   const [attendant, setAttendant] = React.useState("");
   const [prescription, setPrescription] = React.useState("");
   const [notes, setNotes] = React.useState("");
@@ -63,6 +68,9 @@ export default function Atendimentos() {
   const [paymentMethod, setPaymentMethod] = React.useState("pix");
   const [entrada, setEntrada] = React.useState<number>(0);
   const [installmentsCount, setInstallmentsCount] = React.useState<number>(1);
+  const [discountValue, setDiscountValue] = React.useState<number>(0);
+  const [feeValue, setFeeValue] = React.useState<number>(0);
+  const [feeType, setFeeType] = React.useState<"fixed" | "percent">("percent");
   const [firstDueDate, setFirstDueDate] = React.useState<string>("");
 
   React.useEffect(() => {
@@ -109,8 +117,10 @@ export default function Atendimentos() {
             .replace(/(\d{2})(\d)/, "$1/$2");
   };
 
-  const totalGeral = sessionOrders.reduce((acc, curr) => acc + curr.price, 0);
-  const saldoDevedor = Math.max(0, totalGeral - entrada);
+  const subtotal = sessionOrders.reduce((acc, curr) => acc + curr.price, 0);
+  const calculatedFee = feeType === "percent" ? (subtotal * (feeValue / 100)) : feeValue;
+  const totalFinal = Math.max(0, subtotal - discountValue + calculatedFee);
+  const saldoDevedor = Math.max(0, totalFinal - entrada);
   const isCarne = paymentMethod === "carne";
 
   const handleAddOrder = () => {
@@ -139,6 +149,13 @@ export default function Atendimentos() {
       setSessionOrders(sessionOrders.map(o => o.id === id ? { ...o, expanded: !o.expanded } : o));
   };
 
+  const selectedClient = clients.find(c => c.id === selectedClientId);
+
+  const filteredClients = clients.filter(c => 
+    c.name?.toLowerCase().includes(clientSearch.toLowerCase()) || 
+    c.cpf?.includes(clientSearch)
+  );
+
   const resetSession = () => {
       setSelectedClientId("");
       setAttendant("");
@@ -153,6 +170,9 @@ export default function Atendimentos() {
       });
       setPaymentMethod("pix");
       setEntrada(0);
+      setDiscountValue(0);
+      setFeeValue(0);
+      setFeeType("percent");
       setInstallmentsCount(1);
       setFirstDueDate("");
   };
@@ -182,8 +202,12 @@ export default function Atendimentos() {
         attendant: attendant,
         notes: notes,
         prescription: prescription,
-        rxData: rxData, // Salvando a tabela completa
-        totalValue: totalGeral,
+        rxData: rxData, 
+        subtotal: subtotal,
+        discount: discountValue,
+        fee: calculatedFee,
+        feePercent: feeType === "percent" ? feeValue : 0,
+        totalValue: totalFinal,
         paymentMethod: paymentMethod,
         isCarne: isCarne,
         createdAt: isoDate,
@@ -212,13 +236,13 @@ export default function Atendimentos() {
       }
 
       // 3. Financeiro & Carnê
-      if (totalGeral > 0) {
+      if (totalFinal > 0) {
           if (!isCarne) {
               // Pagamento à vista total
               await addDoc(collection(db, "financial_transactions"), {
                   atendimentoId: atendimentoDoc.id,
-                  description: `Venda à vista - ${client?.name || 'Avulso'}`,
-                  amount: totalGeral,
+                  description: `Venda ${paymentMethod.toUpperCase()} - ${client?.name || 'Avulso'}`,
+                  amount: totalFinal,
                   date: brDate,
                   category: "Venda de Produto",
                   type: "Entrada",
@@ -301,11 +325,15 @@ export default function Atendimentos() {
         toast.error("Telefone do cliente não cadastrado.");
         return;
     }
-    const message = `Olá, ${atend.clientName}! Aqui é da Ótica Melissa. 
-Acabamos de registrar seu atendimento #${atend.id.substring(0, 8).toUpperCase()}.
-Total: R$ ${atend.totalValue.toFixed(2)}
-${atend.isCarne ? 'Seu carnê já está disponível no portal.' : ''}
-Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.app/rastreio?id=${atend.id}`;
+    const message = `Olá, *${atend.clientName.split(' ')[0]}*! Aqui é da *Ótica Melissa*. ✨
+
+Acabamos de registrar seu atendimento *#${atend.id.substring(0, 8).toUpperCase()}*.
+Total: *R$ ${atend.totalValue.toFixed(2)}*
+${atend.isCarne ? '\n💳 *Seu carnê foi aprovado e já está disponível online!*\n' : ''}
+Acompanhe seu pedido e histórico completo através da nossa nova *Área do Cliente*:
+🔗 https://otica-melissa.vercel.app/cliente/login
+
+Agradecemos a preferência! 👓💙`;
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -323,11 +351,11 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full print:hidden">
           <div className="flex justify-start mb-6">
-            <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-8">
-              <TabsTrigger value="novo" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+            <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-2">
+              <TabsTrigger value="novo" className="flex-none !rounded-none-none border-b-2 border-transparent w-[220px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
                   <Activity className="h-4 w-4" /> SESSÃO DE ATENDIMENTO
               </TabsTrigger>
-              <TabsTrigger value="historico" className="!rounded-none-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <TabsTrigger value="historico" className="flex-none !rounded-none-none border-b-2 border-transparent w-[220px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
                   <FileText className="h-4 w-4" /> HISTÓRICO E FICHAS
               </TabsTrigger>
             </TabsList>
@@ -345,24 +373,52 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Paciente / Cliente *</Label>
-                                        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                                            <SelectTrigger className="!rounded-none border-slate-200 h-10 text-sm font-medium">
-                                                <SelectValue placeholder="Busque ou selecione o cliente" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                            {clients.map(c => (
-                                                <SelectItem key={c.id} value={c.id}>{c.name} - {c.cpf}</SelectItem>
-                                            ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="relative">
+                                            <Input 
+                                                value={selectedClient ? `${selectedClient.name} - ${selectedClient.cpf}` : clientSearch}
+                                                onChange={(e) => {
+                                                    setClientSearch(e.target.value);
+                                                    setIsClientListOpen(true);
+                                                    if (selectedClientId) setSelectedClientId("");
+                                                }}
+                                                onFocus={() => setIsClientListOpen(true)}
+                                                onBlur={() => setTimeout(() => setIsClientListOpen(false), 200)}
+                                                placeholder="Busque por nome ou CPF..."
+                                                className="!rounded-none border-slate-200 h-12 text-sm font-medium pr-10 w-full"
+                                            />
+                                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                            
+                                            {isClientListOpen && clientSearch && !selectedClientId && (
+                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-xl max-h-60 overflow-auto !rounded-none">
+                                                    {filteredClients.length === 0 ? (
+                                                        <div className="p-4 text-xs text-slate-500 text-center">Nenhum cliente encontrado</div>
+                                                    ) : (
+                                                        filteredClients.map(c => (
+                                                            <div 
+                                                                key={c.id}
+                                                                className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 flex flex-col gap-0.5"
+                                                                onClick={() => {
+                                                                    setSelectedClientId(c.id);
+                                                                    setClientSearch(`${c.name} - ${c.cpf}`);
+                                                                    setIsClientListOpen(false);
+                                                                }}
+                                                            >
+                                                                <div className="text-sm font-bold text-slate-900">{c.name}</div>
+                                                                <div className="text-[10px] text-slate-500 font-medium">CPF: {c.cpf}</div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Atendente / Consultor *</Label>
                                         <Select value={attendant} onValueChange={setAttendant}>
-                                            <SelectTrigger className="!rounded-none border-slate-200 h-10 text-sm font-medium">
+                                            <SelectTrigger className="!rounded-none border-slate-200 h-12 text-sm font-medium w-full">
                                                 <SelectValue placeholder="Selecione o atendente" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -435,7 +491,7 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Anotações da Consulta (Histórico, Queixas)</Label>
-                                        <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full !rounded-none border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" placeholder="O que foi conversado com o paciente..."></textarea>
+                                        <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full !rounded-none border border-slate-300 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" placeholder="O que foi conversado com o paciente..."></textarea>
                                     </div>
                                 </div>
                             </CardContent>
@@ -554,6 +610,14 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                                         <Input value={order.labNotes} onChange={(e) => updateOrder(order.id, 'labNotes', e.target.value)} placeholder="Ex: Montagem nylon cuidadosa..." className="!rounded-none border-slate-200 h-9 text-xs" />
                                                     </div>
                                                 </div>
+                                                <div className="flex justify-end pt-2">
+                                                    <Button 
+                                                        onClick={(e) => { e.stopPropagation(); toggleOrderExpansion(order.id); }} 
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase h-8 px-4 !rounded-none"
+                                                    >
+                                                        Salvar Item
+                                                    </Button>
+                                                </div>
                                             </div>
                                         )}
                                     </Card>
@@ -589,19 +653,50 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                         )}
                                     </div>
 
-                                    {/* Totais */}
-                                    <div className="p-5 space-y-3 bg-white">
-                                        <div className="flex justify-between items-center text-slate-500">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider">Subtotal</span>
-                                            <span className="text-sm font-bold">R$ {totalGeral.toFixed(2)}</span>
+                                    {/* Ajustes e Totais */}
+                                    <div className="p-5 space-y-4 bg-white">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-[9px] font-bold uppercase text-slate-400">Desconto (R$)</Label>
+                                                <Input type="number" step="0.01" value={discountValue || ''} onChange={(e) => setDiscountValue(Number(e.target.value))} className="h-8 text-xs font-bold border-slate-100 bg-slate-50/50" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[9px] font-bold uppercase text-slate-400">Acréscimo ({feeType === 'percent' ? '%' : 'R$'})</Label>
+                                                <div className="flex gap-1">
+                                                    <Input type="number" step="0.01" value={feeValue || ''} onChange={(e) => setFeeValue(Number(e.target.value))} className="h-8 text-xs font-bold border-slate-100 bg-slate-50/50" />
+                                                    <Button variant="outline" size="icon" className="h-8 w-8 !rounded-none border-slate-100" onClick={() => setFeeType(feeType === 'percent' ? 'fixed' : 'percent')}>
+                                                        <span className="text-[10px] font-bold">{feeType === 'percent' ? '%' : '$'}</span>
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <Separator className="bg-slate-100" />
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs font-bold text-slate-900 uppercase">Total Geral</span>
-                                            <span className="text-2xl font-black text-slate-900 tracking-tight">
-                                                <span className="text-sm font-bold text-slate-400 mr-1">R$</span>
-                                                {totalGeral.toFixed(2)}
-                                            </span>
+
+                                        <Separator className="bg-slate-50" />
+
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center text-slate-500 text-[11px]">
+                                                <span>Subtotal</span>
+                                                <span className="font-semibold">R$ {subtotal.toFixed(2)}</span>
+                                            </div>
+                                            {discountValue > 0 && (
+                                                <div className="flex justify-between items-center text-rose-500 text-[11px]">
+                                                    <span>Desconto</span>
+                                                    <span className="font-semibold">- R$ {discountValue.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            {calculatedFee > 0 && (
+                                                <div className="flex justify-between items-center text-emerald-600 text-[11px]">
+                                                    <span>Acréscimo / Taxas</span>
+                                                    <span className="font-semibold">+ R$ {calculatedFee.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center pt-2">
+                                                <span className="text-xs font-bold text-slate-900 uppercase">Total Final</span>
+                                                <span className="text-2xl font-black text-slate-900 tracking-tight">
+                                                    <span className="text-sm font-bold text-slate-400 mr-1">R$</span>
+                                                    {totalFinal.toFixed(2)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -701,20 +796,99 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
                                 <span className="text-[10px] text-slate-500 font-medium">Atend: {atend.attendant}</span>
                             </div>
                         </TableCell>
-                        <TableCell className="px-6 py-3 text-slate-500 max-w-xs truncate text-[11px]">
-                            {atend.prescription ? `Rx: ${atend.prescription}` : (atend.notes || "Sem anotações clínicas.")}
+                        <TableCell className="px-6 py-2 min-w-[200px]">
+                            {atend.rxData && (
+                                atend.rxData.longe_od_esf || atend.rxData.longe_od_cil || atend.rxData.longe_od_eixo || 
+                                atend.rxData.longe_oe_esf || atend.rxData.longe_oe_cil || atend.rxData.longe_oe_eixo ||
+                                atend.rxData.perto_od_esf || atend.rxData.perto_od_cil || atend.rxData.perto_od_eixo ||
+                                atend.rxData.perto_oe_esf || atend.rxData.perto_oe_cil || atend.rxData.perto_oe_eixo
+                            ) ? (
+                                <div className="flex gap-4 font-mono text-[9px] tabular-nums leading-tight">
+                                    {/* Longe */}
+                                    {(atend.rxData.longe_od_esf || atend.rxData.longe_od_cil || atend.rxData.longe_od_eixo || atend.rxData.longe_oe_esf || atend.rxData.longe_oe_cil || atend.rxData.longe_oe_eixo) && (
+                                        <div className="space-y-0.5">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase border-b border-slate-50 pb-0.5 mb-1 text-center">Longe</p>
+                                            {(atend.rxData.longe_od_esf || atend.rxData.longe_od_cil || atend.rxData.longe_od_eixo) && (
+                                                <div className="flex gap-1.5 whitespace-nowrap">
+                                                    <span className="text-slate-300 w-3 font-bold">D</span>
+                                                    <span className="font-bold text-slate-600">
+                                                        {[atend.rxData.longe_od_esf, atend.rxData.longe_od_cil, atend.rxData.longe_od_eixo].filter(Boolean).join("/")}
+                                                        {atend.rxData.longe_od_dp && <span className="ml-1 text-slate-300 font-normal">({atend.rxData.longe_od_dp})</span>}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {(atend.rxData.longe_oe_esf || atend.rxData.longe_oe_cil || atend.rxData.longe_oe_eixo) && (
+                                                <div className="flex gap-1.5 whitespace-nowrap">
+                                                    <span className="text-slate-300 w-3 font-bold">E</span>
+                                                    <span className="font-bold text-slate-600">
+                                                        {[atend.rxData.longe_oe_esf, atend.rxData.longe_oe_cil, atend.rxData.longe_oe_eixo].filter(Boolean).join("/")}
+                                                        {atend.rxData.longe_oe_dp && <span className="ml-1 text-slate-300 font-normal">({atend.rxData.longe_oe_dp})</span>}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {/* Perto */}
+                                    {(atend.rxData.perto_od_esf || atend.rxData.perto_od_cil || atend.rxData.perto_od_eixo || atend.rxData.perto_oe_esf || atend.rxData.perto_oe_cil || atend.rxData.perto_oe_eixo) && (
+                                        <div className="space-y-0.5 border-l border-slate-100 pl-3">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase border-b border-slate-50 pb-0.5 mb-1 text-center">Perto</p>
+                                            {(atend.rxData.perto_od_esf || atend.rxData.perto_od_cil || atend.rxData.perto_od_eixo) && (
+                                                <div className="flex gap-1.5 whitespace-nowrap">
+                                                    <span className="text-slate-300 w-3 font-bold">D</span>
+                                                    <span className="font-bold text-slate-600">
+                                                        {[atend.rxData.perto_od_esf, atend.rxData.perto_od_cil, atend.rxData.perto_od_eixo].filter(Boolean).join("/")}
+                                                        {atend.rxData.perto_od_dp && <span className="ml-1 text-slate-300 font-normal">({atend.rxData.perto_od_dp})</span>}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {(atend.rxData.perto_oe_esf || atend.rxData.perto_oe_cil || atend.rxData.perto_oe_eixo) && (
+                                                <div className="flex gap-1.5 whitespace-nowrap">
+                                                    <span className="text-slate-300 w-3 font-bold">E</span>
+                                                    <span className="font-bold text-slate-600">
+                                                        {[atend.rxData.perto_oe_esf, atend.rxData.perto_oe_cil, atend.rxData.perto_oe_eixo].filter(Boolean).join("/")}
+                                                        {atend.rxData.perto_oe_dp && <span className="ml-1 text-slate-300 font-normal">({atend.rxData.perto_oe_dp})</span>}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <span className="text-[9px] text-slate-400 italic font-medium">Nenhum dado técnico de receita (Rx)</span>
+                            )}
                         </TableCell>
                         <TableCell className="px-6 py-3 text-right font-bold text-slate-900">
                             R$ {(atend.totalValue || 0).toFixed(2)}
                             {atend.isCarne && <span className="block text-[9px] text-amber-600 uppercase">Carnê</span>}
                         </TableCell>
                         <TableCell className="px-6 py-3 text-right">
-                            <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold !rounded-none text-emerald-600 hover:bg-emerald-50" onClick={() => handleWhatsAppReceipt(atend)}>
-                                    <Activity className="h-3.5 w-3.5 mr-2" /> WHATSAPP
+                            <div className="flex justify-end gap-2">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 !rounded-none text-slate-400 hover:bg-slate-100 hover:text-slate-600" 
+                                    onClick={() => navigate(`/admin/atendimentos/${atend.id}`)}
+                                    title="Visualizar Ficha Completa"
+                                >
+                                    <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold !rounded-none text-slate-600 hover:bg-slate-100" onClick={() => handlePrint(atend)}>
-                                    <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR A4
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 !rounded-none text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700" 
+                                    onClick={() => handleWhatsAppReceipt(atend)}
+                                    title="Enviar por WhatsApp"
+                                >
+                                    <MessageCircle className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 !rounded-none text-slate-400 hover:bg-slate-100 hover:text-slate-600" 
+                                    onClick={() => handlePrint(atend)}
+                                    title="Imprimir Ficha A4"
+                                >
+                                    <Printer className="h-4 w-4" />
                                 </Button>
                             </div>
                         </TableCell>
@@ -890,64 +1064,67 @@ Você pode acompanhar seu pedido em nosso portal: https://otica-melissa.vercel.a
             </div>
 
             {/* CANHOTO */}
-            {printData.orders && printData.orders.length > 0 && (
-              <div style={{marginTop: '8mm', borderTop: '2px dashed #cbd5e1', paddingTop: '5mm', position: 'relative'}}>
-                <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '0 6px'}}>
-                  <span style={{fontSize: '8pt', color: '#94a3b8'}}>✂</span>
-                </div>
-                
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-                  <div>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3mm'}}>
-                      <img src="/logo.png" alt="Ótica Melissa" style={{height: '22px', width: 'auto'}} />
-                      <div>
-                        <p style={{fontSize: '8pt', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', margin: 0}}>Canhoto de Retirada</p>
-                        <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Apresente este comprovante para retirar seus óculos</p>
-                      </div>
-                    </div>
-                    <div style={{fontSize: '8.5pt', display: 'flex', flexDirection: 'column', gap: '1mm'}}>
-                      <p style={{margin: 0}}><strong>Cliente:</strong> {printData.clientName}</p>
-                      <p style={{margin: 0}}><strong>Pedidos:</strong> {printData.orders.length} item(ns)</p>
-                      <p style={{margin: 0}}><strong>Valor Total:</strong> R$ {(printData.totalValue || 0).toFixed(2)}</p>
-                      {printData.isCarne && <p style={{margin: 0, color: '#dc2626', fontWeight: '700'}}>⚠ CARNÊ — Verificar pendências antes da entrega</p>}
+            <div style={{marginTop: '8mm', borderTop: '2px dashed #cbd5e1', paddingTop: '5mm', position: 'relative'}}>
+              <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '0 6px'}}>
+                <span style={{fontSize: '8pt', color: '#94a3b8'}}>✂</span>
+              </div>
+              
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                <div>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3mm'}}>
+                    <img src="/logo.png" alt="Ótica Melissa" style={{height: '22px', width: 'auto'}} />
+                    <div>
+                      <p style={{fontSize: '8pt', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', margin: 0}}>Canhoto de Retirada</p>
+                      <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Apresente este comprovante para retirar seus óculos</p>
                     </div>
                   </div>
-                  <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
-                    {/* QR CODE DE RASTREIO */}
-                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
-                      <QRCodeSVG 
-                        value={`https://otica-melissa.vercel.app/rastreio?id=${printData.id}`} 
-                        size={60} 
-                      />
-                      <p style={{fontSize: '4.5pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Online</p>
-                    </div>
+                  <div style={{fontSize: '8.5pt', display: 'flex', flexDirection: 'column', gap: '1mm'}}>
+                    <p style={{margin: 0}}><strong>Cliente:</strong> {printData.clientName || "Não informado"}</p>
+                    <p style={{margin: 0}}><strong>Pedidos:</strong> {(printData.orders || []).length} item(ns)</p>
+                    <p style={{margin: 0}}><strong>Valor Total:</strong> R$ {(printData.totalValue || 0).toFixed(2)}</p>
+                    {printData.isCarne && <p style={{margin: 0, color: '#dc2626', fontWeight: '700'}}>⚠ CARNÊ — Verificar pendências antes da entrega</p>}
+                  </div>
+                </div>
+                <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
+                  {/* QR CODE DE RASTREIO */}
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
+                    <QRCodeSVG 
+                      value={`https://otica-melissa.vercel.app/cliente/login`} 
+                      size={60} 
+                    />
+                    <p style={{fontSize: '4.5pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Área do Cliente</p>
+                  </div>
 
-                    <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm', minWidth: '45mm'}}>
-                      <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
-                      <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{printData.id.substring(0, 8).toUpperCase()}</p>
-                      <table style={{fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
-                        <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
-                        <tbody>
-                          {printData.orders.map((o: any, i: number) => (
-                            <tr key={i} style={{borderBottom: '1px solid #f1f5f9'}}>
-                              <td style={{padding: '1mm 2mm', fontWeight: '600'}}>{o.serviceType}</td>
-                              <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{(() => {
-                                if (!o.dueDate) return "Retirada";
-                                if (o.dueDate.includes("/")) {
-                                    const [d, m, y] = o.dueDate.split("/").map(Number);
-                                    return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-                                }
-                                return new Date(o.dueDate).toLocaleDateString('pt-BR');
-                              })()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                  <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm', minWidth: '45mm'}}>
+                    <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
+                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{printData.id ? printData.id.substring(0, 8).toUpperCase() : "—"}</p>
+                    <table style={{fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
+                      <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
+                      <tbody>
+                        {(printData.orders || []).map((o: any, i: number) => (
+                          <tr key={i} style={{borderBottom: '1px solid #f1f5f9'}}>
+                            <td style={{padding: '1mm 2mm', fontWeight: '600'}}>{o.serviceType}</td>
+                            <td style={{padding: '1mm 2mm', textAlign: 'center', fontWeight: '700'}}>{(() => {
+                              if (!o.dueDate) return "Retirada";
+                              if (o.dueDate.includes("/")) {
+                                  const [d, m, y] = o.dueDate.split("/").map(Number);
+                                  return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                              }
+                              return new Date(o.dueDate).toLocaleDateString('pt-BR');
+                            })()}</td>
+                          </tr>
+                        ))}
+                        {(printData.orders || []).length === 0 && (
+                          <tr>
+                            <td colSpan={2} style={{padding: '2mm', textAlign: 'center', fontStyle: 'italic', color: '#94a3b8'}}>Consulta / Registro Clínico</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* RODAPÉ */}
             <div style={{marginTop: 'auto', paddingTop: '3mm', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>

@@ -33,6 +33,7 @@ export default function OrderDetails() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [order, setOrder] = React.useState<any>(null);
+  const [isEditing, setIsEditing] = React.useState(false);
   
   // States for selects
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
@@ -87,12 +88,19 @@ export default function OrderDetails() {
       const data = Object.fromEntries(formData.entries());
       
       const newStatus = data.status as string;
-      const oldStatus = order.status;
+      const changes: string[] = [];
+      if (order.status !== data.status) changes.push(`Status: ${order.status} -> ${data.status}`);
+      if (order.seller !== data.seller) changes.push(`Vendedor: ${order.seller} -> ${data.seller}`);
+      if (order.orderCode !== data.orderCode) changes.push(`Código: ${order.orderCode || 'Vazio'} -> ${data.orderCode}`);
+      if (order.supplier !== data.supplier) changes.push(`Fornecedor: ${order.supplier || 'Vazio'} -> ${data.supplier}`);
+      if (order.serviceType !== data.serviceType) changes.push(`Serviço: ${order.serviceType} -> ${data.serviceType}`);
+      if (order.items !== data.items) changes.push(`Itens: alterados`);
+      if (order.dueDate !== data.dueDate) changes.push(`Entrega: ${order.dueDate} -> ${data.dueDate}`);
+      if (order.notes !== data.notes) changes.push(`Observações: alteradas`);
       
-      // Criar entrada no histórico se o status mudou ou se houver alteração significativa
       const historyEntry = {
         date: new Date().toISOString(),
-        action: oldStatus !== newStatus ? `Status alterado de ${oldStatus} para ${newStatus}` : "Pedido atualizado",
+        action: changes.length > 0 ? `Alterações: ${changes.join(', ')}` : "Pedido atualizado sem mudanças visíveis",
         user: "Administrador" // Em um sistema real, viria do Auth
       };
 
@@ -111,6 +119,7 @@ export default function OrderDetails() {
       });
 
       toast.success("Pedido atualizado!");
+      setIsEditing(false);
     } catch (error: any) {
       toast.error("Erro ao atualizar: " + error.message);
     } finally {
@@ -150,13 +159,29 @@ export default function OrderDetails() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handlePrint} variant="outline" className="rounded font-bold text-xs h-9">
-            <Printer className="mr-2 h-4 w-4" /> IMPRIMIR OS
-          </Button>
+          {isEditing ? (
+            <>
+              <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="rounded font-bold text-xs h-9">
+                <XCircle className="mr-2 h-4 w-4" /> CANCELAR
+              </Button>
+              <Button type="submit" form="order-form" disabled={saving} className="rounded font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white">
+                <Save className="mr-2 h-4 w-4" /> {saving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" onClick={() => setIsEditing(true)} variant="outline" className="rounded font-bold text-xs h-9">
+                <Wrench className="mr-2 h-4 w-4" /> EDITAR
+              </Button>
+              <Button type="button" onClick={handlePrint} variant="outline" className="rounded font-bold text-xs h-9">
+                <Printer className="mr-2 h-4 w-4" /> IMPRIMIR OS
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      <form onSubmit={handleUpdate} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form id="order-form" onSubmit={handleUpdate} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* COLUNA ESQUERDA: DADOS DO PEDIDO */}
         <div className="lg:col-span-2 space-y-6 print:hidden">
@@ -170,8 +195,8 @@ export default function OrderDetails() {
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Vendedor / Atendente</Label>
-                  <Select name="seller" defaultValue={order.seller}>
-                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm">
+                  <Select name="seller" defaultValue={order.seller} disabled={!isEditing}>
+                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm disabled:opacity-70 disabled:bg-slate-50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -183,8 +208,8 @@ export default function OrderDetails() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Status Atual</Label>
-                  <Select name="status" defaultValue={order.status}>
-                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm font-bold">
+                  <Select name="status" defaultValue={order.status} disabled={!isEditing}>
+                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm font-bold disabled:opacity-70 disabled:bg-slate-50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -199,12 +224,12 @@ export default function OrderDetails() {
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
-                  <Input name="orderCode" defaultValue={order.orderCode} className="h-9 rounded border-slate-200 text-sm font-mono" />
+                  <Input name="orderCode" defaultValue={order.orderCode} disabled={!isEditing} className="h-9 rounded border-slate-200 text-sm font-mono disabled:opacity-70 disabled:bg-slate-50" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
-                  <Select name="supplier" defaultValue={order.supplier}>
-                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm">
+                  <Select name="supplier" defaultValue={order.supplier} disabled={!isEditing}>
+                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm disabled:opacity-70 disabled:bg-slate-50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,15 +246,16 @@ export default function OrderDetails() {
                 <textarea 
                   name="items" 
                   defaultValue={order.items}
-                  className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" 
+                  disabled={!isEditing}
+                  className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium disabled:opacity-70 disabled:bg-slate-50" 
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço</Label>
-                  <Select name="serviceType" defaultValue={order.serviceType}>
-                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm">
+                  <Select name="serviceType" defaultValue={order.serviceType} disabled={!isEditing}>
+                    <SelectTrigger className="h-9 rounded border-slate-200 text-sm disabled:opacity-70 disabled:bg-slate-50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -241,7 +267,7 @@ export default function OrderDetails() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida</Label>
-                  <Input name="dueDate" type="text" placeholder="DD/MM/YYYY" defaultValue={order.dueDate} className="h-9 rounded border-slate-200 text-sm" />
+                  <Input name="dueDate" type="text" placeholder="DD/MM/YYYY" defaultValue={order.dueDate} disabled={!isEditing} className="h-9 rounded border-slate-200 text-sm disabled:opacity-70 disabled:bg-slate-50" />
                 </div>
               </div>
 
@@ -250,7 +276,8 @@ export default function OrderDetails() {
                 <textarea 
                   name="notes" 
                   defaultValue={order.notes}
-                  className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" 
+                  disabled={!isEditing}
+                  className="w-full rounded border-slate-200 text-sm p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium disabled:opacity-70 disabled:bg-slate-50" 
                 />
               </div>
             </CardContent>
@@ -268,12 +295,12 @@ export default function OrderDetails() {
             <CardContent className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor do Pedido (R$)</Label>
-                <Input name="total" type="number" step="0.01" defaultValue={order.total} className="h-10 rounded border-slate-200 text-lg font-black text-emerald-600" />
+                <Input name="total" type="number" step="0.01" defaultValue={order.total} disabled={!isEditing} className="h-10 rounded border-slate-200 text-lg font-black text-emerald-600 disabled:opacity-70 disabled:bg-slate-50" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Forma de Pagto</Label>
-                <Select name="paymentMethod" defaultValue={order.paymentMethod}>
-                  <SelectTrigger className="h-9 rounded border-slate-200 text-sm">
+                <Select name="paymentMethod" defaultValue={order.paymentMethod} disabled={!isEditing}>
+                  <SelectTrigger className="h-9 rounded border-slate-200 text-sm disabled:opacity-70 disabled:bg-slate-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -334,11 +361,42 @@ export default function OrderDetails() {
               </div>
             </CardContent>
           </Card>
+
+          {order.history && order.history.length > 0 && (
+            <Card className="rounded border-slate-200 shadow-sm overflow-hidden mt-6">
+              <CardHeader className="bg-slate-50 border-b border-slate-100 p-4">
+                <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5" /> Histórico de Alterações
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                  {order.history.map((h: any, i: number) => (
+                    <div key={i} className="p-4 space-y-1.5 hover:bg-slate-50 transition-colors">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{h.user}</span>
+                        <span className="text-[10px] font-medium text-slate-400">
+                          {new Date(h.date).toLocaleDateString('pt-BR')} às {new Date(h.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 font-medium leading-relaxed">{h.action}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </form>
 
       {/* OVERLAY DE IMPRESSÃO (A4) - Só aparece no print */}
-      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '12mm 14mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', gap: '5mm'}}>
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 0; }
+          html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
+        }
+      `}</style>
+      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '12mm 14mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '5mm'}}>
         
         {/* CABEÇALHO */}
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a'}}>

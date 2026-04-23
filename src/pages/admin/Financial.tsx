@@ -141,6 +141,17 @@ export default function Financial() {
       }
   };
 
+  const handlePrintCarne = (carneId: string) => {
+      const printContent = document.getElementById(`printable-carne-${carneId}`);
+      if (printContent) {
+          const originalContent = document.body.innerHTML;
+          document.body.innerHTML = printContent.innerHTML;
+          window.print();
+          document.body.innerHTML = originalContent;
+          window.location.reload();
+      }
+  };
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
@@ -394,14 +405,15 @@ export default function Financial() {
                 {/* Installment List */}
                 <div className="lg:col-span-8 space-y-4">
                     {groupedInstallments.map((inst) => (
-                        <Card key={inst.id} className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+                        <React.Fragment key={inst.id}>
+                          <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
                             <CardHeader className="px-6 py-4 border-b border-slate-100 flex flex-row items-center justify-between">
                                 <div className="flex flex-col">
                                     <CardTitle className="text-sm font-semibold text-slate-900">{inst.client}</CardTitle>
                                     <p className="text-[11px] text-slate-400 font-medium mt-0.5">Atendimento #{inst.id.substring(0,8).toUpperCase()}</p>
                                 </div>
                                 <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900" onClick={() => handlePrintCarne(inst.id)}>
                                         <Printer className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400">
@@ -483,7 +495,151 @@ export default function Financial() {
                                     </div>
                                 </div>
                             </CardContent>
-                        </Card>
+                          </Card>
+                          
+                          {/* PRINTABLE CARNÊ OVERLAY */}
+                          <div id={`printable-carne-${inst.id}`} style={{display: 'none'}}>
+                            <style>{`
+                              @media print {
+                                @page { size: A4; margin: 0; }
+                                html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
+                                body { background: white !important; }
+                              }
+                            `}</style>
+                            <div style={{
+                              width: '210mm', 
+                              minHeight: '297mm', 
+                              padding: '12mm 14mm', 
+                              backgroundColor: 'white', 
+                              color: 'black',
+                              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}>
+                                {/* CABEÇALHO */}
+                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a', marginBottom: '6mm'}}>
+                                  <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                    <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
+                                    <div>
+                                      <p style={{fontSize: '7pt', fontWeight: '700', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Contrato de Crediário / Carnê</p>
+                                    </div>
+                                  </div>
+                                  <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px'}}>
+                                    <p style={{fontSize: '7pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Atendimento Base</p>
+                                    <p style={{fontSize: '11pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{inst.id.substring(0, 8).toUpperCase()}</p>
+                                  </div>
+                                </div>
+
+                                {/* DADOS DO CLIENTE */}
+                                <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm', marginBottom: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                  <div>
+                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Dados do Titular</p>
+                                    <p style={{fontSize: '11pt', fontWeight: '800', color: '#0f172a', margin: 0}}>{inst.client}</p>
+                                  </div>
+                                  <div style={{textAlign: 'right'}}>
+                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Resumo Financeiro</p>
+                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#334155', margin: 0}}>Valor Total do Carnê: <span style={{fontWeight: '900', color: '#0f172a'}}>R$ {inst.totalValue.toFixed(2)}</span></p>
+                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#dc2626', margin: 0}}>Saldo Devedor Restante: <span style={{fontWeight: '900'}}>R$ {inst.remainingValue.toFixed(2)}</span></p>
+                                  </div>
+                                </div>
+
+                                {/* TABELA DE PARCELAS */}
+                                <div style={{marginBottom: '4mm', flex: 1}}>
+                                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Detalhamento das Parcelas</p>
+                                  <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '9pt'}}>
+                                    <thead>
+                                      <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
+                                        <th style={{padding: '3mm 4mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Nº Parcela</th>
+                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Vencimento</th>
+                                        <th style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor da Parcela</th>
+                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
+                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Rubrica / Autenticação (Loja)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {inst.installments.map((parc: any, i: number) => {
+                                          let displayStatus = parc.status;
+                                          if (displayStatus !== 'Pago' && parc.dueDate) {
+                                              const hoje = new Date();
+                                              hoje.setHours(0,0,0,0);
+                                              let dueDate: Date;
+                                              if (parc.dueDate.includes("/")) {
+                                                  const [d, m, y] = parc.dueDate.split("/").map(Number);
+                                                  dueDate = new Date(y, m - 1, d);
+                                              } else {
+                                                  dueDate = new Date(parc.dueDate);
+                                              }
+                                              if (hoje > dueDate) displayStatus = 'Vencido';
+                                          }
+
+                                          const formattedDate = (() => {
+                                              if (!parc.dueDate) return "---";
+                                              if (parc.dueDate.includes("/")) {
+                                                  const [d, m, y] = parc.dueDate.split("/").map(Number);
+                                                  return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                                              }
+                                              return new Date(parc.dueDate).toLocaleDateString('pt-BR');
+                                          })();
+
+                                          return (
+                                            <tr key={parc.id} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')}}>
+                                              <td style={{padding: '4mm', fontWeight: '800', color: '#0f172a'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
+                                              <td style={{padding: '4mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{formattedDate}</td>
+                                              <td style={{padding: '4mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {parc.value.toFixed(2)}</td>
+                                              <td style={{padding: '4mm', textAlign: 'center'}}>
+                                                  <span style={{
+                                                      padding: '1mm 2mm', 
+                                                      borderRadius: '4px', 
+                                                      fontSize: '6.5pt', 
+                                                      fontWeight: '800', 
+                                                      textTransform: 'uppercase',
+                                                      backgroundColor: displayStatus === 'Pago' ? '#dcfce7' : displayStatus === 'Vencido' ? '#fee2e2' : '#f1f5f9',
+                                                      color: displayStatus === 'Pago' ? '#166534' : displayStatus === 'Vencido' ? '#991b1b' : '#475569'
+                                                  }}>
+                                                      {displayStatus}
+                                                  </span>
+                                              </td>
+                                              <td style={{padding: '4mm', textAlign: 'center'}}>
+                                                  {displayStatus === 'Pago' ? (
+                                                      <span style={{color: '#166534', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px'}}>PAGO ELETRONICAMENTE</span>
+                                                  ) : (
+                                                      <div style={{width: '30mm', borderBottom: '1px solid #cbd5e1', margin: '0 auto'}}></div>
+                                                  )}
+                                              </td>
+                                            </tr>
+                                          );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                {/* TERMOS E ASSINATURAS */}
+                                <div style={{marginTop: 'auto', borderTop: '2px dashed #e2e8f0', paddingTop: '6mm'}}>
+                                  <p style={{fontSize: '7.5pt', color: '#64748b', textAlign: 'justify', lineHeight: '1.5', marginBottom: '8mm'}}>
+                                    Reconheço e concordo com a dívida referente aos itens adquiridos na Ótica Melissa, constante no atendimento supracitado, comprometendo-me a pagar as parcelas detalhadas acima até as respectivas datas de vencimento. O atraso no pagamento poderá acarretar multa e juros conforme a legislação vigente, além da possível inclusão nos órgãos de proteção ao crédito. Este carnê é pessoal e intransferível.
+                                  </p>
+
+                                  <div style={{display: 'flex', justifyContent: 'space-around', paddingTop: '2mm'}}>
+                                    <div style={{textAlign: 'center', width: '70mm'}}>
+                                      <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
+                                      <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Titular</p>
+                                      <p style={{fontSize: '6pt', color: '#94a3b8', margin: '1mm 0 0 0'}}>{inst.client}</p>
+                                    </div>
+                                    <div style={{textAlign: 'center', width: '70mm'}}>
+                                      <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
+                                      <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Ótica Melissa — Crediário</p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* RODAPÉ */}
+                                <div style={{marginTop: '6mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                  <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
+                                  <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                                </div>
+                            </div>
+                          </div>
+                        </React.Fragment>
                     ))}
                     {groupedInstallments.length === 0 && (
                         <div className="p-8 text-center text-slate-500 bg-slate-50 border border-slate-200 rounded">

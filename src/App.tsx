@@ -9,6 +9,7 @@ import Orders from "./pages/admin/Orders";
 import Financial from "./pages/admin/Financial";
 import Atendimentos from "./pages/admin/Atendimentos";
 import OrderDetails from "./pages/admin/OrderDetails";
+import AtendimentoDetails from "./pages/admin/AtendimentoDetails";
 import AdminLogin from "./pages/admin/Login";
 import Configuracoes from "./pages/admin/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="financeiro" element={<Financial />} />
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="atendimentos" element={<Atendimentos />} />
+              <Route path="atendimentos/:id" element={<AtendimentoDetails />} />
             </Route>
           </Route>
           <Route path="/rastreio" element={<Rastreio />} />

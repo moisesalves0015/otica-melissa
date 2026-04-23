@@ -48,7 +48,21 @@ const ANNOUNCEMENTS = [
   "Frete Grátis Para Todo Brasil",
 ];
 
-const NAV_MENU_DATA = [
+type NavMenuItem = {
+  name: string;
+  href: string;
+  badge?: string;
+  categories?: {
+    title: string;
+    links: string[];
+  }[];
+  featured?: {
+    image: string;
+    title: string;
+  };
+};
+
+const NAV_MENU_DATA: NavMenuItem[] = [
   { name: "Óculos de Grau", href: "#" },
   { name: "Óculos de Sol", href: "#" },
   { name: "Lentes", href: "#" },
