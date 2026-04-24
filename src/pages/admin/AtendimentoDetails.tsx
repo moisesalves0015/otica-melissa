@@ -501,35 +501,35 @@ export default function AtendimentoDetails() {
           }}>
             
             {/* CABEÇALHO */}
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>
               <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                 <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
                 <div>
-                  <p style={{fontSize: '7pt', fontWeight: '700', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Ficha Clínica & Pedido</p>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#000000', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Ficha Clínica & Pedido</p>
                 </div>
               </div>
-              <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px'}}>
-                <p style={{fontSize: '7pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Protocolo</p>
-                <p style={{fontSize: '11pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{atendimento.id.substring(0, 8).toUpperCase()}</p>
-                <p style={{fontSize: '7pt', color: '#64748b', margin: 0}}>{atendimento.date} • {atendimento.time}</p>
+              <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 10px'}}>
+                <p style={{fontSize: '7pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Protocolo</p>
+                <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>#{atendimento.id.substring(0, 8).toUpperCase()}</p>
+                <p style={{fontSize: '7pt', color: '#334155', margin: 0}}>{atendimento.date} • {atendimento.time}</p>
               </div>
             </div>
 
             {/* DADOS DO PACIENTE */}
-            <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
-              <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Dados do Paciente</p>
+            <div style={{backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
+              <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Dados do Paciente</p>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4mm'}}>
                 <div>
-                  <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nome Completo</p>
-                  <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{atendimento.clientName}</p>
+                  <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nome Completo</p>
+                  <p style={{fontSize: '10pt', fontWeight: '700', color: '#000000', margin: 0}}>{atendimento.clientName}</p>
                 </div>
                 <div>
-                  <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>CPF</p>
-                  <p style={{fontSize: '10pt', fontWeight: '600', color: '#334155', margin: 0}}>{atendimento.clientCpf || "—"}</p>
+                  <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>CPF</p>
+                  <p style={{fontSize: '10pt', fontWeight: '700', color: '#000000', margin: 0}}>{atendimento.clientCpf || "—"}</p>
                 </div>
                 <div>
-                  <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Atendente</p>
-                  <p style={{fontSize: '10pt', fontWeight: '600', color: '#334155', margin: 0}}>{atendimento.attendant}</p>
+                  <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Atendente</p>
+                  <p style={{fontSize: '10pt', fontWeight: '700', color: '#000000', margin: 0}}>{atendimento.attendant}</p>
                 </div>
               </div>
             </div>
@@ -537,49 +537,49 @@ export default function AtendimentoDetails() {
             {/* PRESCRIÇÃO E ANOTAÇÕES */}
             <div style={{display: 'grid', gridTemplateColumns: atendimento.rxData ? '1.5fr 1fr' : '1fr', gap: '4mm', marginBottom: '4mm'}}>
               {atendimento.rxData && (
-                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden'}}>
-                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', padding: '1mm 2mm', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', margin: 0}}>Prescrição Óptica (Rx)</p>
+                <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden'}}>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', padding: '1mm 2mm', backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1', margin: 0}}>Prescrição Óptica (Rx)</p>
                   <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8pt', textAlign: 'center'}}>
-                    <thead style={{backgroundColor: '#f1f5f9', fontSize: '6.5pt', fontWeight: '700', color: '#64748b'}}>
+                    <thead style={{backgroundColor: '#f1f5f9', fontSize: '6.5pt', fontWeight: '800', color: '#000000'}}>
                       <tr>
-                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}></th>
-                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}></th>
-                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>ESF.</th>
-                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>CIL.</th>
-                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>EIXO</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #cbd5e1'}}></th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #cbd5e1'}}></th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #cbd5e1'}}>ESF.</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #cbd5e1'}}>CIL.</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #cbd5e1'}}>EIXO</th>
                         <th style={{padding: '1mm'}}>D.P.</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>LONGE</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_esf || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_cil || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_eixo || "—"}</td>
-                        <td style={{padding: '1mm'}}>{atendimento.rxData.longe_od_dp || "—"}</td>
+                      <tr style={{borderBottom: '1px solid #cbd5e1'}}>
+                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', backgroundColor: '#f8fafc', color: '#000000'}}>LONGE</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', color: '#000000'}}>O.D.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_od_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_od_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_od_eixo || "—"}</td>
+                        <td style={{padding: '1mm', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_od_dp || "—"}</td>
                       </tr>
-                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_esf || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_cil || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_eixo || "—"}</td>
-                        <td style={{padding: '1mm'}}>{atendimento.rxData.longe_oe_dp || "—"}</td>
+                      <tr style={{borderBottom: '1px solid #cbd5e1'}}>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', color: '#000000'}}>O.E.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_oe_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_oe_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_oe_eixo || "—"}</td>
+                        <td style={{padding: '1mm', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.longe_oe_dp || "—"}</td>
                       </tr>
-                      <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>PERTO</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_esf || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_cil || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_eixo || "—"}</td>
-                        <td style={{padding: '1mm'}}>{atendimento.rxData.perto_od_dp || "—"}</td>
+                      <tr style={{borderBottom: '1px solid #cbd5e1'}}>
+                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', backgroundColor: '#f8fafc', color: '#000000'}}>PERTO</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', color: '#000000'}}>O.D.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_od_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_od_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_od_eixo || "—"}</td>
+                        <td style={{padding: '1mm', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_od_dp || "—"}</td>
                       </tr>
                       <tr>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_esf || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_cil || "—"}</td>
-                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_eixo || "—"}</td>
-                        <td style={{padding: '1mm'}}>{atendimento.rxData.perto_oe_dp || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', fontWeight: '800', fontSize: '6pt', color: '#000000'}}>O.E.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_oe_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_oe_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #cbd5e1', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_oe_eixo || "—"}</td>
+                        <td style={{padding: '1mm', color: '#000000', fontWeight: '700'}}>{atendimento.rxData.perto_oe_dp || "—"}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -587,31 +587,31 @@ export default function AtendimentoDetails() {
               )}
 
               {atendimento.notes && (
-                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '3mm 4mm', backgroundColor: '#fff', display: 'flex', flexDirection: 'column'}}>
-                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Anotações Clínicas</p>
-                  <p style={{fontSize: '8.5pt', color: '#334155', margin: 0, whiteSpace: 'pre-wrap'}}>{atendimento.notes}</p>
+                <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', padding: '3mm 4mm', backgroundColor: '#fff', display: 'flex', flexDirection: 'column'}}>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Anotações Clínicas</p>
+                  <p style={{fontSize: '8.5pt', color: '#000000', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500'}}>{atendimento.notes}</p>
                 </div>
               )}
             </div>
 
             {/* TABELA DE PEDIDOS */}
             <div style={{marginBottom: '4mm', flex: 1}}>
-              <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Relação de Pedidos / Vendas</p>
+              <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Relação de Pedidos / Vendas</p>
               <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt'}}>
                 <thead>
-                  <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Tipo de Serviço</th>
-                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Itens / Descrição</th>
-                    <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Entrega</th>
-                    <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Valor</th>
+                  <tr style={{backgroundColor: '#000000', color: 'white'}}>
+                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Tipo de Serviço</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Itens / Descrição</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Entrega</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Valor</th>
                   </tr>
                 </thead>
                 <tbody>
                   {atendimento.orders && atendimento.orders.map((o: any, i: number) => (
-                    <tr key={i} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
-                      <td style={{padding: '2mm 3mm', fontWeight: '700', color: '#0f172a'}}>{o.serviceType}</td>
-                      <td style={{padding: '2mm 3mm', color: '#64748b'}}>{o.items || "—"}</td>
-                      <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569'}}>{(() => {
+                    <tr key={i} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
+                      <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#000000'}}>{o.serviceType}</td>
+                      <td style={{padding: '2mm 3mm', color: '#000000', fontWeight: '500'}}>{o.items || "—"}</td>
+                      <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#000000', fontWeight: '600'}}>{(() => {
                         if (!o.dueDate) return "Imediata";
                         if (o.dueDate.includes("/")) {
                             const [d, m, y] = o.dueDate.split("/").map(Number);
@@ -619,59 +619,59 @@ export default function AtendimentoDetails() {
                         }
                         return new Date(o.dueDate).toLocaleDateString('pt-BR');
                       })()}</td>
-                      <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(o.price || 0).toFixed(2)}</td>
+                      <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {(o.price || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                   {(!atendimento.orders || atendimento.orders.length === 0) && (
-                    <tr><td colSpan={4} style={{padding: '2mm', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic'}}>Nenhum pedido registrado nesta sessão.</td></tr>
+                    <tr><td colSpan={4} style={{padding: '2mm', textAlign: 'center', color: '#334155', fontStyle: 'italic', fontWeight: '600'}}>Nenhum pedido registrado nesta sessão.</td></tr>
                   )}
                 </tbody>
                 <tfoot>
                   {(atendimento.discount > 0 || atendimento.fee > 0) && (
-                    <tr style={{backgroundColor: '#f8fafc', color: '#64748b'}}>
-                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>SUBTOTAL BRUTO</td>
-                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>R$ {(atendimento.subtotal || atendimento.totalValue || 0).toFixed(2)}</td>
+                    <tr style={{backgroundColor: '#f8fafc', color: '#1e293b'}}>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #cbd5e1'}}>SUBTOTAL BRUTO</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '8pt', borderBottom: '1px solid #cbd5e1', color: '#000000'}}>R$ {(atendimento.subtotal || atendimento.totalValue || 0).toFixed(2)}</td>
                     </tr>
                   )}
                   {atendimento.discount > 0 && (
-                    <tr style={{backgroundColor: '#fef2f2', color: '#dc2626'}}>
-                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>DESCONTO</td>
-                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>- R$ {atendimento.discount.toFixed(2)}</td>
+                    <tr style={{backgroundColor: '#fef2f2', color: '#991b1b'}}>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #cbd5e1'}}>DESCONTO</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '8pt', borderBottom: '1px solid #cbd5e1'}}>- R$ {atendimento.discount.toFixed(2)}</td>
                     </tr>
                   )}
                   {atendimento.fee > 0 && (
-                    <tr style={{backgroundColor: '#ecfdf5', color: '#059669'}}>
-                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>TAXAS / ACRÉSCIMOS</td>
-                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>+ R$ {atendimento.fee.toFixed(2)}</td>
+                    <tr style={{backgroundColor: '#ecfdf5', color: '#064e3b'}}>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #cbd5e1'}}>TAXAS / ACRÉSCIMOS</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '8pt', borderBottom: '1px solid #cbd5e1'}}>+ R$ {atendimento.fee.toFixed(2)}</td>
                     </tr>
                   )}
-                  <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                    <td colSpan={3} style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>VALOR FINAL</td>
+                  <tr style={{backgroundColor: '#000000', color: 'white'}}>
+                    <td colSpan={3} style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>VALOR FINAL</td>
                     <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt'}}>R$ {(atendimento.totalValue || 0).toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
-              <p style={{fontSize: '7.5pt', textAlign: 'right', marginTop: '1.5mm', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px'}}>
+              <p style={{fontSize: '7.5pt', textAlign: 'right', marginTop: '1.5mm', fontWeight: '800', color: '#000000', textTransform: 'uppercase', letterSpacing: '1px'}}>
                 Pagamento: {atendimento.isCarne ? 'CARNÊ / CREDIÁRIO' : (atendimento.paymentMethod || 'NÃO DEFINIDO').toUpperCase()}
               </p>
             </div>
 
             {/* ASSINATURAS */}
-            <div style={{display: 'flex', justifyContent: 'space-around', marginTop: '4mm', paddingTop: '4mm', borderTop: '1px solid #e2e8f0', pageBreakInside: 'avoid'}}>
+            <div style={{display: 'flex', justifyContent: 'space-around', marginTop: '4mm', paddingTop: '4mm', borderTop: '1px solid #cbd5e1', pageBreakInside: 'avoid'}}>
               <div style={{textAlign: 'center', width: '70mm'}}>
-                <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
-                <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Paciente / Cliente</p>
+                <div style={{borderBottom: '1px solid #000000', marginBottom: '2mm', height: '10mm'}}></div>
+                <p style={{fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: '#334155', margin: 0}}>Assinatura do Paciente / Cliente</p>
               </div>
               <div style={{textAlign: 'center', width: '70mm'}}>
-                <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
-                <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Ótica Melissa — {atendimento.attendant}</p>
+                <div style={{borderBottom: '1px solid #000000', marginBottom: '2mm', height: '10mm'}}></div>
+                <p style={{fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: '#334155', margin: 0}}>Ótica Melissa — {atendimento.attendant}</p>
               </div>
             </div>
 
             {/* CANHOTO */}
-            <div style={{marginTop: '6mm', borderTop: '2px dashed #cbd5e1', paddingTop: '4mm', position: 'relative', pageBreakInside: 'avoid'}}>
+            <div style={{marginTop: '6mm', borderTop: '2px dashed #94a3b8', paddingTop: '4mm', position: 'relative', pageBreakInside: 'avoid'}}>
               <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '0 6px'}}>
-                <span style={{fontSize: '8pt', color: '#94a3b8'}}>✂</span>
+                <span style={{fontSize: '8pt', color: '#000000'}}>✂</span>
               </div>
               
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
@@ -731,9 +731,9 @@ export default function AtendimentoDetails() {
             </div>
 
             {/* RODAPÉ */}
-            <div style={{marginTop: 'auto', paddingTop: '3mm', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-              <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
-              <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+            <div style={{marginTop: 'auto', paddingTop: '3mm', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
+              <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
             </div>
           </div>
         </div>

@@ -618,54 +618,54 @@ export default function Financial() {
                               flexDirection: 'column'
                             }}>
                                 {/* CABEÇALHO */}
-                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
+                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>
                                   <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                                     <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
                                     <div>
-                                      <p style={{fontSize: '7pt', fontWeight: '700', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Contrato de Crediário / Carnê</p>
+                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#000000', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Contrato de Crediário / Carnê</p>
                                     </div>
                                   </div>
-                                  <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px'}}>
-                                    <p style={{fontSize: '7pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Atendimento Base</p>
-                                    <p style={{fontSize: '11pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{inst.id.substring(0, 8).toUpperCase()}</p>
+                                  <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 10px'}}>
+                                    <p style={{fontSize: '7pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Atendimento Base</p>
+                                    <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>#{inst.id.substring(0, 8).toUpperCase()}</p>
                                   </div>
                                 </div>
 
                                 {/* DADOS DO CLIENTE */}
-                                <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                <div style={{backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                   <div>
-                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Dados do Titular</p>
-                                    <p style={{fontSize: '11pt', fontWeight: '800', color: '#0f172a', margin: 0}}>{inst.client}</p>
+                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#334155', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Dados do Titular</p>
+                                    <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>{inst.client}</p>
                                   </div>
                                   <div style={{textAlign: 'right'}}>
-                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Resumo Financeiro</p>
+                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#334155', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Resumo Financeiro</p>
                                       {inst.downPayment && (
-                                        <p style={{fontSize: '8pt', fontWeight: '700', color: '#15803d', margin: 0}}>Entrada: <span style={{fontWeight: '900'}}>R$ {inst.downPayment.value.toFixed(2)}</span>{inst.downPayment.status === 'Pago' ? ' ✓ Recebida' : ' — Pendente'}</p>
+                                        <p style={{fontSize: '8pt', fontWeight: '800', color: '#166534', margin: 0}}>Entrada: <span style={{fontWeight: '900'}}>R$ {inst.downPayment.value.toFixed(2)}</span>{inst.downPayment.status === 'Pago' ? ' ✓ Recebida' : ' — Pendente'}</p>
                                       )}
-                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#334155', margin: 0}}>Total Parcelas: <span style={{fontWeight: '900', color: '#0f172a'}}>R$ {inst.totalValue.toFixed(2)}</span></p>
-                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#dc2626', margin: 0}}>Saldo Devedor: <span style={{fontWeight: '900'}}>R$ {inst.remainingValue.toFixed(2)}</span></p>
+                                      <p style={{fontSize: '8.5pt', fontWeight: '800', color: '#1e293b', margin: 0}}>Total Parcelas: <span style={{fontWeight: '900', color: '#000000'}}>R$ {inst.totalValue.toFixed(2)}</span></p>
+                                      <p style={{fontSize: '8.5pt', fontWeight: '800', color: '#991b1b', margin: 0}}>Saldo Devedor: <span style={{fontWeight: '900'}}>R$ {inst.remainingValue.toFixed(2)}</span></p>
                                   </div>
                                 </div>
 
                                 {/* LINHA DE ENTRADA NO PDF */}
                                 {inst.downPayment && (
                                   <div style={{marginBottom: '4mm', pageBreakInside: 'avoid'}}>
-                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Entrada / Sinal Inicial</p>
+                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Entrada / Sinal Inicial</p>
                                     <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt'}}>
                                       <thead>
-                                        <tr style={{backgroundColor: '#064e3b', color: 'white'}}>
-                                          <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Descrição</th>
-                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Data</th>
-                                          <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
-                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
-                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Autenticação / Rubrica</th>
+                                        <tr style={{backgroundColor: '#000000', color: 'white'}}>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Descrição</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Data</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Autenticação / Rubrica</th>
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        <tr style={{backgroundColor: inst.downPayment.status === 'Pago' ? '#f0fdf4' : '#fffbeb', borderBottom: '1px solid #e2e8f0'}}>
-                                          <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#0f172a'}}>Entrada (Sinal)</td>
-                                          <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{inst.downPayment.dueDate || '---'}</td>
-                                          <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {inst.downPayment.value.toFixed(2)}</td>
+                                        <tr style={{backgroundColor: inst.downPayment.status === 'Pago' ? '#f0fdf4' : '#fffbeb', borderBottom: '1px solid #cbd5e1'}}>
+                                          <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#000000'}}>Entrada (Sinal)</td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#000000', fontWeight: '700'}}>{inst.downPayment.dueDate || '---'}</td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {inst.downPayment.value.toFixed(2)}</td>
                                           <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
                                             <span style={{padding: '1mm 2mm', borderRadius: '4px', fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', backgroundColor: inst.downPayment.status === 'Pago' ? '#dcfce7' : '#fef3c7', color: inst.downPayment.status === 'Pago' ? '#166534' : '#92400e'}}>
                                               {inst.downPayment.status}
@@ -693,15 +693,15 @@ export default function Financial() {
 
                                 {/* TABELA DE PARCELAS */}
                                 <div style={{marginBottom: '4mm', flex: 1}}>
-                                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Detalhamento das Parcelas</p>
+                                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Detalhamento das Parcelas</p>
                                   <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '9pt'}}>
                                     <thead>
-                                      <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                                        <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Nº Parcela</th>
-                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Vencimento</th>
-                                        <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
-                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
-                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Autenticação / Rubrica (Loja)</th>
+                                      <tr style={{backgroundColor: '#000000', color: 'white'}}>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Nº Parcela</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Vencimento</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Autenticação / Rubrica (Loja)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -730,10 +730,10 @@ export default function Financial() {
                                           })();
 
                                           return (
-                                            <tr key={parc.id} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')}}>
-                                              <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#0f172a'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
-                                              <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{formattedDate}</td>
-                                              <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {parc.value.toFixed(2)}</td>
+                                            <tr key={parc.id} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')}}>
+                                              <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#000000'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#000000', fontWeight: '700'}}>{formattedDate}</td>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {parc.value.toFixed(2)}</td>
                                               <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
                                                   <span style={{
                                                       padding: '1mm 2mm', 
@@ -770,28 +770,27 @@ export default function Financial() {
                                 </div>
 
                                 {/* TERMOS E ASSINATURAS */}
-                                <div style={{marginTop: 'auto', borderTop: '2px dashed #e2e8f0', paddingTop: '4mm', pageBreakInside: 'avoid'}}>
-                                  <p style={{fontSize: '7.5pt', color: '#64748b', textAlign: 'justify', lineHeight: '1.4', marginBottom: '4mm'}}>
+                                <div style={{marginTop: 'auto', borderTop: '2px dashed #94a3b8', paddingTop: '4mm', pageBreakInside: 'avoid'}}>
+                                  <p style={{fontSize: '7.5pt', color: '#000000', textAlign: 'justify', lineHeight: '1.4', marginBottom: '4mm', fontWeight: '500'}}>
                                     Reconheço e concordo com a dívida referente aos itens adquiridos na Ótica Melissa, constante no atendimento supracitado, comprometendo-me a pagar as parcelas detalhadas acima até as respectivas datas de vencimento. O atraso no pagamento poderá acarretar multa e juros conforme a legislação vigente, além da possível inclusão nos órgãos de proteção ao crédito. Este carnê é pessoal e intransferível.
                                   </p>
-
                                   <div style={{display: 'flex', justifyContent: 'space-around', paddingTop: '1mm'}}>
                                     <div style={{textAlign: 'center', width: '70mm'}}>
-                                      <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
-                                      <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Titular</p>
-                                      <p style={{fontSize: '6pt', color: '#94a3b8', margin: '1mm 0 0 0'}}>{inst.client}</p>
+                                      <div style={{borderBottom: '1px solid #000000', marginBottom: '2mm', height: '10mm'}}></div>
+                                      <p style={{fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: '#334155', margin: 0}}>Assinatura do Titular</p>
+                                      <p style={{fontSize: '6pt', color: '#334155', margin: '1mm 0 0 0', fontWeight: '700'}}>{inst.client}</p>
                                     </div>
                                     <div style={{textAlign: 'center', width: '70mm'}}>
-                                      <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
-                                      <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Ótica Melissa — Crediário</p>
+                                      <div style={{borderBottom: '1px solid #000000', marginBottom: '2mm', height: '10mm'}}></div>
+                                      <p style={{fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: '#334155', margin: 0}}>Ótica Melissa — Crediário</p>
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* RODAPÉ */}
                                 <div style={{marginTop: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                  <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
-                                  <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+                                  <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
+                                  <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
                                 </div>
                             </div>
                           </div>

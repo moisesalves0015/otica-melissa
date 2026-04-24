@@ -399,63 +399,63 @@ export default function OrderDetails() {
       <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
             <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
             <div>
-              <p style={{fontSize: '7pt', fontWeight: '800', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Ordem de Serviço & Pedido</p>
-              <p style={{fontSize: '9pt', fontWeight: '400', color: '#0f172a', margin: 0}}>Via da Loja / Operacional</p>
+              <p style={{fontSize: '7pt', fontWeight: '800', color: '#000000', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Ordem de Serviço & Pedido</p>
+              <p style={{fontSize: '9pt', fontWeight: '800', color: '#000000', margin: 0}}>Via da Loja / Operacional</p>
             </div>
           </div>
           <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
             {/* QR CODE DE RASTREIO */}
-            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2mm'}}>
+            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '2mm'}}>
               <QRCodeSVG 
                 value={`https://otica-melissa.vercel.app/rastreio?id=${order.id}`} 
                 size={55} 
               />
-              <p style={{fontSize: '4pt', fontWeight: '800', textTransform: 'uppercase', color: '#94a3b8', margin: 0}}>Rastrear Pedido</p>
+              <p style={{fontSize: '4pt', fontWeight: '900', textTransform: 'uppercase', color: '#000000', margin: 0}}>Rastrear Pedido</p>
             </div>
             
-            <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px'}}>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
-              <p style={{fontSize: '13pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{order.id.slice(0, 8).toUpperCase()}</p>
-              <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Data: {order.date}</p>
+            <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
+              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{order.id.slice(0, 8).toUpperCase()}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', margin: 0, fontWeight: '700'}}>Data: {order.date}</p>
             </div>
           </div>
         </div>
 
         {/* DADOS DO CLIENTE E ATENDIMENTO */}
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
-          <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Cliente Responsável</p>
-            <p style={{fontSize: '11pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{order.clientName}</p>
+          <div style={{backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Cliente Responsável</p>
+            <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>{order.clientName}</p>
           </div>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Vendedor / Atendente</p>
-            <p style={{fontSize: '10pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.seller}</p>
+          <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Vendedor / Atendente</p>
+            <p style={{fontSize: '10pt', fontWeight: '800', color: '#000000', margin: 0}}>{order.seller}</p>
           </div>
         </div>
 
         {/* DETALHES TÉCNICOS E LAB */}
-        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
-          <div style={{backgroundColor: '#0f172a', color: 'white', padding: '1.5mm 4mm'}}>
+        <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+          <div style={{backgroundColor: '#000000', color: 'white', padding: '1.5mm 4mm'}}>
             <p style={{fontSize: '7pt', fontWeight: '800', textTransform: 'uppercase', margin: 0, letterSpacing: '1px'}}>Especificações de Laboratório</p>
           </div>
           <div style={{padding: '4mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm'}}>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código / Lab</p>
-              <p style={{fontSize: '10pt', fontWeight: '800', color: '#0f172a', margin: '0 0 2mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código / Lab</p>
+              <p style={{fontSize: '10pt', fontWeight: '900', color: '#000000', margin: '0 0 2mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
               
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Fornecedor</p>
-              <p style={{fontSize: '9pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.supplier || "NÃO INFORMADO"}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Fornecedor</p>
+              <p style={{fontSize: '9pt', fontWeight: '800', color: '#000000', margin: 0}}>{order.supplier || "NÃO INFORMADO"}</p>
             </div>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Tipo de Serviço</p>
-              <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: '0 0 2mm'}}>{order.serviceType}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Tipo de Serviço</p>
+              <p style={{fontSize: '10pt', fontWeight: '900', color: '#000000', margin: '0 0 2mm'}}>{order.serviceType}</p>
               
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Data Prometida</p>
-              <p style={{fontSize: '10pt', fontWeight: '800', color: '#dc2626', margin: 0}}>{(() => {
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Data Prometida</p>
+              <p style={{fontSize: '10pt', fontWeight: '900', color: '#991b1b', margin: 0}}>{(() => {
                 if (!order.dueDate) return "Imediata";
                 if (order.dueDate.includes("/")) {
                     const [d, m, y] = order.dueDate.split("/").map(Number);
@@ -465,55 +465,55 @@ export default function OrderDetails() {
               })()}</p>
             </div>
           </div>
-          <div style={{padding: '4mm', borderTop: '1px solid #e2e8f0', backgroundColor: '#fafafa'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Descrição dos Itens / Lentes</p>
-            <p style={{fontSize: '9pt', color: '#334155', fontWeight: '500', margin: 0, lineHeight: '1.4'}}>{order.items}</p>
+          <div style={{padding: '4mm', borderTop: '1px solid #cbd5e1', backgroundColor: '#fafafa'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Descrição dos Itens / Lentes</p>
+            <p style={{fontSize: '9pt', color: '#000000', fontWeight: '600', margin: 0, lineHeight: '1.4'}}>{order.items}</p>
           </div>
         </div>
 
         {/* OBSERVAÇÕES TÉCNICAS */}
-        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
-          <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '1mm'}}>Observações Técnicas</p>
-          <p style={{fontSize: '9pt', color: '#475569', lineHeight: '1.5', margin: 0}}>{order.notes || "Sem observações adicionais."}</p>
+        <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+          <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '1mm'}}>Observações Técnicas</p>
+          <p style={{fontSize: '9pt', color: '#000000', lineHeight: '1.5', margin: 0, fontWeight: '500'}}>{order.notes || "Sem observações adicionais."}</p>
         </div>
 
         {/* FINANCEIRO E PAGAMENTO */}
         <div style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Forma de Pagamento</p>
-            <p style={{fontSize: '9pt', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', margin: 0}}>{order.paymentMethod}</p>
+          <div style={{border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Forma de Pagamento</p>
+            <p style={{fontSize: '9pt', fontWeight: '800', color: '#000000', textTransform: 'uppercase', margin: 0}}>{order.paymentMethod}</p>
           </div>
-          <div style={{backgroundColor: '#0f172a', borderRadius: '8px', padding: '4mm', color: 'white', textAlign: 'right'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Valor Total</p>
+          <div style={{backgroundColor: '#000000', borderRadius: '8px', padding: '4mm', color: 'white', textAlign: 'right'}}>
+            <p style={{fontSize: '6.5pt', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Valor Total</p>
             <p style={{fontSize: '16pt', fontWeight: '900', margin: 0}}>R$ {(Number(order.total) || 0).toFixed(2)}</p>
           </div>
         </div>
 
         {/* LINHA DO TEMPO (HISTÓRICO) NO PRINT */}
-        <div style={{flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', pageBreakInside: 'avoid'}}>
-          <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '2mm'}}>Histórico da Linha do Tempo</p>
+        <div style={{flex: 1, border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm', pageBreakInside: 'avoid'}}>
+          <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '800', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Histórico da Linha do Tempo</p>
           <div style={{display: 'flex', flexDirection: 'column', gap: '2mm'}}>
             {order.history && order.history.slice().reverse().map((item: any, idx: number) => (
-              <div key={idx} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #e2e8f0', paddingLeft: '3mm'}}>
+              <div key={idx} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #cbd5e1', paddingLeft: '3mm'}}>
                 <div>
-                  <p style={{fontSize: '8pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{item.action}</p>
-                  <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0, textTransform: 'uppercase'}}>Por: {item.user}</p>
+                  <p style={{fontSize: '8pt', fontWeight: '800', color: '#000000', margin: 0}}>{item.action}</p>
+                  <p style={{fontSize: '6.5pt', color: '#334155', margin: 0, textTransform: 'uppercase', fontWeight: '700'}}>Por: {item.user}</p>
                 </div>
-                <p style={{fontSize: '7pt', color: '#64748b', margin: 0, whiteSpace: 'nowrap'}}>
+                <p style={{fontSize: '7pt', color: '#334155', margin: 0, whiteSpace: 'nowrap', fontWeight: '700'}}>
                   {new Date(item.date).toLocaleDateString('pt-BR')} {new Date(item.date).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}
                 </p>
               </div>
             ))}
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #0f172a', paddingLeft: '3mm'}}>
-              <p style={{fontSize: '8pt', fontWeight: '700', color: '#0f172a', margin: 0}}>Pedido Criado no Sistema</p>
-              <p style={{fontSize: '7pt', color: '#64748b', margin: 0}}>{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #000000', paddingLeft: '3mm'}}>
+              <p style={{fontSize: '8pt', fontWeight: '800', color: '#000000', margin: 0}}>Pedido Criado no Sistema</p>
+              <p style={{fontSize: '7pt', color: '#334155', margin: 0, fontWeight: '700'}}>{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
             </div>
           </div>
         </div>
 
         {/* STATUS E RODAPÉ */}
-        <div style={{fontSize: '7pt', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <p style={{margin: 0}}>Status Atual: <strong style={{color: '#0f172a'}}>{order.status.toUpperCase()}</strong></p>
+        <div style={{fontSize: '7pt', color: '#334155', borderTop: '1px solid #cbd5e1', paddingTop: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700'}}>
+          <p style={{margin: 0}}>Status Atual: <strong style={{color: '#000000'}}>{order.status.toUpperCase()}</strong></p>
           <p style={{margin: 0, fontStyle: 'italic'}}>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
         </div>
       </div>

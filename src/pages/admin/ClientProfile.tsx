@@ -259,17 +259,17 @@ export default function ClientProfile() {
       <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
             <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
             <div>
-              <p style={{fontSize: '7pt', fontWeight: '800', color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Prontuário do Cliente</p>
+              <p style={{fontSize: '7pt', fontWeight: '800', color: '#000000', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Prontuário do Cliente</p>
             </div>
           </div>
-          <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº da Ficha</p>
-            <p style={{fontSize: '13pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{client.id.length > 8 ? client.id.slice(0,6).toUpperCase() : client.id}</p>
-            <p style={{fontSize: '6.5pt', color: '#64748b', margin: 0}}>Cliente desde {(() => {
+          <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº da Ficha</p>
+            <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{client.id.length > 8 ? client.id.slice(0,6).toUpperCase() : client.id}</p>
+            <p style={{fontSize: '6.5pt', color: '#334155', margin: 0}}>Cliente desde {(() => {
                 if (!client.createdAt) return "---";
                 if (client.createdAt.includes("/")) return client.createdAt;
                 return new Date(client.createdAt).toLocaleDateString('pt-BR');
@@ -278,75 +278,75 @@ export default function ClientProfile() {
         </div>
 
         {/* DADOS PESSOAIS */}
-        <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
-          <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Dados Pessoais</p>
+        <div style={{backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
+          <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Dados Pessoais</p>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4mm'}}>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Nome Completo</p><p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{client.name}</p></div>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>CPF</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.cpf || "—"}</p></div>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Data de Nascimento</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{(() => {
+            <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Nome Completo</p><p style={{fontSize: '10pt', fontWeight: '800', color: '#000000', margin: 0}}>{client.name}</p></div>
+            <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>CPF</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{client.cpf || "—"}</p></div>
+            <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Data de Nascimento</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{(() => {
                 if (!client.birthDate) return "—";
                 if (client.birthDate.includes("/")) return client.birthDate;
                 return new Date(client.birthDate).toLocaleDateString('pt-BR');
             })()}</p></div>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Telefone</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.phone || "—"}</p></div>
-            <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Email</p><p style={{fontSize: '9.5pt', fontWeight: '600', color: '#334155', margin: 0}}>{client.email || "—"}</p></div>
+            <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Telefone</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{client.phone || "—"}</p></div>
+            <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Email</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{client.email || "—"}</p></div>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Status de Crédito</p>
-              <p style={{fontSize: '9.5pt', fontWeight: '800', color: client.creditStatus === 'Bom' ? '#1d4ed8' : client.creditStatus === 'Excelente' ? '#065f46' : '#6d28d9', margin: 0}}>{client.creditStatus || "Em Análise"}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Status de Crédito</p>
+              <p style={{fontSize: '9.5pt', fontWeight: '900', color: client.creditStatus === 'Bom' ? '#1d4ed8' : client.creditStatus === 'Excelente' ? '#065f46' : '#6d28d9', margin: 0}}>{client.creditStatus || "Em Análise"}</p>
             </div>
           </div>
         </div>
 
         {/* STATUS FINANCEIRO */}
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '4mm'}}>
-          <div style={{border: '1px solid #e2e8f0', borderLeft: '4px solid #0f172a', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Saldo Devedor Ativo</p>
-            <p style={{fontSize: '16pt', fontWeight: '900', color: (client.balance || 0) > 0 ? '#dc2626' : '#0f172a', margin: 0}}>R$ {(client.balance || 0).toFixed(2)}</p>
+          <div style={{border: '1px solid #cbd5e1', borderLeft: '4px solid #000000', borderRadius: '8px', padding: '4mm'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Saldo Devedor Ativo</p>
+            <p style={{fontSize: '16pt', fontWeight: '900', color: (client.balance || 0) > 0 ? '#991b1b' : '#000000', margin: 0}}>R$ {(client.balance || 0).toFixed(2)}</p>
           </div>
-          <div style={{border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Última Visita Registrada</p>
-            <p style={{fontSize: '12pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{client.lastVisit || "—"}</p>
+          <div style={{border: '1px solid #cbd5e1', borderLeft: '4px solid #334155', borderRadius: '8px', padding: '4mm'}}>
+            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Última Visita Registrada</p>
+            <p style={{fontSize: '12pt', fontWeight: '800', color: '#000000', margin: 0}}>{client.lastVisit || "—"}</p>
           </div>
         </div>
 
         {/* HISTÓRICO DE ATENDIMENTOS */}
         <div style={{flex: 1}}>
-          <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Histórico de Atendimentos</p>
+          <p style={{fontSize: '7pt', fontWeight: '800', color: '#1e293b', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #cbd5e1', paddingBottom: '2mm'}}>Histórico de Atendimentos</p>
           {history.length === 0 ? (
-            <p style={{color: '#94a3b8', fontStyle: 'italic', fontSize: '9pt', textAlign: 'center', padding: '6mm'}}>Nenhum atendimento registrado.</p>
+            <p style={{color: '#334155', fontStyle: 'italic', fontSize: '9pt', textAlign: 'center', padding: '6mm'}}>Nenhum atendimento registrado.</p>
           ) : (
             <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8pt'}}>
               <thead>
-                <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Data</th>
-                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Serviços / Itens</th>
-                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Pagamento</th>
-                  <th style={{padding: '2mm 3mm', textAlign: 'right', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Valor</th>
+                <tr style={{backgroundColor: '#000000', color: 'white'}}>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '800'}}>Data</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '800'}}>Serviços / Itens</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '800'}}>Pagamento</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'right', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '800'}}>Valor</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((atendimento: any, idx: number) => {
                   const orderItems = atendimento.orders || atendimento.items || [];
                   return (
-                    <tr key={atendimento.id} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', pageBreakInside: 'avoid'}}>
-                      <td style={{padding: '3mm 3mm', fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap'}}>
+                    <tr key={atendimento.id} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', pageBreakInside: 'avoid'}}>
+                      <td style={{padding: '3mm 3mm', fontWeight: '800', color: '#000000', whiteSpace: 'nowrap'}}>
                         {atendimento.date || "—"}
-                        {atendimento.time && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8', fontWeight: '400', marginTop: '1mm'}}>{atendimento.time}</span>}
+                        {atendimento.time && <span style={{display: 'block', fontSize: '6.5pt', color: '#334155', fontWeight: '700', marginTop: '1mm'}}>{atendimento.time}</span>}
                       </td>
-                      <td style={{padding: '3mm 3mm', color: '#475569'}}>
+                      <td style={{padding: '3mm 3mm', color: '#000000', fontWeight: '600'}}>
                         {orderItems.length > 0 ? orderItems.map((o: any) => o.serviceType || o.service).join(', ') : "Registro clínico"}
-                        {orderItems.length > 0 && orderItems[0].items && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8', marginTop: '1mm', lineHeight: '1.4'}}>{orderItems[0].items}</span>}
+                        {orderItems.length > 0 && orderItems[0].items && <span style={{display: 'block', fontSize: '6.5pt', color: '#334155', marginTop: '1mm', lineHeight: '1.4', fontWeight: '500'}}>{orderItems[0].items}</span>}
                       </td>
-                      <td style={{padding: '3mm 3mm', color: '#64748b', textTransform: 'uppercase', fontSize: '7pt', fontWeight: '700'}}>{atendimento.paymentMethod || "—"}</td>
-                      <td style={{padding: '3mm 3mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(atendimento.totalValue || atendimento.total || 0).toFixed(2)}</td>
+                      <td style={{padding: '3mm 3mm', color: '#000000', textTransform: 'uppercase', fontSize: '7pt', fontWeight: '800'}}>{atendimento.paymentMethod || "—"}</td>
+                      <td style={{padding: '3mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {(atendimento.totalValue || atendimento.total || 0).toFixed(2)}</td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr style={{backgroundColor: '#f1f5f9', borderTop: '2px solid #e2e8f0'}}>
-                  <td colSpan={3} style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b'}}>Total Gasto no Histórico:</td>
-                  <td style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt', color: '#0f172a'}}>
+                <tr style={{backgroundColor: '#f1f5f9', borderTop: '2px solid #cbd5e1'}}>
+                  <td colSpan={3} style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '800', fontSize: '7pt', textTransform: 'uppercase', letterSpacing: '1px', color: '#334155'}}>Total Gasto no Histórico:</td>
+                  <td style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt', color: '#000000'}}>
                     R$ {history.reduce((acc: number, a: any) => acc + (a.totalValue || a.total || 0), 0).toFixed(2)}
                   </td>
                 </tr>
@@ -356,9 +356,9 @@ export default function ClientProfile() {
         </div>
 
         {/* RODAPÉ */}
-        <div style={{marginTop: 'auto', paddingTop: '3mm', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Prontuário gerado pelo sistema Ótica Melissa</p>
-          <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Relatório emitido em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+        <div style={{marginTop: 'auto', paddingTop: '3mm', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Prontuário gerado pelo sistema Ótica Melissa</p>
+          <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Relatório emitido em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
         </div>
       </div>
 
