@@ -256,10 +256,10 @@ export default function ClientProfile() {
       </Card>
       
       {/* OVERLAY DE IMPRESSÃO MODERNO - Aparece apenas na impressão, cobre tudo */}
-      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '12mm 14mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
+      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a'}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
             <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
             <div>
@@ -278,7 +278,7 @@ export default function ClientProfile() {
         </div>
 
         {/* DADOS PESSOAIS */}
-        <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
+        <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
           <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Dados Pessoais</p>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4mm'}}>
             <div><p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Nome Completo</p><p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{client.name}</p></div>
@@ -298,7 +298,7 @@ export default function ClientProfile() {
         </div>
 
         {/* STATUS FINANCEIRO */}
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm'}}>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '4mm'}}>
           <div style={{border: '1px solid #e2e8f0', borderLeft: '4px solid #0f172a', borderRadius: '8px', padding: '4mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Saldo Devedor Ativo</p>
             <p style={{fontSize: '16pt', fontWeight: '900', color: (client.balance || 0) > 0 ? '#dc2626' : '#0f172a', margin: 0}}>R$ {(client.balance || 0).toFixed(2)}</p>
@@ -311,17 +311,17 @@ export default function ClientProfile() {
 
         {/* HISTÓRICO DE ATENDIMENTOS */}
         <div style={{flex: 1}}>
-          <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Histórico de Atendimentos</p>
+          <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Histórico de Atendimentos</p>
           {history.length === 0 ? (
             <p style={{color: '#94a3b8', fontStyle: 'italic', fontSize: '9pt', textAlign: 'center', padding: '6mm'}}>Nenhum atendimento registrado.</p>
           ) : (
             <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8pt'}}>
               <thead>
                 <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                  <th style={{padding: '2.5mm 4mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Data</th>
-                  <th style={{padding: '2.5mm 4mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Serviços / Itens</th>
-                  <th style={{padding: '2.5mm 4mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Pagamento</th>
-                  <th style={{padding: '2.5mm 4mm', textAlign: 'right', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Valor</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Data</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Serviços / Itens</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'left', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Pagamento</th>
+                  <th style={{padding: '2mm 3mm', textAlign: 'right', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '700'}}>Valor</th>
                 </tr>
               </thead>
               <tbody>
@@ -329,24 +329,24 @@ export default function ClientProfile() {
                   const orderItems = atendimento.orders || atendimento.items || [];
                   return (
                     <tr key={atendimento.id} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', pageBreakInside: 'avoid'}}>
-                      <td style={{padding: '2.5mm 4mm', fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap'}}>
+                      <td style={{padding: '3mm 3mm', fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap'}}>
                         {atendimento.date || "—"}
-                        {atendimento.time && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8', fontWeight: '400'}}>{atendimento.time}</span>}
+                        {atendimento.time && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8', fontWeight: '400', marginTop: '1mm'}}>{atendimento.time}</span>}
                       </td>
-                      <td style={{padding: '2.5mm 4mm', color: '#475569'}}>
+                      <td style={{padding: '3mm 3mm', color: '#475569'}}>
                         {orderItems.length > 0 ? orderItems.map((o: any) => o.serviceType || o.service).join(', ') : "Registro clínico"}
-                        {orderItems.length > 0 && orderItems[0].items && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8'}}>{orderItems[0].items}</span>}
+                        {orderItems.length > 0 && orderItems[0].items && <span style={{display: 'block', fontSize: '6.5pt', color: '#94a3b8', marginTop: '1mm', lineHeight: '1.4'}}>{orderItems[0].items}</span>}
                       </td>
-                      <td style={{padding: '2.5mm 4mm', color: '#64748b', textTransform: 'uppercase', fontSize: '7pt', fontWeight: '700'}}>{atendimento.paymentMethod || "—"}</td>
-                      <td style={{padding: '2.5mm 4mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(atendimento.totalValue || atendimento.total || 0).toFixed(2)}</td>
+                      <td style={{padding: '3mm 3mm', color: '#64748b', textTransform: 'uppercase', fontSize: '7pt', fontWeight: '700'}}>{atendimento.paymentMethod || "—"}</td>
+                      <td style={{padding: '3mm 3mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(atendimento.totalValue || atendimento.total || 0).toFixed(2)}</td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
                 <tr style={{backgroundColor: '#f1f5f9', borderTop: '2px solid #e2e8f0'}}>
-                  <td colSpan={3} style={{padding: '2.5mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b'}}>Total Gasto no Histórico:</td>
-                  <td style={{padding: '2.5mm 4mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt', color: '#0f172a'}}>
+                  <td colSpan={3} style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b'}}>Total Gasto no Histórico:</td>
+                  <td style={{padding: '4mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt', color: '#0f172a'}}>
                     R$ {history.reduce((acc: number, a: any) => acc + (a.totalValue || a.total || 0), 0).toFixed(2)}
                   </td>
                 </tr>

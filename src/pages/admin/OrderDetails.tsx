@@ -396,10 +396,10 @@ export default function OrderDetails() {
           html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
         }
       `}</style>
-      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '12mm 14mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '5mm'}}>
+      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a'}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
             <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
             <div>
@@ -426,33 +426,33 @@ export default function OrderDetails() {
         </div>
 
         {/* DADOS DO CLIENTE E ATENDIMENTO */}
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6mm', marginBottom: '2mm'}}>
-          <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+          <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Cliente Responsável</p>
             <p style={{fontSize: '11pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{order.clientName}</p>
           </div>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
+          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Vendedor / Atendente</p>
             <p style={{fontSize: '10pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.seller}</p>
           </div>
         </div>
 
         {/* DETALHES TÉCNICOS E LAB */}
-        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '2mm'}}>
-          <div style={{backgroundColor: '#0f172a', color: 'white', padding: '2.5mm 5mm'}}>
+        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+          <div style={{backgroundColor: '#0f172a', color: 'white', padding: '1.5mm 4mm'}}>
             <p style={{fontSize: '7pt', fontWeight: '800', textTransform: 'uppercase', margin: 0, letterSpacing: '1px'}}>Especificações de Laboratório</p>
           </div>
-          <div style={{padding: '5mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8mm'}}>
+          <div style={{padding: '4mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm'}}>
             <div>
               <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código / Lab</p>
-              <p style={{fontSize: '10pt', fontWeight: '800', color: '#0f172a', margin: '0 0 4mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
+              <p style={{fontSize: '10pt', fontWeight: '800', color: '#0f172a', margin: '0 0 2mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
               
               <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Fornecedor</p>
               <p style={{fontSize: '9pt', fontWeight: '600', color: '#0f172a', margin: 0}}>{order.supplier || "NÃO INFORMADO"}</p>
             </div>
             <div>
               <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Tipo de Serviço</p>
-              <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: '0 0 4mm'}}>{order.serviceType}</p>
+              <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: '0 0 2mm'}}>{order.serviceType}</p>
               
               <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Data Prometida</p>
               <p style={{fontSize: '10pt', fontWeight: '800', color: '#dc2626', margin: 0}}>{(() => {
@@ -465,34 +465,34 @@ export default function OrderDetails() {
               })()}</p>
             </div>
           </div>
-          <div style={{padding: '5mm', borderTop: '1px solid #e2e8f0', backgroundColor: '#fafafa'}}>
+          <div style={{padding: '4mm', borderTop: '1px solid #e2e8f0', backgroundColor: '#fafafa'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Descrição dos Itens / Lentes</p>
             <p style={{fontSize: '9pt', color: '#334155', fontWeight: '500', margin: 0, lineHeight: '1.4'}}>{order.items}</p>
           </div>
         </div>
 
         {/* OBSERVAÇÕES TÉCNICAS */}
-        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm', marginBottom: '2mm'}}>
+        <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
           <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '1mm'}}>Observações Técnicas</p>
           <p style={{fontSize: '9pt', color: '#475569', lineHeight: '1.5', margin: 0}}>{order.notes || "Sem observações adicionais."}</p>
         </div>
 
         {/* FINANCEIRO E PAGAMENTO */}
-        <div style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '6mm', marginBottom: '2mm'}}>
-          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
+        <div style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '4mm', marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+          <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Forma de Pagamento</p>
             <p style={{fontSize: '9pt', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', margin: 0}}>{order.paymentMethod}</p>
           </div>
-          <div style={{backgroundColor: '#0f172a', borderRadius: '8px', padding: '5mm', color: 'white', textAlign: 'right'}}>
+          <div style={{backgroundColor: '#0f172a', borderRadius: '8px', padding: '4mm', color: 'white', textAlign: 'right'}}>
             <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1mm'}}>Valor Total</p>
             <p style={{fontSize: '16pt', fontWeight: '900', margin: 0}}>R$ {(Number(order.total) || 0).toFixed(2)}</p>
           </div>
         </div>
 
         {/* LINHA DO TEMPO (HISTÓRICO) NO PRINT */}
-        <div style={{flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm'}}>
-          <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 3mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '1mm'}}>Histórico da Linha do Tempo</p>
-          <div style={{display: 'flex', flexDirection: 'column', gap: '3mm'}}>
+        <div style={{flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', pageBreakInside: 'avoid'}}>
+          <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 2mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '2mm'}}>Histórico da Linha do Tempo</p>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '2mm'}}>
             {order.history && order.history.slice().reverse().map((item: any, idx: number) => (
               <div key={idx} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '2px solid #e2e8f0', paddingLeft: '3mm'}}>
                 <div>

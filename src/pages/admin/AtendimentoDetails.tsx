@@ -1,12 +1,12 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, query } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, query, deleteDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
   ArrowLeft, User, ShoppingCart, 
   Clock, FileText, Activity, Printer, 
-  CreditCard, DollarSign, Calendar, Wrench, XCircle, Save
+  CreditCard, DollarSign, Calendar, Wrench, XCircle, Save, Trash2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ export default function AtendimentoDetails() {
   const [isEditing, setIsEditing] = React.useState(false);
   const [atendimento, setAtendimento] = React.useState<any>(null);
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
+  const [editNotes, setEditNotes] = React.useState("");
+  const [editRx, setEditRx] = React.useState<any>({});
 
   React.useEffect(() => {
     if (!id) return;
@@ -49,35 +51,26 @@ export default function AtendimentoDetails() {
     };
   }, [id, navigate]);
 
-  if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent" />
-      </div>
-    );
-  }
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const startEditing = () => {
+    setEditNotes(atendimento.notes || "");
+    setEditRx({ ...(atendimento.rxData || {}) });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const handleUpdate = async () => {
     if (!atendimento || !id) return;
     setSaving(true);
     
     try {
-      const formData = new FormData(e.currentTarget);
-      const data = Object.fromEntries(formData.entries());
-      
       const changes: string[] = [];
-      if (atendimento.clientName !== data.clientName) changes.push(`Cliente: ${atendimento.clientName} -> ${data.clientName}`);
-      if (atendimento.clientCpf !== data.clientCpf) changes.push(`CPF alterado`);
-      if (atendimento.attendant !== data.attendant) changes.push(`Atendente: ${atendimento.attendant} -> ${data.attendant}`);
-      if (atendimento.notes !== data.notes) changes.push(`Anotações atualizadas`);
+      if (atendimento.notes !== editNotes) changes.push(`Anotações atualizadas`);
       
       const rxData = atendimento.rxData || {};
-      const newRxData: any = {
-        longe_od_esf: data.longe_od_esf as string, longe_od_cil: data.longe_od_cil as string, longe_od_eixo: data.longe_od_eixo as string, longe_od_dp: data.longe_od_dp as string,
-        longe_oe_esf: data.longe_oe_esf as string, longe_oe_cil: data.longe_oe_cil as string, longe_oe_eixo: data.longe_oe_eixo as string, longe_oe_dp: data.longe_oe_dp as string,
-        perto_od_esf: data.perto_od_esf as string, perto_od_cil: data.perto_od_cil as string, perto_od_eixo: data.perto_od_eixo as string, perto_od_dp: data.perto_od_dp as string,
-        perto_oe_esf: data.perto_oe_esf as string, perto_oe_cil: data.perto_oe_cil as string, perto_oe_eixo: data.perto_oe_eixo as string, perto_oe_dp: data.perto_oe_dp as string,
-      };
+      const newRxData = { ...editRx };
 
       let rxChanged = false;
       const rxFields = ['longe_od_esf', 'longe_od_cil', 'longe_od_eixo', 'longe_od_dp', 'longe_oe_esf', 'longe_oe_cil', 'longe_oe_eixo', 'longe_oe_dp', 'perto_od_esf', 'perto_od_cil', 'perto_od_eixo', 'perto_od_dp', 'perto_oe_esf', 'perto_oe_cil', 'perto_oe_eixo', 'perto_oe_dp'];
@@ -104,10 +97,7 @@ export default function AtendimentoDetails() {
       };
 
       await updateDoc(doc(db, "atendimentos", id), {
-        clientName: data.clientName,
-        clientCpf: data.clientCpf,
-        attendant: data.attendant,
-        notes: data.notes,
+        notes: editNotes,
         rxData: newRxData,
         history: arrayUnion(historyEntry)
       });
@@ -121,9 +111,34 @@ export default function AtendimentoDetails() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    if (window.confirm("ATENÇÃO: Tem certeza que deseja excluir permanentemente este atendimento? Esta ação não pode ser desfeita e pode causar inconsistência se houverem pedidos associados.")) {
+      try {
+        await deleteDoc(doc(db, "atendimentos", id));
+        toast.success("Atendimento excluído com sucesso.");
+        navigate("/admin/atendimentos");
+      } catch (err: any) {
+        toast.error("Erro ao excluir atendimento: " + err.message);
+      }
+    }
+  };
+
+  if (loading) {
     return (
-      <>
-        <form id="atendimento-form" onSubmit={handleUpdate} className="max-w-5xl mx-auto space-y-6 pb-12">
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!atendimento) {
+    return <div className="p-8 text-center text-slate-500 font-semibold">Atendimento não encontrado.</div>;
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+
           
           {/* HEADER */}
           <div className="flex items-center justify-between print:hidden">
@@ -141,16 +156,24 @@ export default function AtendimentoDetails() {
             <div className="flex gap-2">
               {isEditing ? (
                 <>
-                  <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="rounded font-bold text-xs h-9">
+                  <Button type="button" onClick={cancelEditing} variant="outline" className="rounded font-bold text-xs h-9">
                     <XCircle className="mr-2 h-4 w-4" /> CANCELAR
                   </Button>
-                  <Button type="submit" form="atendimento-form" disabled={saving} className="rounded font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white">
+                  <Button 
+                    type="button" 
+                    disabled={saving} 
+                    onClick={handleUpdate as any}
+                    className="rounded font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white"
+                  >
                     <Save className="mr-2 h-4 w-4" /> {saving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button type="button" onClick={() => setIsEditing(true)} variant="outline" className="rounded font-bold text-xs h-9">
+                  <Button type="button" onClick={handleDelete} variant="outline" className="rounded font-bold text-xs h-9 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                    <Trash2 className="mr-2 h-4 w-4" /> EXCLUIR
+                  </Button>
+                  <Button type="button" onClick={startEditing} variant="outline" className="rounded font-bold text-xs h-9">
                     <Wrench className="mr-2 h-4 w-4" /> EDITAR
                   </Button>
                   <Button 
@@ -190,33 +213,12 @@ export default function AtendimentoDetails() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Paciente</p>
-                            {isEditing ? (
-                              <Input name="clientName" defaultValue={atendimento.clientName} className="h-8 text-sm font-bold text-slate-900" />
-                            ) : (
-                              <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.clientName}</p>
-                            )}
-                            {isEditing ? (
-                              <Input name="clientCpf" defaultValue={atendimento.clientCpf} placeholder="CPF" className="h-7 text-[11px] text-slate-500" />
-                            ) : (
-                              <p className="text-[11px] text-slate-500 h-7 flex items-center">{atendimento.clientCpf}</p>
-                            )}
+                            <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.clientName}</p>
+                            <p className="text-[11px] text-slate-500 h-7 flex items-center">{atendimento.clientCpf}</p>
                         </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Atendente</p>
-                            {isEditing ? (
-                              <Select name="attendant" defaultValue={atendimento.attendant}>
-                                <SelectTrigger className="h-8 text-sm font-bold text-slate-900">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {atendentes.map(a => (
-                                    <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.attendant}</p>
-                            )}
+                            <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.attendant}</p>
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Data/Hora</p>
@@ -232,12 +234,7 @@ export default function AtendimentoDetails() {
                         <div className="space-y-3">
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Receita Óptica (Grau)</Label>
                             <div className="!rounded-none border border-slate-200 overflow-hidden bg-white">
-                            {isEditing || (atendimento.rxData && (
-                                atendimento.rxData.longe_od_esf || atendimento.rxData.longe_od_cil || atendimento.rxData.longe_od_eixo || 
-                                atendimento.rxData.longe_oe_esf || atendimento.rxData.longe_oe_cil || atendimento.rxData.longe_oe_eixo ||
-                                atendimento.rxData.perto_od_esf || atendimento.rxData.perto_od_cil || atendimento.rxData.perto_od_eixo ||
-                                atendimento.rxData.perto_oe_esf || atendimento.rxData.perto_oe_cil || atendimento.rxData.perto_oe_eixo
-                            )) ? (
+                            {isEditing ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-center border-collapse text-xs">
                                         <thead className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
@@ -250,34 +247,40 @@ export default function AtendimentoDetails() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
+                                            {(['longe_od','longe_oe','perto_od','perto_oe'] as const).map(row => (
+                                                <tr key={row}>
+                                                    <td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">{row.replace('longe_','').replace('perto_','').toUpperCase()} {row.startsWith('longe') ? 'LONGE' : 'PERTO'}</td>
+                                                    {(['esf','cil','eixo','dp'] as const).map((col, ci) => (
+                                                        <td key={col} className={`p-1 ${ci < 3 ? 'border-r border-slate-100' : ''}`}>
+                                                            <Input
+                                                                value={editRx[`${row}_${col}`] || ''}
+                                                                onChange={e => setEditRx((prev: any) => ({ ...prev, [`${row}_${col}`]: e.target.value }))}
+                                                                className="h-8 w-16 mx-auto text-center p-1"
+                                                            />
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : atendimento.rxData && (atendimento.rxData.longe_od_esf || atendimento.rxData.longe_oe_esf || atendimento.rxData.perto_od_esf || atendimento.rxData.perto_oe_esf) ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-center border-collapse text-xs">
+                                        <thead className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                                             <tr>
-                                                <td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OD LONGE</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_od_esf" defaultValue={atendimento.rxData?.longe_od_esf} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_od_esf || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_od_cil" defaultValue={atendimento.rxData?.longe_od_cil} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_od_cil || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_od_eixo" defaultValue={atendimento.rxData?.longe_od_eixo} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_od_eixo || "—")}</td>
-                                                <td className="p-1">{isEditing ? <Input name="longe_od_dp" defaultValue={atendimento.rxData?.longe_od_dp} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_od_dp || "—")}</td>
+                                                <th className="p-3 border-r border-slate-100"></th>
+                                                <th className="p-3 border-r border-slate-100">ESF.</th>
+                                                <th className="p-3 border-r border-slate-100">CIL.</th>
+                                                <th className="p-3 border-r border-slate-100">EIXO</th>
+                                                <th className="p-3">D.P.</th>
                                             </tr>
-                                            <tr>
-                                                <td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OE LONGE</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_oe_esf" defaultValue={atendimento.rxData?.longe_oe_esf} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_oe_esf || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_oe_cil" defaultValue={atendimento.rxData?.longe_oe_cil} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_oe_cil || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="longe_oe_eixo" defaultValue={atendimento.rxData?.longe_oe_eixo} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_oe_eixo || "—")}</td>
-                                                <td className="p-1">{isEditing ? <Input name="longe_oe_dp" defaultValue={atendimento.rxData?.longe_oe_dp} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.longe_oe_dp || "—")}</td>
-                                            </tr>
-                                            <tr className="border-t-2 border-slate-100">
-                                                <td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OD PERTO</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_od_esf" defaultValue={atendimento.rxData?.perto_od_esf} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_od_esf || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_od_cil" defaultValue={atendimento.rxData?.perto_od_cil} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_od_cil || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_od_eixo" defaultValue={atendimento.rxData?.perto_od_eixo} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_od_eixo || "—")}</td>
-                                                <td className="p-1">{isEditing ? <Input name="perto_od_dp" defaultValue={atendimento.rxData?.perto_od_dp} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_od_dp || "—")}</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OE PERTO</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_oe_esf" defaultValue={atendimento.rxData?.perto_oe_esf} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_oe_esf || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_oe_cil" defaultValue={atendimento.rxData?.perto_oe_cil} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_oe_cil || "—")}</td>
-                                                <td className="p-1 border-r border-slate-100">{isEditing ? <Input name="perto_oe_eixo" defaultValue={atendimento.rxData?.perto_oe_eixo} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_oe_eixo || "—")}</td>
-                                                <td className="p-1">{isEditing ? <Input name="perto_oe_dp" defaultValue={atendimento.rxData?.perto_oe_dp} className="h-8 w-16 mx-auto text-center p-1" /> : (atendimento.rxData?.perto_oe_dp || "—")}</td>
-                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            <tr><td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OD LONGE</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_od_esf || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_od_cil || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_od_eixo || '—'}</td><td className="p-3">{atendimento.rxData?.longe_od_dp || '—'}</td></tr>
+                                            <tr><td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OE LONGE</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_oe_esf || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_oe_cil || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.longe_oe_eixo || '—'}</td><td className="p-3">{atendimento.rxData?.longe_oe_dp || '—'}</td></tr>
+                                            <tr><td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OD PERTO</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_od_esf || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_od_cil || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_od_eixo || '—'}</td><td className="p-3">{atendimento.rxData?.perto_od_dp || '—'}</td></tr>
+                                            <tr><td className="p-3 font-bold bg-slate-50/30 border-r border-slate-100 text-[10px]">OE PERTO</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_oe_esf || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_oe_cil || '—'}</td><td className="p-3 border-r border-slate-100">{atendimento.rxData?.perto_oe_eixo || '—'}</td><td className="p-3">{atendimento.rxData?.perto_oe_dp || '—'}</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -295,8 +298,8 @@ export default function AtendimentoDetails() {
                             <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Anotações da Consulta (Histórico, Queixas)</Label>
                             {isEditing ? (
                               <textarea 
-                                name="notes" 
-                                defaultValue={atendimento.notes}
+                                value={editNotes}
+                                onChange={e => setEditNotes(e.target.value)}
                                 className="w-full !rounded-none border border-slate-200 text-sm p-3 min-h-[80px] bg-white focus:outline-none focus:ring-1 focus:ring-slate-300 font-medium" 
                               />
                             ) : (
@@ -476,7 +479,6 @@ export default function AtendimentoDetails() {
               )}
             </div>
           </div>
-        </form>
 
         {/* ÁREA DE IMPRESSÃO MODERNA (Oculta na tela, visível apenas na impressão) */}
         <div id="printable-area" style={{display: 'none'}}>
@@ -490,7 +492,7 @@ export default function AtendimentoDetails() {
           <div style={{
             width: '210mm', 
             minHeight: '297mm', 
-            padding: '12mm 14mm', 
+            padding: '10mm 12mm', 
             backgroundColor: 'white', 
             color: 'black',
             fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -499,7 +501,7 @@ export default function AtendimentoDetails() {
           }}>
             
             {/* CABEÇALHO */}
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a', marginBottom: '6mm'}}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
               <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                 <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
                 <div>
@@ -514,9 +516,9 @@ export default function AtendimentoDetails() {
             </div>
 
             {/* DADOS DO PACIENTE */}
-            <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm', marginBottom: '4mm'}}>
+            <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm'}}>
               <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Dados do Paciente</p>
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '3mm'}}>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4mm'}}>
                 <div>
                   <p style={{fontSize: '6.5pt', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nome Completo</p>
                   <p style={{fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0}}>{atendimento.clientName}</p>
@@ -536,48 +538,48 @@ export default function AtendimentoDetails() {
             <div style={{display: 'grid', gridTemplateColumns: atendimento.rxData ? '1.5fr 1fr' : '1fr', gap: '4mm', marginBottom: '4mm'}}>
               {atendimento.rxData && (
                 <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden'}}>
-                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', padding: '2mm 3mm', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', margin: 0}}>Prescrição Óptica (Rx)</p>
+                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', padding: '1mm 2mm', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', margin: 0}}>Prescrição Óptica (Rx)</p>
                   <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8pt', textAlign: 'center'}}>
                     <thead style={{backgroundColor: '#f1f5f9', fontSize: '6.5pt', fontWeight: '700', color: '#64748b'}}>
                       <tr>
-                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}></th>
-                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}></th>
-                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>ESF.</th>
-                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>CIL.</th>
-                        <th style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>EIXO</th>
-                        <th style={{padding: '1.5mm'}}>D.P.</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}></th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}></th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>ESF.</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>CIL.</th>
+                        <th style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>EIXO</th>
+                        <th style={{padding: '1mm'}}>D.P.</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td rowSpan={2} style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>LONGE</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_esf || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_cil || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_eixo || "—"}</td>
-                        <td style={{padding: '1.5mm'}}>{atendimento.rxData.longe_od_dp || "—"}</td>
+                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>LONGE</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_od_eixo || "—"}</td>
+                        <td style={{padding: '1mm'}}>{atendimento.rxData.longe_od_dp || "—"}</td>
                       </tr>
                       <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_esf || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_cil || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_eixo || "—"}</td>
-                        <td style={{padding: '1.5mm'}}>{atendimento.rxData.longe_oe_dp || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.longe_oe_eixo || "—"}</td>
+                        <td style={{padding: '1mm'}}>{atendimento.rxData.longe_oe_dp || "—"}</td>
                       </tr>
                       <tr style={{borderBottom: '1px solid #e2e8f0'}}>
-                        <td rowSpan={2} style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>PERTO</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_esf || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_cil || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_eixo || "—"}</td>
-                        <td style={{padding: '1.5mm'}}>{atendimento.rxData.perto_od_dp || "—"}</td>
+                        <td rowSpan={2} style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt', backgroundColor: '#f8fafc'}}>PERTO</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.D.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_od_eixo || "—"}</td>
+                        <td style={{padding: '1mm'}}>{atendimento.rxData.perto_od_dp || "—"}</td>
                       </tr>
                       <tr>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_esf || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_cil || "—"}</td>
-                        <td style={{padding: '1.5mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_eixo || "—"}</td>
-                        <td style={{padding: '1.5mm'}}>{atendimento.rxData.perto_oe_dp || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0', fontWeight: '700', fontSize: '6pt'}}>O.E.</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_esf || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_cil || "—"}</td>
+                        <td style={{padding: '1mm', borderRight: '1px solid #e2e8f0'}}>{atendimento.rxData.perto_oe_eixo || "—"}</td>
+                        <td style={{padding: '1mm'}}>{atendimento.rxData.perto_oe_dp || "—"}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -585,7 +587,7 @@ export default function AtendimentoDetails() {
               )}
 
               {atendimento.notes && (
-                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', backgroundColor: '#fff', display: 'flex', flexDirection: 'column'}}>
+                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '3mm 4mm', backgroundColor: '#fff', display: 'flex', flexDirection: 'column'}}>
                   <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Anotações Clínicas</p>
                   <p style={{fontSize: '8.5pt', color: '#334155', margin: 0, whiteSpace: 'pre-wrap'}}>{atendimento.notes}</p>
                 </div>
@@ -594,22 +596,22 @@ export default function AtendimentoDetails() {
 
             {/* TABELA DE PEDIDOS */}
             <div style={{marginBottom: '4mm', flex: 1}}>
-              <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Relação de Pedidos / Vendas</p>
+              <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Relação de Pedidos / Vendas</p>
               <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt'}}>
                 <thead>
                   <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                    <th style={{padding: '3mm 4mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Tipo de Serviço</th>
-                    <th style={{padding: '3mm 4mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Itens / Descrição</th>
-                    <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Entrega</th>
-                    <th style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Valor</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Tipo de Serviço</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Itens / Descrição</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Entrega</th>
+                    <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Valor</th>
                   </tr>
                 </thead>
                 <tbody>
                   {atendimento.orders && atendimento.orders.map((o: any, i: number) => (
                     <tr key={i} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
-                      <td style={{padding: '3mm 4mm', fontWeight: '700', color: '#0f172a'}}>{o.serviceType}</td>
-                      <td style={{padding: '3mm 4mm', color: '#64748b'}}>{o.items || "—"}</td>
-                      <td style={{padding: '3mm 4mm', textAlign: 'center', color: '#475569'}}>{(() => {
+                      <td style={{padding: '2mm 3mm', fontWeight: '700', color: '#0f172a'}}>{o.serviceType}</td>
+                      <td style={{padding: '2mm 3mm', color: '#64748b'}}>{o.items || "—"}</td>
+                      <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569'}}>{(() => {
                         if (!o.dueDate) return "Imediata";
                         if (o.dueDate.includes("/")) {
                             const [d, m, y] = o.dueDate.split("/").map(Number);
@@ -617,35 +619,35 @@ export default function AtendimentoDetails() {
                         }
                         return new Date(o.dueDate).toLocaleDateString('pt-BR');
                       })()}</td>
-                      <td style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(o.price || 0).toFixed(2)}</td>
+                      <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '800', color: '#0f172a'}}>R$ {(o.price || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                   {(!atendimento.orders || atendimento.orders.length === 0) && (
-                    <tr><td colSpan={4} style={{padding: '4mm', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic'}}>Nenhum pedido registrado nesta sessão.</td></tr>
+                    <tr><td colSpan={4} style={{padding: '2mm', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic'}}>Nenhum pedido registrado nesta sessão.</td></tr>
                   )}
                 </tbody>
                 <tfoot>
                   {(atendimento.discount > 0 || atendimento.fee > 0) && (
                     <tr style={{backgroundColor: '#f8fafc', color: '#64748b'}}>
-                      <td colSpan={3} style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>SUBTOTAL BRUTO</td>
-                      <td style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>R$ {(atendimento.subtotal || atendimento.totalValue || 0).toFixed(2)}</td>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>SUBTOTAL BRUTO</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>R$ {(atendimento.subtotal || atendimento.totalValue || 0).toFixed(2)}</td>
                     </tr>
                   )}
                   {atendimento.discount > 0 && (
                     <tr style={{backgroundColor: '#fef2f2', color: '#dc2626'}}>
-                      <td colSpan={3} style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>DESCONTO</td>
-                      <td style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>- R$ {atendimento.discount.toFixed(2)}</td>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>DESCONTO</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>- R$ {atendimento.discount.toFixed(2)}</td>
                     </tr>
                   )}
                   {atendimento.fee > 0 && (
                     <tr style={{backgroundColor: '#ecfdf5', color: '#059669'}}>
-                      <td colSpan={3} style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>TAXAS / ACRÉSCIMOS</td>
-                      <td style={{padding: '2mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>+ R$ {atendimento.fee.toFixed(2)}</td>
+                      <td colSpan={3} style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '6.5pt', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0'}}>TAXAS / ACRÉSCIMOS</td>
+                      <td style={{padding: '1mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '8pt', borderBottom: '1px solid #e2e8f0'}}>+ R$ {atendimento.fee.toFixed(2)}</td>
                     </tr>
                   )}
                   <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                    <td colSpan={3} style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>VALOR FINAL</td>
-                    <td style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '900', fontSize: '12pt'}}>R$ {(atendimento.totalValue || 0).toFixed(2)}</td>
+                    <td colSpan={3} style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>VALOR FINAL</td>
+                    <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', fontSize: '11pt'}}>R$ {(atendimento.totalValue || 0).toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -655,7 +657,7 @@ export default function AtendimentoDetails() {
             </div>
 
             {/* ASSINATURAS */}
-            <div style={{display: 'flex', justifyContent: 'space-around', marginTop: '8mm', paddingTop: '4mm', borderTop: '1px solid #e2e8f0'}}>
+            <div style={{display: 'flex', justifyContent: 'space-around', marginTop: '4mm', paddingTop: '4mm', borderTop: '1px solid #e2e8f0', pageBreakInside: 'avoid'}}>
               <div style={{textAlign: 'center', width: '70mm'}}>
                 <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
                 <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Paciente / Cliente</p>
@@ -667,7 +669,7 @@ export default function AtendimentoDetails() {
             </div>
 
             {/* CANHOTO */}
-            <div style={{marginTop: '8mm', borderTop: '2px dashed #cbd5e1', paddingTop: '5mm', position: 'relative'}}>
+            <div style={{marginTop: '6mm', borderTop: '2px dashed #cbd5e1', paddingTop: '4mm', position: 'relative', pageBreakInside: 'avoid'}}>
               <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '0 6px'}}>
                 <span style={{fontSize: '8pt', color: '#94a3b8'}}>✂</span>
               </div>
@@ -735,6 +737,6 @@ export default function AtendimentoDetails() {
             </div>
           </div>
         </div>
-      </>
-    );
-  }
+    </div>
+  );
+}

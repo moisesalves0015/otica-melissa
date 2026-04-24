@@ -232,6 +232,8 @@ export default function Atendimentos() {
             status: "Pendente",
             createdAt: isoDate,
             date: brDate,
+            orderCode: order.orderCode || "",
+            supplier: order.supplier || "",
           });
       }
 
@@ -251,16 +253,19 @@ export default function Atendimentos() {
               });
           } else {
               // Fluxo de Carnê
-              // 3.1. Se houver entrada, registrar no fluxo de caixa atual
+              // 3.1. Se houver entrada, registrar no fluxo de caixa E como installment pendente de confirmação
               if (entrada > 0) {
-                  await addDoc(collection(db, "financial_transactions"), {
+                  // Lança na fila de confirmação de recebimento (aparece no card de Carnês)
+                  await addDoc(collection(db, "installments"), {
                       atendimentoId: atendimentoDoc.id,
-                      description: `Entrada (Carnê) - ${client?.name || 'Avulso'}`,
-                      amount: entrada,
-                      date: brDate,
-                      category: "Venda de Produto",
-                      type: "Entrada",
-                      paymentMethod: "Dinheiro/Pix", // assumindo que entrada é a vista
+                      clientId: selectedClientId,
+                      clientName: client?.name || 'Avulso',
+                      number: 0,
+                      totalInstallments: installmentsCount,
+                      isDownPayment: true,
+                      value: entrada,
+                      dueDate: brDate,
+                      status: "Pendente",
                       createdAt: isoDate,
                   });
               }

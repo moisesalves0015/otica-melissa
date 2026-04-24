@@ -65,6 +65,8 @@ export default function Financial() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [groupedInstallments, setGroupedInstallments] = React.useState<any[]>([]);
+  const [receivingInstallment, setReceivingInstallment] = React.useState<any>(null);
+  const [receivedByName, setReceivedByName] = React.useState("");
 
   React.useEffect(() => {
     // 1. Transações (Fluxo de Caixa)
@@ -92,14 +94,22 @@ export default function Financial() {
                     id: inst.atendimentoId,
                     client: inst.clientName,
                     installments: [],
+                    downPayment: null,
                     totalValue: 0,
                     remainingValue: 0,
                 };
             }
-            groups[inst.atendimentoId].installments.push(inst);
-            groups[inst.atendimentoId].totalValue += inst.value;
-            if (inst.status !== 'Pago') {
-                groups[inst.atendimentoId].remainingValue += inst.value;
+            if (inst.isDownPayment) {
+                groups[inst.atendimentoId].downPayment = inst;
+                if (inst.status !== 'Pago') {
+                    groups[inst.atendimentoId].remainingValue += inst.value;
+                }
+            } else {
+                groups[inst.atendimentoId].installments.push(inst);
+                groups[inst.atendimentoId].totalValue += inst.value;
+                if (inst.status !== 'Pago') {
+                    groups[inst.atendimentoId].remainingValue += inst.value;
+                }
             }
         });
 
@@ -118,26 +128,46 @@ export default function Financial() {
     };
   }, []);
 
-  const handleReceiveInstallment = async (installment: any) => {
+  const handleReceiveInstallment = async () => {
+      if (!receivingInstallment || !receivedByName.trim()) {
+          toast.error("Informe quem está recebendo o pagamento.");
+          return;
+      }
       try {
+          const now = new Date();
+          const receivedAt = now.toISOString();
+          const receivedAtBr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
           // Atualiza status da parcela
-          const docRef = doc(db, "installments", installment.id);
-          await updateDoc(docRef, { status: 'Pago' });
+          const docRef = doc(db, "installments", receivingInstallment.id);
+          await updateDoc(docRef, {
+              status: 'Pago',
+              receivedBy: receivedByName,
+              receivedAt: receivedAt,
+              receivedAtBr: receivedAtBr,
+          });
+
+          const label = receivingInstallment.isDownPayment
+              ? `Entrada (Carnê) - ${receivingInstallment.clientName}`
+              : `Parcela ${receivingInstallment.number}/${receivingInstallment.totalInstallments} - ${receivingInstallment.clientName}`;
 
           // Lança entrada no fluxo de caixa
           await addDoc(collection(db, "financial_transactions"), {
-            description: `Receb. Parcela ${installment.number}/${installment.totalInstallments} - ${installment.clientName}`,
-            amount: installment.value,
-            date: new Date().toLocaleDateString('pt-BR'),
-            category: "Recebimento Carnê",
+            description: label,
+            amount: receivingInstallment.value,
+            date: now.toLocaleDateString('pt-BR'),
+            category: receivingInstallment.isDownPayment ? "Entrada Carnê" : "Recebimento Carnê",
             type: "Entrada",
             paymentMethod: "Dinheiro/Pix",
-            createdAt: new Date().toISOString(),
+            receivedBy: receivedByName,
+            createdAt: receivedAt,
           });
 
-          toast.success("Parcela recebida e lançada no caixa!");
+          toast.success("Recebimento confirmado e lançado no caixa!");
+          setReceivingInstallment(null);
+          setReceivedByName("");
       } catch (err: any) {
-          toast.error("Erro ao receber parcela: " + err.message);
+          toast.error("Erro ao receber: " + err.message);
       }
   };
 
@@ -197,6 +227,44 @@ export default function Financial() {
 
   return (
     <div className="space-y-6">
+      {/* DIALOG DE CONFIRMAÇÃO DE RECEBIMENTO */}
+      {receivingInstallment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 uppercase tracking-wide">
+                {receivingInstallment.isDownPayment ? 'Confirmar Recebimento da Entrada' : `Confirmar Recebimento — ${receivingInstallment.number}ª Parcela`}
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">Cliente: <strong>{receivingInstallment.clientName}</strong></p>
+              <p className="text-sm text-slate-500">Valor: <strong className="text-slate-900">R$ {receivingInstallment.value?.toFixed(2)}</strong></p>
+              {!receivingInstallment.isDownPayment && <p className="text-sm text-slate-500">Vencimento: <strong>{receivingInstallment.dueDate}</strong></p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Recebido por *</label>
+              <input
+                type="text"
+                value={receivedByName}
+                onChange={e => setReceivedByName(e.target.value)}
+                placeholder="Nome do responsável pelo recebimento"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400"
+                onKeyDown={e => e.key === 'Enter' && handleReceiveInstallment()}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => { setReceivingInstallment(null); setReceivedByName(''); }}
+                className="flex-1 border border-slate-200 text-slate-600 font-bold text-xs py-2 hover:bg-slate-50"
+              >CANCELAR</button>
+              <button
+                onClick={handleReceiveInstallment}
+                disabled={!receivedByName.trim()}
+                className="flex-1 bg-slate-900 text-white font-bold text-xs py-2 hover:bg-slate-800 disabled:opacity-40"
+              >CONFIRMAR RECEBIMENTO</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold text-slate-900">Gestão Financeira</h1>
@@ -424,9 +492,15 @@ export default function Financial() {
                             <CardContent className="p-0">
                                 <div className="grid grid-cols-4 gap-6 p-6 border-b border-slate-50 bg-slate-50/30">
                                     <div>
-                                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Valor Total</p>
+                                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Valor Total Parcelas</p>
                                         <p className="text-base font-bold text-slate-900">R$ {inst.totalValue.toFixed(2)}</p>
                                     </div>
+                                    {inst.downPayment && (
+                                      <div>
+                                          <p className="text-[10px] font-semibold text-slate-400 uppercase">Entrada</p>
+                                          <p className={`text-base font-bold ${inst.downPayment.status === 'Pago' ? 'text-emerald-600' : 'text-amber-600'}`}>R$ {inst.downPayment.value.toFixed(2)}</p>
+                                      </div>
+                                    )}
                                     <div>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase">Saldo Devedor</p>
                                         <p className="text-base font-bold text-red-600">R$ {inst.remainingValue.toFixed(2)}</p>
@@ -436,65 +510,92 @@ export default function Financial() {
                                         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full bg-slate-900" 
-                                                style={{ width: `${((inst.totalValue - inst.remainingValue) / inst.totalValue) * 100}%` }}
+                                                style={{ width: `${((inst.totalValue - inst.remainingValue) / (inst.totalValue + (inst.downPayment?.value || 0))) * 100}%` }}
                                             />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                        {inst.installments.map((parc: any) => {
-                                            // Lógica visual básica de vencimento (apenas p/ exibir vermelho se passou da data e não tá pago)
-                                            let displayStatus = parc.status;
-                                            if (displayStatus !== 'Pago' && parc.dueDate) {
-                                                const hoje = new Date();
-                                                hoje.setHours(0,0,0,0);
-                                                let dueDate: Date;
-                                                if (parc.dueDate.includes("/")) {
-                                                    const [d, m, y] = parc.dueDate.split("/").map(Number);
-                                                    dueDate = new Date(y, m - 1, d);
-                                                } else {
-                                                    dueDate = new Date(parc.dueDate);
-                                                }
-                                                if (hoje > dueDate) displayStatus = 'Vencido';
-                                            }
-
-                                            return (
-                                            <div key={parc.id} className={`p-3 rounded border ${
-                                                displayStatus === 'Pago' ? 'bg-emerald-50/30 border-emerald-100' :
-                                                displayStatus === 'Vencido' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'
-                                            }`}>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className="text-[10px] font-semibold text-slate-500 uppercase">{parc.number}ª Parcela</span>
-                                                    <Badge className={`${
-                                                        displayStatus === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
-                                                        displayStatus === 'Vencido' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'
-                                                    } text-[9px] font-bold shadow-none border-none px-1.5 py-0`}>
-                                                        {displayStatus}
+                                <div className="p-6 space-y-4">
+                                    {/* CARD DE ENTRADA */}
+                                    {inst.downPayment && (
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Entrada / Sinal</p>
+                                            <div className={`p-3 rounded border ${inst.downPayment.status === 'Pago' ? 'bg-emerald-50/30 border-emerald-100' : 'bg-amber-50/30 border-amber-200'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-[10px] font-bold text-slate-600 uppercase">Entrada</span>
+                                                    <Badge className={`${inst.downPayment.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} text-[9px] font-bold shadow-none border-none px-1.5 py-0`}>
+                                                        {inst.downPayment.status}
                                                     </Badge>
                                                 </div>
-                                                <p className="font-bold text-slate-900 text-[13px]">R$ {parc.value.toFixed(2)}</p>
-                                                <div className="flex items-center gap-1.5 mt-2 text-[10px] font-medium text-slate-400 uppercase">
-                                                    <Calendar className="h-3 w-3" /> {(() => {
-                                                        if (!parc.dueDate) return "---";
-                                                        if (parc.dueDate.includes("/")) {
-                                                            const [d, m, y] = parc.dueDate.split("/").map(Number);
-                                                            return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
-                                                        }
-                                                        return new Date(parc.dueDate).toLocaleDateString('pt-BR');
-                                                    })()}
-                                                </div>
-                                                {parc.status !== 'Pago' && (
-                                                    <Button onClick={() => handleReceiveInstallment(parc)} className="w-full mt-3 h-7 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-semibold">
-                                                        Receber
+                                                <p className="font-bold text-slate-900 text-[13px]">R$ {inst.downPayment.value.toFixed(2)}</p>
+                                                {inst.downPayment.status === 'Pago' ? (
+                                                    <div className="mt-1 space-y-0.5">
+                                                        <p className="text-[10px] text-emerald-700 font-semibold">✓ Recebido em {inst.downPayment.receivedAtBr}</p>
+                                                        <p className="text-[10px] text-emerald-600">por {inst.downPayment.receivedBy}</p>
+                                                    </div>
+                                                ) : (
+                                                    <Button onClick={() => { setReceivingInstallment(inst.downPayment); setReceivedByName(''); }} className="w-full mt-2 h-7 rounded bg-amber-600 hover:bg-amber-700 text-[10px] font-semibold text-white">
+                                                        Confirmar Recebimento da Entrada
                                                     </Button>
                                                 )}
                                             </div>
-                                            );
-                                        })}
+                                        </div>
+                                    )}
+                                    {/* CARDS DE PARCELAS */}
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Parcelas do Carnê</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                            {inst.installments.map((parc: any) => {
+                                                let displayStatus = parc.status;
+                                                if (displayStatus !== 'Pago' && parc.dueDate) {
+                                                    const hoje = new Date();
+                                                    hoje.setHours(0,0,0,0);
+                                                    let dueDate: Date;
+                                                    if (parc.dueDate.includes("/")) {
+                                                        const [d, m, y] = parc.dueDate.split("/").map(Number);
+                                                        dueDate = new Date(y, m - 1, d);
+                                                    } else {
+                                                        dueDate = new Date(parc.dueDate);
+                                                    }
+                                                    if (hoje > dueDate) displayStatus = 'Vencido';
+                                                }
+                                                return (
+                                                <div key={parc.id} className={`p-3 rounded border ${
+                                                    displayStatus === 'Pago' ? 'bg-emerald-50/30 border-emerald-100' :
+                                                    displayStatus === 'Vencido' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'
+                                                }`}>
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-[10px] font-semibold text-slate-500 uppercase">{parc.number}ª Parcela</span>
+                                                        <Badge className={`${
+                                                            displayStatus === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
+                                                            displayStatus === 'Vencido' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'
+                                                        } text-[9px] font-bold shadow-none border-none px-1.5 py-0`}>
+                                                            {displayStatus}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="font-bold text-slate-900 text-[13px]">R$ {parc.value.toFixed(2)}</p>
+                                                    <div className="flex items-center gap-1.5 mt-1 text-[10px] font-medium text-slate-400 uppercase">
+                                                        <Calendar className="h-3 w-3" /> Venc: {parc.dueDate || '---'}
+                                                    </div>
+                                                    {parc.status === 'Pago' && parc.receivedBy && (
+                                                        <div className="mt-1 space-y-0.5">
+                                                            <p className="text-[10px] text-emerald-700 font-semibold">✓ {parc.receivedAtBr}</p>
+                                                            <p className="text-[10px] text-emerald-600">por {parc.receivedBy}</p>
+                                                        </div>
+                                                    )}
+                                                    {parc.status !== 'Pago' && (
+                                                        <Button onClick={() => { setReceivingInstallment(parc); setReceivedByName(''); }} className="w-full mt-3 h-7 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-semibold">
+                                                            Receber
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
+
                           </Card>
                           
                           {/* PRINTABLE CARNÊ OVERLAY */}
@@ -509,7 +610,7 @@ export default function Financial() {
                             <div style={{
                               width: '210mm', 
                               minHeight: '297mm', 
-                              padding: '12mm 14mm', 
+                              padding: '10mm 12mm', 
                               backgroundColor: 'white', 
                               color: 'black',
                               fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -517,7 +618,7 @@ export default function Financial() {
                               flexDirection: 'column'
                             }}>
                                 {/* CABEÇALHO */}
-                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a', marginBottom: '6mm'}}>
+                                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #0f172a', marginBottom: '4mm'}}>
                                   <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                                     <img src="/logo.png" alt="Ótica Melissa" style={{height: '36px', width: 'auto', objectFit: 'contain'}} />
                                     <div>
@@ -531,29 +632,76 @@ export default function Financial() {
                                 </div>
 
                                 {/* DADOS DO CLIENTE */}
-                                <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5mm', marginBottom: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4mm', marginBottom: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                   <div>
-                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Dados do Titular</p>
+                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Dados do Titular</p>
                                     <p style={{fontSize: '11pt', fontWeight: '800', color: '#0f172a', margin: 0}}>{inst.client}</p>
                                   </div>
                                   <div style={{textAlign: 'right'}}>
-                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm'}}>Resumo Financeiro</p>
-                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#334155', margin: 0}}>Valor Total do Carnê: <span style={{fontWeight: '900', color: '#0f172a'}}>R$ {inst.totalValue.toFixed(2)}</span></p>
-                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#dc2626', margin: 0}}>Saldo Devedor Restante: <span style={{fontWeight: '900'}}>R$ {inst.remainingValue.toFixed(2)}</span></p>
+                                      <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1mm'}}>Resumo Financeiro</p>
+                                      {inst.downPayment && (
+                                        <p style={{fontSize: '8pt', fontWeight: '700', color: '#15803d', margin: 0}}>Entrada: <span style={{fontWeight: '900'}}>R$ {inst.downPayment.value.toFixed(2)}</span>{inst.downPayment.status === 'Pago' ? ' ✓ Recebida' : ' — Pendente'}</p>
+                                      )}
+                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#334155', margin: 0}}>Total Parcelas: <span style={{fontWeight: '900', color: '#0f172a'}}>R$ {inst.totalValue.toFixed(2)}</span></p>
+                                      <p style={{fontSize: '8.5pt', fontWeight: '700', color: '#dc2626', margin: 0}}>Saldo Devedor: <span style={{fontWeight: '900'}}>R$ {inst.remainingValue.toFixed(2)}</span></p>
                                   </div>
                                 </div>
 
+                                {/* LINHA DE ENTRADA NO PDF */}
+                                {inst.downPayment && (
+                                  <div style={{marginBottom: '4mm', pageBreakInside: 'avoid'}}>
+                                    <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Entrada / Sinal Inicial</p>
+                                    <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt'}}>
+                                      <thead>
+                                        <tr style={{backgroundColor: '#064e3b', color: 'white'}}>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Descrição</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Data</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
+                                          <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Autenticação / Rubrica</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr style={{backgroundColor: inst.downPayment.status === 'Pago' ? '#f0fdf4' : '#fffbeb', borderBottom: '1px solid #e2e8f0'}}>
+                                          <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#0f172a'}}>Entrada (Sinal)</td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{inst.downPayment.dueDate || '---'}</td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {inst.downPayment.value.toFixed(2)}</td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
+                                            <span style={{padding: '1mm 2mm', borderRadius: '4px', fontSize: '6.5pt', fontWeight: '800', textTransform: 'uppercase', backgroundColor: inst.downPayment.status === 'Pago' ? '#dcfce7' : '#fef3c7', color: inst.downPayment.status === 'Pago' ? '#166534' : '#92400e'}}>
+                                              {inst.downPayment.status}
+                                            </span>
+                                          </td>
+                                          <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
+                                            {inst.downPayment.status === 'Pago' ? (
+                                              <div>
+                                                <p style={{color: '#166534', fontWeight: '800', fontSize: '6.5pt', margin: 0}}>✓ RECEBIDO</p>
+                                                <p style={{color: '#166534', fontWeight: '600', fontSize: '6pt', margin: '0.5mm 0 0 0'}}>{inst.downPayment.receivedAtBr}</p>
+                                                <p style={{color: '#166534', fontWeight: '600', fontSize: '6pt', margin: 0}}>por: {inst.downPayment.receivedBy}</p>
+                                              </div>
+                                            ) : (
+                                              <div>
+                                                <div style={{width: '35mm', borderBottom: '1px solid #000', margin: '0 auto 1mm'}}></div>
+                                                <p style={{fontSize: '5.5pt', color: '#94a3b8', margin: 0}}>Assinatura do responsável</p>
+                                              </div>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+
                                 {/* TABELA DE PARCELAS */}
                                 <div style={{marginBottom: '4mm', flex: 1}}>
-                                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Detalhamento das Parcelas</p>
+                                  <p style={{fontSize: '7pt', fontWeight: '800', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2mm', borderBottom: '1px solid #e2e8f0', paddingBottom: '2mm'}}>Detalhamento das Parcelas</p>
                                   <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '9pt'}}>
                                     <thead>
                                       <tr style={{backgroundColor: '#0f172a', color: 'white'}}>
-                                        <th style={{padding: '3mm 4mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Nº Parcela</th>
-                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Vencimento</th>
-                                        <th style={{padding: '3mm 4mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor da Parcela</th>
-                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
-                                        <th style={{padding: '3mm 4mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Rubrica / Autenticação (Loja)</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'left', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '4px 0 0 4px'}}>Nº Parcela</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Vencimento</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Valor</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase'}}>Status</th>
+                                        <th style={{padding: '2mm 3mm', textAlign: 'center', fontWeight: '700', fontSize: '7pt', letterSpacing: '1px', textTransform: 'uppercase', borderRadius: '0 4px 4px 0'}}>Autenticação / Rubrica (Loja)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -583,10 +731,10 @@ export default function Financial() {
 
                                           return (
                                             <tr key={parc.id} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')}}>
-                                              <td style={{padding: '4mm', fontWeight: '800', color: '#0f172a'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
-                                              <td style={{padding: '4mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{formattedDate}</td>
-                                              <td style={{padding: '4mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {parc.value.toFixed(2)}</td>
-                                              <td style={{padding: '4mm', textAlign: 'center'}}>
+                                              <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#0f172a'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#475569', fontWeight: '600'}}>{formattedDate}</td>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#0f172a'}}>R$ {parc.value.toFixed(2)}</td>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
                                                   <span style={{
                                                       padding: '1mm 2mm', 
                                                       borderRadius: '4px', 
@@ -599,11 +747,19 @@ export default function Financial() {
                                                       {displayStatus}
                                                   </span>
                                               </td>
-                                              <td style={{padding: '4mm', textAlign: 'center'}}>
+                                              <td style={{padding: '2mm 3mm', textAlign: 'center'}}>
                                                   {displayStatus === 'Pago' ? (
-                                                      <span style={{color: '#166534', fontWeight: '800', fontSize: '7pt', letterSpacing: '1px'}}>PAGO ELETRONICAMENTE</span>
+                                                      <div>
+                                                        <p style={{color: '#166534', fontWeight: '800', fontSize: '7pt', margin: 0}}>✓ PAGO</p>
+                                                        {parc.receivedAtBr && <p style={{color: '#166534', fontWeight: '600', fontSize: '6pt', margin: '0.5mm 0 0 0'}}>{parc.receivedAtBr}</p>}
+                                                        {parc.receivedBy && <p style={{color: '#166534', fontWeight: '600', fontSize: '6pt', margin: 0}}>por: {parc.receivedBy}</p>}
+                                                        {!parc.receivedBy && <p style={{color: '#166534', fontWeight: '600', fontSize: '6pt', margin: '0.5mm 0 0 0'}}>Sistema</p>}
+                                                      </div>
                                                   ) : (
-                                                      <div style={{width: '30mm', borderBottom: '1px solid #cbd5e1', margin: '0 auto'}}></div>
+                                                      <div>
+                                                        <div style={{width: '35mm', borderBottom: '1px solid #000', margin: '0 auto 1mm'}}></div>
+                                                        <p style={{fontSize: '5.5pt', color: '#94a3b8', margin: 0}}>Assinatura / Carimbo</p>
+                                                      </div>
                                                   )}
                                               </td>
                                             </tr>
@@ -614,12 +770,12 @@ export default function Financial() {
                                 </div>
 
                                 {/* TERMOS E ASSINATURAS */}
-                                <div style={{marginTop: 'auto', borderTop: '2px dashed #e2e8f0', paddingTop: '6mm'}}>
-                                  <p style={{fontSize: '7.5pt', color: '#64748b', textAlign: 'justify', lineHeight: '1.5', marginBottom: '8mm'}}>
+                                <div style={{marginTop: 'auto', borderTop: '2px dashed #e2e8f0', paddingTop: '4mm', pageBreakInside: 'avoid'}}>
+                                  <p style={{fontSize: '7.5pt', color: '#64748b', textAlign: 'justify', lineHeight: '1.4', marginBottom: '4mm'}}>
                                     Reconheço e concordo com a dívida referente aos itens adquiridos na Ótica Melissa, constante no atendimento supracitado, comprometendo-me a pagar as parcelas detalhadas acima até as respectivas datas de vencimento. O atraso no pagamento poderá acarretar multa e juros conforme a legislação vigente, além da possível inclusão nos órgãos de proteção ao crédito. Este carnê é pessoal e intransferível.
                                   </p>
 
-                                  <div style={{display: 'flex', justifyContent: 'space-around', paddingTop: '2mm'}}>
+                                  <div style={{display: 'flex', justifyContent: 'space-around', paddingTop: '1mm'}}>
                                     <div style={{textAlign: 'center', width: '70mm'}}>
                                       <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
                                       <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Titular</p>
@@ -633,7 +789,7 @@ export default function Financial() {
                                 </div>
 
                                 {/* RODAPÉ */}
-                                <div style={{marginTop: '6mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                <div style={{marginTop: '4mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                   <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Documento gerado pelo sistema Ótica Melissa</p>
                                   <p style={{fontSize: '6.5pt', color: '#cbd5e1', margin: 0}}>Impresso em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
                                 </div>
