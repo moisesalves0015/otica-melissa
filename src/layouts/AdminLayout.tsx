@@ -23,43 +23,12 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../contexts/AuthContext";
 
 const sidebarLinks = [
-  {
-    group: "PRINCIPAL",
-    items: [
-      { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-      { name: "Atendimentos", icon: Zap, path: "/admin/atendimentos", highlight: true },
-    ],
-  },
-  {
-    group: "CLIENTES",
-    items: [
-      { name: "Lista de Clientes", icon: Users, path: "/admin/clientes" },
-    ],
-  },
-  {
-    group: "PRODUTOS",
-    items: [
-      { name: "Estoque", icon: Package, path: "/admin/produtos" },
-    ],
-  },
-  {
-    group: "OPERACIONAL",
-    items: [
-      { name: "Pedidos", icon: ShoppingCart, path: "/admin/pedidos" },
-    ],
-  },
-  {
-    group: "FINANCEIRO",
-    items: [
-      { name: "Gestão Financeira", icon: DollarSign, path: "/admin/financeiro" },
-    ],
-  },
-  {
-    group: "SISTEMA",
-    items: [
-      { name: "Configurações", icon: Settings, path: "/admin/configuracoes" },
-    ],
-  },
+  { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { name: "Atendimentos", icon: Zap, path: "/admin/atendimentos", highlight: true },
+  { name: "Lista de Clientes", icon: Users, path: "/admin/clientes" },
+  { name: "Pedidos", icon: ShoppingCart, path: "/admin/pedidos" },
+  { name: "Gestão Financeira", icon: DollarSign, path: "/admin/financeiro" },
+  { name: "Configurações", icon: Settings, path: "/admin/configuracoes" },
 ];
 
 export default function AdminLayout() {
@@ -72,64 +41,79 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside
         className={`${
-          isSidebarOpen ? "w-60" : "w-16"
-        } bg-slate-900 text-slate-400 transition-all duration-300 flex flex-col fixed inset-y-0 z-50 border-r border-slate-800`}
+          isSidebarOpen ? "w-64" : "w-20"
+        } bg-[#0f172a] text-slate-400 transition-all duration-300 flex flex-col fixed inset-y-0 z-50 border-r border-slate-800/50 shadow-xl`}
       >
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
+        <div className="h-20 flex items-center px-6 border-b border-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center shrink-0">
-               <img src="/logo.png" alt="" className="h-6 w-auto" />
-            </div>
-            {isSidebarOpen && (
-              <span className="text-sm font-bold text-white uppercase tracking-tight">Melissa Admin</span>
+            {isSidebarOpen ? (
+              <div className="flex flex-col">
+                <img 
+                  src="/logo.png" 
+                  alt="Melissa" 
+                  className="h-8 w-auto object-contain brightness-0 invert" 
+                />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Admin Panel</span>
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center transition-transform hover:scale-110">
+                <img 
+                  src="/logo.png" 
+                  alt="M" 
+                  className="h-6 w-auto object-contain brightness-0 invert" 
+                />
+              </div>
             )}
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
-          {sidebarLinks.map((group) => (
-            <div key={group.group} className="space-y-1">
-              {isSidebarOpen && (
-                <p className="text-[10px] font-semibold tracking-wider text-slate-500 px-3 mb-2">
-                  {group.group}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      className={`flex items-center gap-3 px-3 py-2 rounded transition-colors group ${
-                        isActive
-                          ? "bg-slate-800 text-white"
-                          : "hover:bg-slate-800/50 hover:text-slate-200"
-                      }`}
-                    >
-                      <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "group-hover:text-slate-200"}`} />
-                      {isSidebarOpen && (
-                        <span className="text-[13px] font-medium">{item.name}</span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+          {sidebarLinks.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-semibold"
+                    : "hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <div className={`relative flex items-center justify-center ${isActive ? "" : "group-hover:scale-110 transition-transform"}`}>
+                  <item.icon className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-primary"}`} />
+                  {item.highlight && !isActive && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse border-2 border-[#0f172a]" />
+                  )}
+                </div>
+                
+                {isSidebarOpen && (
+                  <span className="text-sm tracking-tight">{item.name}</span>
+                )}
+                
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNav"
+                    className="absolute inset-0 bg-primary rounded-xl -z-10"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-3 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800/50 mt-auto">
           <Button
             variant="ghost"
             size="sm"
             onClick={async () => {
               await logout();
             }}
-            className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-slate-800 px-3 h-10"
+            className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-red-500/10 hover:text-red-400 px-4 h-12 rounded-xl transition-all duration-200"
           >
-            <LogOut className="h-4 w-4" />
-            {isSidebarOpen && <span className="text-[13px] font-medium">Sair do Sistema</span>}
+            <LogOut className="h-5 w-5" />
+            {isSidebarOpen && <span className="text-sm font-medium">Sair do Sistema</span>}
           </Button>
         </div>
       </aside>

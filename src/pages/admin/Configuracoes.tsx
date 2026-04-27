@@ -1,5 +1,5 @@
 import * as React from "react";
-import { collection, addDoc, onSnapshot, query, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc, getDocs, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { Settings, Users, Truck, Plus, Trash2, Building2, Phone, Hash, ExternalLink, Tag } from "lucide-react";
@@ -30,6 +30,10 @@ export default function Configuracoes() {
   const [nomeCategoria, setNomeCategoria] = React.useState("");
   const [descCategoria, setDescCategoria] = React.useState("");
   const [savingCategoria, setSavingCategoria] = React.useState(false);
+
+  // ---- Configurações da Loja ----
+  const [whatsappPhone, setWhatsappPhone] = React.useState("");
+  const [savingStore, setSavingStore] = React.useState(false);
 
   // ---- Sistema ----
   const [migrating, setMigrating] = React.useState(false);
@@ -81,6 +85,10 @@ export default function Configuracoes() {
     });
     const unsubCat = onSnapshot(query(collection(db, "categorias")), (snap) => {
       setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    // Busca configurações da loja
+    getDoc(doc(db, "settings", "store")).then(snap => {
+      if (snap.exists()) setWhatsappPhone(snap.data().whatsappPhone || "");
     });
     return () => { unsubAtend(); unsubForn(); unsubCat(); };
   }, []);
@@ -150,6 +158,18 @@ export default function Configuracoes() {
     toast.success("Categoria removida.");
   };
 
+  const handleSaveStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingStore(true);
+    try {
+      await setDoc(doc(db, "settings", "store"), {
+        whatsappPhone: whatsappPhone.trim()
+      }, { merge: true });
+      toast.success("Configurações salvas!");
+    } catch (err: any) { toast.error("Erro: " + err.message); }
+    finally { setSavingStore(false); }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-col gap-1">
@@ -169,6 +189,9 @@ export default function Configuracoes() {
           </TabsTrigger>
           <TabsTrigger value="categorias" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Tag className="h-4 w-4" /> CATEGORIAS
+          </TabsTrigger>
+          <TabsTrigger value="loja" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+            <Building2 className="h-4 w-4" /> LOJA
           </TabsTrigger>
           <TabsTrigger value="sistema" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
             <Settings className="h-4 w-4" /> SISTEMA
@@ -438,6 +461,39 @@ export default function Configuracoes() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="loja" className="m-0 space-y-6 focus-visible:outline-none">
+          <Card className="!rounded-none border-slate-200 shadow-none !p-0 !gap-0 max-w-md">
+            <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80">
+              <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-slate-500" /> Dados da Loja
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <form onSubmit={handleSaveStore} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                    <Phone className="h-3 w-3" /> WhatsApp da Loja (com DDI)
+                  </Label>
+                  <Input
+                    value={whatsappPhone}
+                    onChange={e => setWhatsappPhone(e.target.value)}
+                    placeholder="5511999999999"
+                    className="!rounded-none border-slate-200 h-9 text-sm"
+                  />
+                  <p className="text-[10px] text-slate-400">Exemplo: 5511987654321 (55 = Brasil, 11 = DDD)</p>
+                </div>
+                <Button
+                  type="submit"
+                  disabled={savingStore}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white !rounded-none font-bold uppercase text-xs tracking-wider h-9"
+                >
+                  {savingStore ? "SALVANDO..." : "SALVAR CONFIGURAÇÕES"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="sistema" className="m-0 space-y-6">

@@ -54,6 +54,7 @@ export default function Atendimentos() {
   const [attendant, setAttendant] = React.useState("");
   const [prescription, setPrescription] = React.useState("");
   const [notes, setNotes] = React.useState("");
+  const [tso, setTso] = React.useState("");
   const [sessionOrders, setSessionOrders] = React.useState<OrderSession[]>([]);
 
   // Tabela de Receita (Rx)
@@ -161,6 +162,7 @@ export default function Atendimentos() {
       setAttendant("");
       setPrescription("");
       setNotes("");
+      setTso("");
       setSessionOrders([]);
       setRxData({
         longe_od_esf: "", longe_od_cil: "", longe_od_eixo: "", longe_od_dp: "",
@@ -201,6 +203,7 @@ export default function Atendimentos() {
         clientCpf: client ? client.cpf : "",
         attendant: attendant,
         notes: notes,
+        tso: tso,
         prescription: prescription,
         rxData: rxData, 
         subtotal: subtotal,
@@ -234,6 +237,7 @@ export default function Atendimentos() {
             date: brDate,
             orderCode: order.orderCode || "",
             supplier: order.supplier || "",
+            tso: tso,
           });
       }
 
@@ -332,7 +336,7 @@ export default function Atendimentos() {
     }
     const message = `Olá, *${atend.clientName.split(' ')[0]}*! Aqui é da *Ótica Melissa*. ✨
 
-Acabamos de registrar seu atendimento *#${atend.id.substring(0, 8).toUpperCase()}*.
+Acabamos de registrar seu atendimento *#${atend.tso || atend.id.substring(0, 8).toUpperCase()}*.
 Total: *R$ ${atend.totalValue.toFixed(2)}*
 ${atend.isCarne ? '\n💳 *Seu carnê foi aprovado e já está disponível online!*\n' : ''}
 Acompanhe seu pedido e histórico completo através da nossa nova *Área do Cliente*:
@@ -419,6 +423,15 @@ Agradecemos a preferência! 👓💙`;
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">TSO (Nº Atendimento) *</Label>
+                                        <Input 
+                                            value={tso}
+                                            onChange={(e) => setTso(e.target.value)}
+                                            placeholder="Ex: 1024"
+                                            className="!rounded-none border-slate-200 h-12 text-sm font-bold w-full bg-slate-50/50 focus:bg-white transition-colors"
+                                        />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Atendente / Consultor *</Label>
@@ -779,6 +792,7 @@ Agradecemos a preferência! 👓💙`;
                 <Table>
                     <TableHeader className="bg-slate-50/50">
                     <TableRow className="border-slate-100 hover:bg-transparent">
+                        <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">TSO</TableHead>
                         <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data/Hora</TableHead>
                         <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cliente</TableHead>
                         <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Anotações / Receita</TableHead>
@@ -789,6 +803,9 @@ Agradecemos a preferência! 👓💙`;
                     <TableBody>
                     {filteredAtendimentos.map((atend) => (
                         <TableRow key={atend.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
+                        <TableCell className="px-6 py-3">
+                            <span className="font-black text-slate-900">#{atend.tso || atend.id.substring(0, 8).toUpperCase()}</span>
+                        </TableCell>
                         <TableCell className="px-6 py-3">
                             <div className="flex flex-col">
                                 <span className="font-semibold text-slate-900">{atend.date}</span>
@@ -928,7 +945,7 @@ Agradecemos a preferência! 👓💙`;
               </div>
               <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px'}}>
                 <p style={{fontSize: '7pt', color: '#94a3b8', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Protocolo</p>
-                <p style={{fontSize: '11pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{printData.id.substring(0, 8).toUpperCase()}</p>
+                <p style={{fontSize: '11pt', fontWeight: '900', color: '#0f172a', margin: 0}}>#{printData.tso || printData.id.substring(0, 8).toUpperCase()}</p>
                 <p style={{fontSize: '7pt', color: '#64748b', margin: 0}}>{printData.date} • {printData.time}</p>
               </div>
             </div>
@@ -1102,7 +1119,7 @@ Agradecemos a preferência! 👓💙`;
 
                   <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm', minWidth: '45mm'}}>
                     <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
-                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{printData.id ? printData.id.substring(0, 8).toUpperCase() : "—"}</p>
+                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{printData.tso || (printData.id ? printData.id.substring(0, 8).toUpperCase() : "—")}</p>
                     <table style={{fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
                       <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
                       <tbody>

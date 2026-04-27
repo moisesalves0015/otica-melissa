@@ -150,7 +150,7 @@ export default function OrderDetails() {
           </Button>
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              Pedido #{order.id.slice(0, 8).toUpperCase()}
+              Pedido #{order.tso || order.id.slice(0, 8).toUpperCase()}
               <Badge className={`rounded ${statusColors[order.status]} text-[10px] font-bold uppercase tracking-wider`}>
                 {order.status}
               </Badge>
@@ -419,7 +419,7 @@ export default function OrderDetails() {
             
             <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
               <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
-              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{order.id.slice(0, 8).toUpperCase()}</p>
+              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{order.tso || order.id.slice(0, 8).toUpperCase()}</p>
               <p style={{fontSize: '6.5pt', color: '#334155', margin: 0, fontWeight: '700'}}>Data: {order.date}</p>
             </div>
           </div>

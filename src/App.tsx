@@ -4,7 +4,6 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Clients from "./pages/admin/Clients";
 import ClientProfile from "./pages/admin/ClientProfile";
-import Products from "./pages/admin/Products";
 import Orders from "./pages/admin/Orders";
 import Financial from "./pages/admin/Financial";
 import Atendimentos from "./pages/admin/Atendimentos";
@@ -13,6 +12,7 @@ import AtendimentoDetails from "./pages/admin/AtendimentoDetails";
 import AdminLogin from "./pages/admin/Login";
 import Configuracoes from "./pages/admin/Configuracoes";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ClientProtectedRoute from "./components/ClientProtectedRoute";
 import Rastreio from "./pages/Rastreio";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -28,7 +28,9 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/cliente/login" element={<ClientLogin />} />
-          <Route path="/cliente/dashboard" element={<ClientDashboard />} />
+          <Route element={<ClientProtectedRoute />}>
+            <Route path="/cliente/dashboard" element={<ClientDashboard />} />
+          </Route>
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute />}>
@@ -36,7 +38,6 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="clientes" element={<Clients />} />
               <Route path="clientes/:id" element={<ClientProfile />} />
-              <Route path="produtos" element={<Products />} />
               <Route path="pedidos" element={<Orders />} />
               <Route path="pedidos/:id" element={<OrderDetails />} />
               <Route path="financeiro" element={<Financial />} />

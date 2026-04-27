@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AtendimentoDetails() {
   const { id } = useParams();
@@ -26,6 +25,7 @@ export default function AtendimentoDetails() {
   const [atendimento, setAtendimento] = React.useState<any>(null);
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
   const [editNotes, setEditNotes] = React.useState("");
+  const [editTso, setEditTso] = React.useState("");
   const [editRx, setEditRx] = React.useState<any>({});
 
   React.useEffect(() => {
@@ -53,6 +53,7 @@ export default function AtendimentoDetails() {
 
   const startEditing = () => {
     setEditNotes(atendimento.notes || "");
+    setEditTso(atendimento.tso || "");
     setEditRx({ ...(atendimento.rxData || {}) });
     setIsEditing(true);
   };
@@ -68,6 +69,7 @@ export default function AtendimentoDetails() {
     try {
       const changes: string[] = [];
       if (atendimento.notes !== editNotes) changes.push(`Anotações atualizadas`);
+      if (atendimento.tso !== editTso) changes.push(`TSO alterado para ${editTso}`);
       
       const rxData = atendimento.rxData || {};
       const newRxData = { ...editRx };
@@ -98,6 +100,7 @@ export default function AtendimentoDetails() {
 
       await updateDoc(doc(db, "atendimentos", id), {
         notes: editNotes,
+        tso: editTso,
         rxData: newRxData,
         history: arrayUnion(historyEntry)
       });
@@ -138,8 +141,6 @@ export default function AtendimentoDetails() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
-
-          
           {/* HEADER */}
           <div className="flex items-center justify-between print:hidden">
             <div className="flex items-center gap-4">
@@ -148,7 +149,7 @@ export default function AtendimentoDetails() {
               </Button>
               <div>
                 <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  Atendimento #{atendimento.id.slice(0, 8).toUpperCase()}
+                  Atendimento #{atendimento.tso || atendimento.id.slice(0, 8).toUpperCase()}
                 </h1>
                 <p className="text-xs text-slate-500">{atendimento.date} às {atendimento.time}</p>
               </div>
@@ -199,10 +200,8 @@ export default function AtendimentoDetails() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
             {/* COLUNA ESQUERDA: DADOS CLÍNICOS E PEDIDOS */}
             <div className="lg:col-span-2 space-y-6">
-              
               <Card className="!rounded-none border-slate-200 shadow-none overflow-hidden !p-0 !gap-0">
                 <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 !rounded-none">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800">
@@ -210,7 +209,19 @@ export default function AtendimentoDetails() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">TSO (Nº)</p>
+                            {isEditing ? (
+                                <Input 
+                                    value={editTso}
+                                    onChange={e => setEditTso(e.target.value)}
+                                    className="h-8 w-24 text-sm font-bold"
+                                />
+                            ) : (
+                                <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.tso || "—"}</p>
+                            )}
+                        </div>
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Paciente</p>
                             <p className="text-sm font-bold text-slate-900 h-8 flex items-center">{atendimento.clientName}</p>
@@ -352,8 +363,8 @@ export default function AtendimentoDetails() {
                               <p className="text-sm text-slate-400 italic font-medium">Nenhum item ou venda vinculada.</p>
                           </div>
                       )}
-                    </div>
-                </div>
+                  </div>
+              </div>
             </div>
 
             {/* COLUNA DIREITA: RESUMO FINANCEIRO */}
@@ -510,7 +521,7 @@ export default function AtendimentoDetails() {
               </div>
               <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 10px'}}>
                 <p style={{fontSize: '7pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Protocolo</p>
-                <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>#{atendimento.id.substring(0, 8).toUpperCase()}</p>
+                <p style={{fontSize: '11pt', fontWeight: '900', color: '#000000', margin: 0}}>#{atendimento.tso || atendimento.id.substring(0, 8).toUpperCase()}</p>
                 <p style={{fontSize: '7pt', color: '#334155', margin: 0}}>{atendimento.date} • {atendimento.time}</p>
               </div>
             </div>
@@ -701,7 +712,7 @@ export default function AtendimentoDetails() {
 
                   <div style={{backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4mm', minWidth: '45mm'}}>
                     <p style={{fontSize: '6.5pt', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1mm'}}>Nº Atendimento</p>
-                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{atendimento.id ? atendimento.id.substring(0, 8).toUpperCase() : "—"}</p>
+                    <p style={{fontSize: '14pt', fontWeight: '900', color: '#0f172a', margin: '0 0 2mm'}}>#{atendimento.tso || (atendimento.id ? atendimento.id.substring(0, 8).toUpperCase() : "—")}</p>
                     <table style={{fontSize: '7pt', borderCollapse: 'collapse', width: '100%'}}>
                       <thead><tr style={{backgroundColor: '#e2e8f0'}}><th style={{padding: '1mm 2mm', textAlign: 'left'}}>Item</th><th style={{padding: '1mm 2mm', textAlign: 'center'}}>Entrega</th></tr></thead>
                       <tbody>
