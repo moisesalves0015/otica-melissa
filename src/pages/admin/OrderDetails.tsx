@@ -1,5 +1,6 @@
 import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
+import html2pdf from 'html2pdf.js';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { doc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Save, Clock, User, ShoppingCart, 
   Calendar, CreditCard, FileText, Activity, Truck, 
-  Wrench, CheckCircle2, Eye, XCircle, Printer
+  Wrench, CheckCircle2, Eye, XCircle, Printer, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,43 @@ export default function OrderDetails() {
     window.print();
   };
 
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('printable-os') as HTMLElement;
+    if (!element) {
+        toast.error("Erro ao localizar o conteúdo da ficha.");
+        return;
+    }
+
+    const clientName = order.clientName || "Cliente";
+    const orderNum = order.tso || order.id.slice(0, 8).toUpperCase();
+
+    const opt = {
+      margin:       0,
+      filename:     `OS_${orderNum}_${clientName.replace(/\s+/g, '_')}.pdf`,
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+    };
+
+    toast.info("Gerando PDF, aguarde...");
+    
+    // Temporariamente tornar a div visível para o html2pdf capturar
+    const originalStyle = element.style.display;
+    element.style.display = 'block';
+    element.classList.remove('hidden');
+    
+    html2pdf().from(element).set(opt).save().then(() => {
+        element.style.display = originalStyle;
+        element.classList.add('hidden');
+        toast.success("Download concluído!");
+    }).catch((err: any) => {
+        element.style.display = originalStyle;
+        element.classList.add('hidden');
+        console.error("Erro no PDF:", err);
+        toast.error("Erro ao gerar PDF.");
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -172,6 +210,9 @@ export default function OrderDetails() {
             <>
               <Button type="button" onClick={() => setIsEditing(true)} variant="outline" className="rounded font-bold text-xs h-9">
                 <Wrench className="mr-2 h-4 w-4" /> EDITAR
+              </Button>
+              <Button type="button" onClick={handleDownloadPDF} variant="outline" className="rounded font-bold text-xs h-9 border-slate-300 text-slate-700">
+                <Download className="mr-2 h-4 w-4" /> BAIXAR PDF
               </Button>
               <Button type="button" onClick={handlePrint} variant="outline" className="rounded font-bold text-xs h-9">
                 <Printer className="mr-2 h-4 w-4" /> IMPRIMIR OS
@@ -396,7 +437,7 @@ export default function OrderDetails() {
           html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
         }
       `}</style>
-      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
+      <div id="printable-os" className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>

@@ -9,6 +9,7 @@ import {
   CreditCard, DollarSign, Calendar, Wrench, XCircle, Save, Trash2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import html2pdf from 'html2pdf.js';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,6 +135,40 @@ export default function AtendimentoDetails() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('printable-area');
+    if (!element) {
+        toast.error("Erro ao localizar o conteúdo da ficha.");
+        return;
+    }
+
+    const clientName = atendimento.clientName || "Cliente";
+    const dateStr = atendimento.date ? atendimento.date.replace(/\//g, '-') : "data";
+
+    const opt = {
+      margin:       0,
+      filename:     `Atendimento_${clientName.replace(/\s+/g, '_')}_${dateStr}.pdf`,
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+    };
+
+    toast.info("Gerando PDF, aguarde...");
+    
+    // Garantir que o elemento seja visível para captura
+    const originalStyle = element.style.display;
+    element.style.display = 'block';
+
+    html2pdf().from(element).set(opt).save().then(() => {
+        element.style.display = originalStyle;
+        toast.success("Download concluído!");
+    }).catch((err: any) => {
+        element.style.display = originalStyle;
+        console.error("Erro no PDF:", err);
+        toast.error("Erro ao gerar PDF.");
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -183,6 +218,9 @@ export default function AtendimentoDetails() {
                   </Button>
                   <Button type="button" onClick={startEditing} variant="outline" className="rounded font-bold text-xs h-9">
                     <Wrench className="mr-2 h-4 w-4" /> EDITAR
+                  </Button>
+                  <Button type="button" onClick={handleDownloadPDF} variant="outline" className="rounded font-bold text-xs h-9 border-slate-300 text-slate-700">
+                    BAIXAR PDF
                   </Button>
                   <Button 
                     type="button"

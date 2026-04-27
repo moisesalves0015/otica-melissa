@@ -1,5 +1,6 @@
 import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
+import html2pdf from 'html2pdf.js';
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, onSnapshot, collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -96,6 +97,37 @@ export default function ClientProfile() {
     printWindow.document.close();
   };
 
+  const handleDownloadPDF = () => {
+    const element = document.querySelector('.print-page') as HTMLElement;
+    if (!element) {
+        toast.error("Erro ao localizar o conteúdo da ficha.");
+        return;
+    }
+
+    const opt = {
+      margin:       0,
+      filename:     `Prontuario_${client.name.replace(/\s+/g, '_')}.pdf`,
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+    };
+
+    toast.info("Gerando PDF, aguarde...");
+    
+    // Garantir que o elemento seja visível para captura
+    const originalStyle = element.style.display;
+    element.style.display = 'block';
+
+    html2pdf().from(element).set(opt).save().then(() => {
+        element.style.display = originalStyle;
+        toast.success("Download concluído!");
+    }).catch((err: any) => {
+        element.style.display = originalStyle;
+        console.error("Erro no PDF:", err);
+        toast.error("Erro ao gerar PDF.");
+    });
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-slate-500">Carregando prontuário...</div>;
   }
@@ -123,9 +155,14 @@ export default function ClientProfile() {
             <p className="text-xs text-slate-500">Ficha #{client.id}</p>
           </div>
         </div>
-        <Button onClick={handlePrint} className="bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase text-xs tracking-wider">
-          <Printer className="mr-2 h-4 w-4" /> Imprimir Relatório
-        </Button>
+        <div className="flex gap-2">
+            <Button onClick={handleDownloadPDF} variant="outline" className="border-slate-300 text-slate-700 rounded font-bold uppercase text-xs tracking-wider">
+                BAIXAR PDF
+            </Button>
+            <Button onClick={handlePrint} className="bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase text-xs tracking-wider">
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+            </Button>
+        </div>
       </div>
 
       {/* CABEÇALHO DO RELATÓRIO (Visível na impressão) */}

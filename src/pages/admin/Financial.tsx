@@ -58,6 +58,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
+import html2pdf from 'html2pdf.js';
 
 export default function Financial() {
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -180,6 +181,37 @@ export default function Financial() {
           document.body.innerHTML = originalContent;
           window.location.reload();
       }
+  };
+
+  const handleDownloadCarnePDF = (carneId: string, clientName: string) => {
+    const element = document.getElementById(`printable-carne-${carneId}`) as HTMLElement;
+    if (!element) {
+        toast.error("Erro ao localizar o conteúdo do carnê.");
+        return;
+    }
+
+    const opt = {
+      margin:       0,
+      filename:     `Carne_${clientName.replace(/\s+/g, '_')}_${carneId.substring(0,6)}.pdf`,
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+    };
+
+    toast.info("Gerando PDF do carnê, aguarde...");
+    
+    // Garantir que o elemento seja visível para captura
+    const originalStyle = element.style.display;
+    element.style.display = 'block';
+
+    html2pdf().from(element).set(opt).save().then(() => {
+        element.style.display = originalStyle;
+        toast.success("Download do carnê concluído!");
+    }).catch((err: any) => {
+        element.style.display = originalStyle;
+        console.error("Erro no PDF do carnê:", err);
+        toast.error("Erro ao gerar PDF do carnê.");
+    });
   };
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -483,8 +515,11 @@ export default function Financial() {
                                     <p className="text-[11px] text-slate-400 font-medium mt-0.5">Atendimento #{inst.id.substring(0,8).toUpperCase()}</p>
                                 </div>
                                 <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900" onClick={() => handlePrintCarne(inst.id)}>
+                                    <Button variant="ghost" size="icon" title="Imprimir Carnê" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900" onClick={() => handlePrintCarne(inst.id)}>
                                         <Printer className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" title="Baixar PDF" className="h-8 w-8 rounded text-slate-400 hover:text-slate-900" onClick={() => handleDownloadCarnePDF(inst.id, inst.client)}>
+                                        <Download className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded text-slate-400">
                                         <QrCode className="h-3.5 w-3.5" />
