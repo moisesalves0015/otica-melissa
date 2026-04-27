@@ -152,11 +152,8 @@
     print-color-adjust: exact;
   }
 
-  /* Esconde o sidebar e o topbar do AdminLayout */
-  aside,
-  header,
-  nav,
-  .print-hide {
+  /* Esconde elementos marcados para não imprimir */
+  .print-hidden {
     display: none !important;
   }
 
@@ -169,12 +166,5 @@
   /* Garante que o conteúdo de impressão ocupe a página toda */
   .print-page {
     display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    background: white;
   }
 }

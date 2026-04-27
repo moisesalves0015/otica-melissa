@@ -28,6 +28,13 @@ export default function AtendimentoDetails() {
   const [editTso, setEditTso] = React.useState("");
   const [editRx, setEditRx] = React.useState<any>({});
 
+  const calculateItemFinalPrice = (item: any) => {
+    let price = item.price || 0;
+    const disc = item.discountType === "percent" ? (price * (item.discount / 100)) : (item.discount || 0);
+    const addition = item.feeType === "percent" ? (price * (item.fee / 100)) : (item.fee || 0);
+    return Math.max(0, price - disc + addition);
+  };
+
   React.useEffect(() => {
     if (!id) return;
     
@@ -180,14 +187,44 @@ export default function AtendimentoDetails() {
                   <Button 
                     type="button"
                     onClick={() => {
-                      const printContent = document.getElementById('printable-area');
-                      if (printContent) {
-                          const originalContent = document.body.innerHTML;
-                          document.body.innerHTML = printContent.innerHTML;
-                          window.print();
-                          document.body.innerHTML = originalContent;
-                          window.location.reload();
+                      const content = document.getElementById('printable-area');
+                      if (!content) return;
+                      
+                      const printWindow = window.open('', '_blank');
+                      if (!printWindow) {
+                        toast.error("Por favor, permita pop-ups para imprimir.");
+                        return;
                       }
+
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>Ficha de Atendimento - Ótica Melissa</title>
+                            <style>
+                              @page { size: A4; margin: 0; }
+                              body { margin: 0; padding: 0; font-family: sans-serif; }
+                              * { box-sizing: border-box; }
+                              @media print {
+                                body { -webkit-print-color-adjust: exact; }
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <div style="padding: 10mm 12mm; min-height: 297mm;">
+                              ${content.innerHTML}
+                            </div>
+                            <script>
+                              window.onload = () => {
+                                setTimeout(() => {
+                                  window.print();
+                                  window.close();
+                                }, 500);
+                              };
+                            </script>
+                          </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
                     }} 
                     variant="outline" 
                     className="rounded font-bold text-xs h-9"
@@ -342,8 +379,11 @@ export default function AtendimentoDetails() {
                                           <span className="text-xs text-slate-500">{order.items || "Sem descrição"}</span>
                                       </div>
                                       <div className="text-right flex items-center justify-end gap-3">
-                                          <div>
-                                              <p className="text-sm font-black text-slate-900">R$ {order.price?.toFixed(2)}</p>
+                                          <div className="flex flex-col items-end">
+                                              <p className="text-sm font-black text-emerald-600">R$ {calculateItemFinalPrice(order).toFixed(2)}</p>
+                                              {calculateItemFinalPrice(order) !== order.price && (
+                                                  <p className="text-[9px] text-slate-400 line-through">R$ {order.price?.toFixed(2)}</p>
+                                              )}
                                               <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Entrega: {order.dueDate || 'Imediata'}</p>
                                           </div>
                                           <Button 
@@ -491,15 +531,8 @@ export default function AtendimentoDetails() {
             </div>
           </div>
 
-        {/* ÁREA DE IMPRESSÃO MODERNA (Oculta na tela, visível apenas na impressão) */}
-        <div id="printable-area" style={{display: 'none'}}>
-          <style>{`
-            @media print {
-              @page { size: A4; margin: 0; }
-              html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
-              body { background: white !important; }
-            }
-          `}</style>
+        {/* FICHA FORMATADA PARA CONFERÊNCIA (PRÉVIA) */}
+        <div id="printable-area" className="mt-12 border-t pt-12 mx-auto" style={{ backgroundColor: 'white' }}>
           <div style={{
             width: '210mm', 
             minHeight: '297mm', 
@@ -508,7 +541,8 @@ export default function AtendimentoDetails() {
             color: 'black',
             fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            gap: '4mm'
           }}>
             
             {/* CABEÇALHO */}
@@ -630,7 +664,20 @@ export default function AtendimentoDetails() {
                         }
                         return new Date(o.dueDate).toLocaleDateString('pt-BR');
                       })()}</td>
-                      <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {(o.price || 0).toFixed(2)}</td>
+                      <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>
+                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end'}}>
+                          <span>R$ {calculateItemFinalPrice(o).toFixed(2)}</span>
+                          {calculateItemFinalPrice(o) !== o.price && (
+                            <span style={{fontSize: '7pt', color: '#64748b', textDecoration: 'line-through', fontWeight: '500'}}>R$ {o.price.toFixed(2)}</span>
+                          )}
+                          {o.discount > 0 && (
+                            <span style={{fontSize: '6.5pt', color: '#dc2626', fontWeight: '700'}}>- {o.discountType === 'percent' ? `${o.discount}%` : `R$ ${o.discount.toFixed(2)}`}</span>
+                          )}
+                          {o.fee > 0 && (
+                            <span style={{fontSize: '6.5pt', color: '#059669', fontWeight: '700'}}>+ {o.feeType === 'percent' ? `${o.fee}%` : `R$ ${o.fee.toFixed(2)}`}</span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {(!atendimento.orders || atendimento.orders.length === 0) && (

@@ -179,24 +179,26 @@ export default function Configuracoes() {
         <p className="text-xs text-slate-500">Gerencie atendentes, fornecedores e preferências da loja.</p>
       </div>
 
-      <Tabs defaultValue="atendentes" className="w-fit">
-        <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-2 mb-6">
-          <TabsTrigger value="atendentes" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-            <Users className="h-4 w-4" /> ATENDENTES
-          </TabsTrigger>
-          <TabsTrigger value="fornecedores" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-            <Truck className="h-4 w-4" /> FORNECEDORES
-          </TabsTrigger>
-          <TabsTrigger value="categorias" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-            <Tag className="h-4 w-4" /> CATEGORIAS
-          </TabsTrigger>
-          <TabsTrigger value="loja" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> LOJA
-          </TabsTrigger>
-          <TabsTrigger value="sistema" className="flex-none !rounded-none-none border-b-2 border-transparent w-[160px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
-            <Settings className="h-4 w-4" /> SISTEMA
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="atendentes" className="w-full">
+        <div className="overflow-x-auto custom-scrollbar mb-6">
+          <TabsList className="bg-transparent p-0 border-b border-slate-200 h-auto w-full justify-start rounded-none gap-2 min-w-max">
+            <TabsTrigger value="atendentes" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <Users className="h-4 w-4" /> ATENDENTES
+            </TabsTrigger>
+            <TabsTrigger value="fornecedores" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <Truck className="h-4 w-4" /> FORNECEDORES
+            </TabsTrigger>
+            <TabsTrigger value="categorias" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <Tag className="h-4 w-4" /> CATEGORIAS
+            </TabsTrigger>
+            <TabsTrigger value="loja" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <Building2 className="h-4 w-4" /> LOJA
+            </TabsTrigger>
+            <TabsTrigger value="sistema" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <Settings className="h-4 w-4" /> SISTEMA
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ===== ABA ATENDENTES ===== */}
         <TabsContent value="atendentes" className="m-0 space-y-6 focus-visible:outline-none">

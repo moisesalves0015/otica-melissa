@@ -375,7 +375,8 @@ export default function Orders() {
           </div>
         </div>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto custom-scrollbar">
+            <Table className="min-w-[1000px]">
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-slate-100 hover:bg-transparent">
                 <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Pedido</TableHead>
@@ -457,6 +458,7 @@ export default function Orders() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

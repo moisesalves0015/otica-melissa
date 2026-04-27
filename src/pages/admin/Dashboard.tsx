@@ -296,7 +296,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {DYNAMIC_STATS.map((stat) => (
           <Card key={stat.label} className="rounded border-slate-200 shadow-none">
             <CardContent className="p-4">
@@ -427,7 +427,8 @@ export default function Dashboard() {
             {topProducts.length === 0 ? (
               <div className="p-10 text-center text-slate-400 text-sm">Nenhuma venda registrada.</div>
             ) : (
-              <table className="w-full text-left">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left min-w-[500px]">
                 <thead className="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Produto</th>
@@ -451,6 +452,7 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, onSnapshot, collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Printer, FileText, User, Phone, Calendar, ShoppingBag, MapPin, Activity } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ClientProfile() {
   const { id } = useParams();
@@ -54,7 +56,44 @@ export default function ClientProfile() {
   }, [id]);
 
   const handlePrint = () => {
-    window.print();
+    const content = document.querySelector('.print-page');
+    if (!content) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        toast.error("Por favor, permita pop-ups para imprimir.");
+        return;
+    }
+
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Prontuário - Ótica Melissa</title>
+                <style>
+                    @page { size: A4; margin: 0; }
+                    body { margin: 0; padding: 0; font-family: sans-serif; }
+                    * { box-sizing: border-box; }
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div style="padding: 10mm 12mm; min-height: 297mm;">
+                    ${content.innerHTML}
+                </div>
+                <script>
+                    window.onload = () => {
+                        setTimeout(() => {
+                            window.print();
+                            window.close();
+                        }, 500);
+                    };
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
   };
 
   if (loading) {
@@ -255,8 +294,17 @@ export default function ClientProfile() {
         </CardContent>
       </Card>
       
-      {/* OVERLAY DE IMPRESSÃO MODERNO - Aparece apenas na impressão, cobre tudo */}
-      <div className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
+      {/* FICHA FORMATADA PARA CONFERÊNCIA (PRÉVIA) */}
+      <div className="print-page bg-white mt-12 border-t pt-12" style={{ 
+        width: '210mm', 
+        minHeight: '297mm', 
+        margin: '0 auto', 
+        padding: '10mm 12mm', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '4mm',
+        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+      }}>
         
         {/* CABEÇALHO */}
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>
@@ -266,14 +314,25 @@ export default function ClientProfile() {
               <p style={{fontSize: '7pt', fontWeight: '800', color: '#000000', letterSpacing: '2px', textTransform: 'uppercase', margin: 0}}>Prontuário do Cliente</p>
             </div>
           </div>
-          <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
-            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº da Ficha</p>
-            <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{client.id.length > 8 ? client.id.slice(0,6).toUpperCase() : client.id}</p>
-            <p style={{fontSize: '6.5pt', color: '#334155', margin: 0}}>Cliente desde {(() => {
-                if (!client.createdAt) return "---";
-                if (client.createdAt.includes("/")) return client.createdAt;
-                return new Date(client.createdAt).toLocaleDateString('pt-BR');
-            })()}</p>
+          <div style={{textAlign: 'right', display: 'flex', gap: '3mm', alignItems: 'flex-start'}}>
+            {/* QR CODE DE ACESSO AO PORTAL */}
+            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '2mm'}}>
+              <QRCodeSVG 
+                value={`https://otica-melissa.vercel.app/cliente/login`} 
+                size={50} 
+              />
+              <p style={{fontSize: '4pt', fontWeight: '900', textTransform: 'uppercase', color: '#000000', margin: 0}}>Portal do Cliente</p>
+            </div>
+
+            <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº da Ficha</p>
+              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{client.id.length > 8 ? client.id.slice(0,6).toUpperCase() : client.id}</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', margin: 0}}>Cliente desde {(() => {
+                  if (!client.createdAt) return "---";
+                  if (client.createdAt.includes("/")) return client.createdAt;
+                  return new Date(client.createdAt).toLocaleDateString('pt-BR');
+              })()}</p>
+            </div>
           </div>
         </div>
 
@@ -360,8 +419,7 @@ export default function ClientProfile() {
           <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Prontuário gerado pelo sistema Ótica Melissa</p>
           <p style={{fontSize: '6.5pt', color: '#94a3b8', margin: 0}}>Relatório emitido em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
         </div>
+        </div>
       </div>
-
-    </div>
   );
 }

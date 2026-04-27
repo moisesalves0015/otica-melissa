@@ -414,7 +414,8 @@ export default function Financial() {
                     </div>
                 </div>
                 <CardContent className="p-0">
-                    <Table>
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <Table className="min-w-[700px]">
                         <TableHeader className="bg-slate-50/50">
                         <TableRow className="border-slate-100 hover:bg-transparent">
                             <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data</TableHead>
@@ -464,6 +465,7 @@ export default function Financial() {
                             )}
                         </TableBody>
                     </Table>
+                    </div>
                 </CardContent>
             </Card>
           </TabsContent>
@@ -544,7 +546,7 @@ export default function Financial() {
                                     {/* CARDS DE PARCELAS */}
                                     <div>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Parcelas do Carnê</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                             {inst.installments.map((parc: any) => {
                                                 let displayStatus = parc.status;
                                                 if (displayStatus !== 'Pago' && parc.dueDate) {

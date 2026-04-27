@@ -27,6 +27,10 @@ interface OrderSession {
     dueDate: string;
     labNotes: string;
     price: number;
+    discount: number;
+    discountType: "fixed" | "percent";
+    fee: number;
+    feeType: "fixed" | "percent";
     expanded: boolean;
     orderCode: string;
     supplier: string;
@@ -70,6 +74,7 @@ export default function Atendimentos() {
   const [entrada, setEntrada] = React.useState<number>(0);
   const [installmentsCount, setInstallmentsCount] = React.useState<number>(1);
   const [discountValue, setDiscountValue] = React.useState<number>(0);
+  const [discountType, setDiscountType] = React.useState<"fixed" | "percent">("fixed");
   const [feeValue, setFeeValue] = React.useState<number>(0);
   const [feeType, setFeeType] = React.useState<"fixed" | "percent">("percent");
   const [firstDueDate, setFirstDueDate] = React.useState<string>("");
@@ -118,9 +123,17 @@ export default function Atendimentos() {
             .replace(/(\d{2})(\d)/, "$1/$2");
   };
 
-  const subtotal = sessionOrders.reduce((acc, curr) => acc + curr.price, 0);
+  const calculateItemFinalPrice = (item: OrderSession) => {
+    let price = item.price || 0;
+    const disc = item.discountType === "percent" ? (price * (item.discount / 100)) : item.discount;
+    const addition = item.feeType === "percent" ? (price * (item.fee / 100)) : item.fee;
+    return Math.max(0, price - (disc || 0) + (addition || 0));
+  };
+
+  const subtotal = sessionOrders.reduce((acc, curr) => acc + calculateItemFinalPrice(curr), 0);
+  const calculatedDiscount = discountType === "percent" ? (subtotal * (discountValue / 100)) : discountValue;
   const calculatedFee = feeType === "percent" ? (subtotal * (feeValue / 100)) : feeValue;
-  const totalFinal = Math.max(0, subtotal - discountValue + calculatedFee);
+  const totalFinal = Math.max(0, subtotal - (calculatedDiscount || 0) + (calculatedFee || 0));
   const saldoDevedor = Math.max(0, totalFinal - entrada);
   const isCarne = paymentMethod === "carne";
 
@@ -132,6 +145,10 @@ export default function Atendimentos() {
           dueDate: "",
           labNotes: "",
           price: 0,
+          discount: 0,
+          discountType: "fixed",
+          fee: 0,
+          feeType: "fixed",
           expanded: true,
           orderCode: "",
           supplier: "",
@@ -173,6 +190,7 @@ export default function Atendimentos() {
       setPaymentMethod("pix");
       setEntrada(0);
       setDiscountValue(0);
+      setDiscountType("fixed");
       setFeeValue(0);
       setFeeType("percent");
       setInstallmentsCount(1);
@@ -230,7 +248,12 @@ export default function Atendimentos() {
             dueDate: order.dueDate,
             notes: order.labNotes,
             items: order.items,
-            total: order.price,
+            total: calculateItemFinalPrice(order),
+            unitPrice: order.price,
+            discount: order.discount,
+            discountType: order.discountType,
+            fee: order.fee,
+            feeType: order.feeType,
             paymentMethod: paymentMethod,
             status: "Pendente",
             createdAt: isoDate,
@@ -322,9 +345,50 @@ export default function Atendimentos() {
 
   const handlePrint = (atend: any) => {
     setPrintData(atend);
+    
+    // Pequeno delay para o React renderizar o printData no DOM oculto
     setTimeout(() => {
-        window.print();
-    }, 500);
+        const content = document.querySelector('.print-page');
+        if (!content) return;
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast.error("Por favor, permita pop-ups para imprimir.");
+            return;
+        }
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Ficha de Atendimento - Ótica Melissa</title>
+                    <style>
+                        @page { size: A4; margin: 0; }
+                        body { margin: 0; padding: 0; font-family: sans-serif; }
+                        * { box-sizing: border-box; }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div style="padding: 10mm 12mm; min-height: 297mm;">
+                        ${content.innerHTML}
+                    </div>
+                    <script>
+                        window.onload = () => {
+                            setTimeout(() => {
+                                window.print();
+                                window.close();
+                            }, 500);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        // Limpar printData após abrir a janela
+        setTimeout(() => setPrintData(null), 1000);
+    }, 300);
   };
 
   const handleWhatsAppReceipt = (atend: any) => {
@@ -359,22 +423,22 @@ Agradecemos a preferência! 👓💙`;
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full print:hidden">
-          <div className="flex justify-start mb-6">
-            <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start !rounded-none-none gap-2">
-              <TabsTrigger value="novo" className="flex-none !rounded-none-none border-b-2 border-transparent w-[220px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+          <div className="flex justify-start mb-6 overflow-x-auto custom-scrollbar">
+            <TabsList className="bg-transparent p-0 border-b border-slate-200 h-auto w-full justify-start rounded-none gap-2 min-w-max">
+              <TabsTrigger value="novo" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
                   <Activity className="h-4 w-4" /> SESSÃO DE ATENDIMENTO
               </TabsTrigger>
-              <TabsTrigger value="historico" className="flex-none !rounded-none-none border-b-2 border-transparent w-[220px] justify-center h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              <TabsTrigger value="historico" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
                   <FileText className="h-4 w-4" /> HISTÓRICO E FICHAS
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="novo" className="m-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                     
                     {/* COLUNA ESQUERDA: DADOS CLÍNICOS E PEDIDOS */}
-                    <div className="xl:col-span-8 space-y-6">
+                    <div className="lg:col-span-7 xl:col-span-8 space-y-6">
                         <Card className="!rounded-none border-slate-200 shadow-none overflow-hidden !p-0 !gap-0">
                             <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/80 !rounded-none">
                                 <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800">
@@ -454,10 +518,10 @@ Agradecemos a preferência! 👓💙`;
                                 <Separator className="bg-slate-100" />
                                 
                                 <div className="space-y-5">
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 overflow-hidden">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Receita Óptica (Grau)</Label>
-                                        <div className="!rounded-none border border-slate-200 overflow-hidden bg-white">
-                                            <table className="w-full text-xs text-center border-collapse">
+                                        <div className="!rounded-none border border-slate-200 overflow-x-auto custom-scrollbar bg-white">
+                                            <table className="w-full text-xs text-center border-collapse min-w-[600px]">
                                             <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500">
                                                 <tr>
                                                 <th className="p-2 border-r border-slate-200 w-16"></th>
@@ -553,7 +617,12 @@ Agradecemos a preferência! 👓💙`;
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-6">
-                                                <span className="text-sm font-black text-emerald-600">R$ {order.price.toFixed(2)}</span>
+                                                <div className="text-right">
+                                                    <span className="text-sm font-black text-emerald-600">R$ {calculateItemFinalPrice(order).toFixed(2)}</span>
+                                                    {calculateItemFinalPrice(order) !== order.price && (
+                                                        <p className="text-[10px] text-slate-400 line-through">R$ {order.price.toFixed(2)}</p>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-1 border-l border-slate-200 pl-4">
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none" onClick={(e) => { e.stopPropagation(); removeOrder(order.id); }}>
                                                         <Trash2 className="h-3.5 w-3.5" />
@@ -567,8 +636,8 @@ Agradecemos a preferência! 👓💙`;
                                         
                                         {order.expanded && (
                                             <div className="p-5 space-y-5 bg-white">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                    <div className="space-y-1.5">
+                                                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                                                    <div className="md:col-span-5 space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço / Categoria</Label>
                                                         <Select value={order.serviceType} onValueChange={(val) => updateOrder(order.id, 'serviceType', val)}>
                                                             <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
@@ -587,9 +656,29 @@ Agradecemos a preferência! 👓💙`;
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
-                                                    <div className="space-y-1.5">
-                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor Deste Item (R$)</Label>
-                                                        <Input type="number" step="0.01" value={order.price || ''} onChange={(e) => updateOrder(order.id, 'price', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                    <div className="md:col-span-7 grid grid-cols-3 gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor (R$)</Label>
+                                                            <Input type="number" step="0.01" value={order.price || ''} onChange={(e) => updateOrder(order.id, 'price', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Desc. ({order.discountType === 'percent' ? '%' : 'R$'})</Label>
+                                                            <div className="flex gap-1">
+                                                                <Input type="number" step="0.01" value={order.discount || ''} onChange={(e) => updateOrder(order.id, 'discount', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                                <Button variant="outline" size="icon" className="h-9 w-9 !rounded-none border-slate-200 flex-none" onClick={(e) => { e.stopPropagation(); updateOrder(order.id, 'discountType', order.discountType === 'percent' ? 'fixed' : 'percent'); }}>
+                                                                    <span className="text-[10px] font-bold">{order.discountType === 'percent' ? '%' : '$'}</span>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Acrés. ({order.feeType === 'percent' ? '%' : 'R$'})</Label>
+                                                            <div className="flex gap-1">
+                                                                <Input type="number" step="0.01" value={order.fee || ''} onChange={(e) => updateOrder(order.id, 'fee', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                                <Button variant="outline" size="icon" className="h-9 w-9 !rounded-none border-slate-200 flex-none" onClick={(e) => { e.stopPropagation(); updateOrder(order.id, 'feeType', order.feeType === 'percent' ? 'fixed' : 'percent'); }}>
+                                                                    <span className="text-[10px] font-bold">{order.feeType === 'percent' ? '%' : '$'}</span>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
@@ -645,7 +734,7 @@ Agradecemos a preferência! 👓💙`;
                     </div>
 
                     {/* COLUNA DIREITA: RESUMO FINANCEIRO (STICKY) */}
-                    <div className="xl:col-span-4">
+                    <div className="lg:col-span-5 xl:col-span-4">
                         <div className="sticky top-6">
                             <Card className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white !p-0 !gap-0">
                                 <CardHeader className="p-5 border-b border-slate-100 bg-slate-900 text-white !rounded-none">
@@ -675,8 +764,13 @@ Agradecemos a preferência! 👓💙`;
                                     <div className="p-5 space-y-4 bg-white">
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <Label className="text-[9px] font-bold uppercase text-slate-400">Desconto (R$)</Label>
-                                                <Input type="number" step="0.01" value={discountValue || ''} onChange={(e) => setDiscountValue(Number(e.target.value))} className="h-8 text-xs font-bold border-slate-100 bg-slate-50/50" />
+                                                <Label className="text-[9px] font-bold uppercase text-slate-400">Desconto ({discountType === 'percent' ? '%' : 'R$'})</Label>
+                                                <div className="flex gap-1">
+                                                    <Input type="number" step="0.01" value={discountValue || ''} onChange={(e) => setDiscountValue(Number(e.target.value))} className="h-8 text-xs font-bold border-slate-100 bg-slate-50/50" />
+                                                    <Button variant="outline" size="icon" className="h-8 w-8 !rounded-none border-slate-100" onClick={() => setDiscountType(discountType === 'percent' ? 'fixed' : 'percent')}>
+                                                        <span className="text-[10px] font-bold">{discountType === 'percent' ? '%' : '$'}</span>
+                                                    </Button>
+                                                </div>
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="text-[9px] font-bold uppercase text-slate-400">Acréscimo ({feeType === 'percent' ? '%' : 'R$'})</Label>
@@ -696,10 +790,10 @@ Agradecemos a preferência! 👓💙`;
                                                 <span>Subtotal</span>
                                                 <span className="font-semibold">R$ {subtotal.toFixed(2)}</span>
                                             </div>
-                                            {discountValue > 0 && (
+                                            {calculatedDiscount > 0 && (
                                                 <div className="flex justify-between items-center text-rose-500 text-[11px]">
                                                     <span>Desconto</span>
-                                                    <span className="font-semibold">- R$ {discountValue.toFixed(2)}</span>
+                                                    <span className="font-semibold">- R$ {calculatedDiscount.toFixed(2)}</span>
                                                 </div>
                                             )}
                                             {calculatedFee > 0 && (
@@ -933,7 +1027,21 @@ Agradecemos a preferência! 👓💙`;
       {/* --- ÁREA DE IMPRESSÃO MODERNA (Oculta na tela, visível apenas na impressão) --- */}
       {printData && (
         <div className="print-page hidden print:block bg-white text-black font-sans" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"}}>
-          <div style={{padding: '12mm 14mm', minHeight: '297mm', display: 'flex', flexDirection: 'column'}}>
+          <style>{`
+            @media print {
+              @page { size: A4; margin: 0; }
+              body * { visibility: hidden; }
+              .print-page, .print-page * { visibility: visible; }
+              .print-page { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 210mm !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+              }
+            }
+          `}</style>          <div style={{padding: '12mm 14mm', minHeight: '297mm', display: 'flex', flexDirection: 'column'}}>
             
             {/* CABEÇALHO */}
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6mm', borderBottom: '2px solid #0f172a', marginBottom: '6mm'}}>
