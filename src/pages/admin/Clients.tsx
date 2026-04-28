@@ -42,7 +42,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { collection, addDoc, setDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, onSnapshot, query, orderBy, where, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -98,11 +98,36 @@ export default function Clients() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    // 1. Validações de Campos Obrigatórios
+    if (!data.name || String(data.name).trim().length < 3) {
+      toast.error("O nome completo é obrigatório e deve ter pelo menos 3 caracteres.");
+      return;
+    }
+    if (!data.cpf || String(data.cpf).replace(/\D/g, "").length !== 11) {
+      toast.error("CPF inválido. Certifique-se de preencher os 11 dígitos.");
+      return;
+    }
+    if (!data.birth || String(data.birth).length !== 10) {
+      toast.error("Data de nascimento inválida. Use o formato DD/MM/AAAA.");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const formData = new FormData(e.currentTarget);
-      const data = Object.fromEntries(formData.entries());
+      // 2. Verificação de CPF Duplicado
+      const cpf = String(data.cpf);
+      const q = query(collection(db, "clients"), where("cpf", "==", cpf));
+      const querySnapshot = await getDocs(q);
       
+      if (!querySnapshot.empty) {
+        toast.error("Este CPF já está cadastrado para outro cliente.");
+        setIsSaving(false);
+        return;
+      }
+
       const uniqueId = Math.floor(100000 + Math.random() * 900000).toString();
       
       const password = data.password ? String(data.password) : String(data.cpf || "").replace(/\D/g, "").slice(-4);

@@ -17,11 +17,13 @@ import Rastreio from "./pages/Rastreio";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
 import { AuthProvider } from "./contexts/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster />
       <Router>
         <Routes>
           {/* Public Routes */}

@@ -437,7 +437,7 @@ export default function OrderDetails() {
           html, body { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; padding: 0 !important; }
         }
       `}</style>
-      <div id="printable-os" className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
+      <div id="printable-os" className="print-page hidden print:block bg-white" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", padding: '5mm 12mm 10mm 12mm', minHeight: '297mm', width: '210mm', display: 'flex', flexDirection: 'column', gap: '4mm'}}>
         
         {/* CABEÇALHO */}
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4mm', borderBottom: '2px solid #000000', marginBottom: '4mm'}}>

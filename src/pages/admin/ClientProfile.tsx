@@ -98,7 +98,7 @@ export default function ClientProfile() {
   };
 
   const handleDownloadPDF = () => {
-    const element = document.querySelector('.print-page') as HTMLElement;
+    const element = document.getElementById('printable-client') as HTMLElement;
     if (!element) {
         toast.error("Erro ao localizar o conteúdo da ficha.");
         return;
@@ -332,11 +332,11 @@ export default function ClientProfile() {
       </Card>
       
       {/* FICHA FORMATADA PARA CONFERÊNCIA (PRÉVIA) */}
-      <div className="print-page bg-white mt-12 border-t pt-12" style={{ 
+      <div id="printable-client" className="print-page bg-white" style={{ 
         width: '210mm', 
         minHeight: '297mm', 
         margin: '0 auto', 
-        padding: '10mm 12mm', 
+        padding: '5mm 12mm 10mm 12mm', 
         display: 'flex', 
         flexDirection: 'column', 
         gap: '4mm',

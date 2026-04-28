@@ -647,7 +647,7 @@ export default function Financial() {
                             <div style={{
                               width: '210mm', 
                               minHeight: '297mm', 
-                              padding: '10mm 12mm', 
+                              padding: '5mm 12mm 10mm 12mm', 
                               backgroundColor: 'white', 
                               color: 'black',
                               fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",

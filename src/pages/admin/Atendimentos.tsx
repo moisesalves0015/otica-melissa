@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { collection, addDoc, onSnapshot, query, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, serverTimestamp, doc, setDoc, where, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
@@ -140,7 +140,7 @@ export default function Atendimentos() {
   const handleAddOrder = () => {
       setSessionOrders([...sessionOrders, {
           id: Math.random().toString(36).substr(2, 9),
-          serviceType: "Óculos Completo",
+          serviceType: "",
           items: "",
           dueDate: "",
           labNotes: "",
@@ -198,17 +198,56 @@ export default function Atendimentos() {
   };
 
   const handleSave = async () => {
-    if (!selectedClientId || !attendant) {
-        toast.error("Preencha o cliente e o atendente.");
+    // 1. Validações Iniciais Detalhadas
+    if (!selectedClientId) {
+        toast.error("Por favor, selecione um cliente para iniciar o atendimento.");
         return;
     }
-    if (isCarne && (!firstDueDate || installmentsCount < 1)) {
-        toast.error("Para Carnê, informe o número de parcelas e a data do 1º vencimento.");
+    if (!attendant) {
+        toast.error("Selecione o atendente responsável por este atendimento.");
+        return;
+    }
+    if (!tso) {
+        toast.error("O número do TSO (Atendimento) é obrigatório para identificação.");
+        return;
+    }
+    
+    if (isCarne) {
+        if (!firstDueDate) {
+            toast.error("Informe a data do 1º vencimento para o carnê.");
+            return;
+        }
+        if (installmentsCount < 1) {
+            toast.error("O número de parcelas deve ser pelo menos 1.");
+            return;
+        }
+    }
+
+    // Validação de itens
+    if (sessionOrders.length === 0) {
+        toast.error("Adicione pelo menos um item ao atendimento.");
+        return;
+    }
+    const missingCategory = sessionOrders.some(o => !o.serviceType);
+    if (missingCategory) {
+        toast.error("Por favor, selecione uma categoria para todos os itens.");
         return;
     }
 
     setIsSaving(true);
+    
     try {
+      // Validação de TSO Único
+      if (tso) {
+        const tsoQuery = query(collection(db, "atendimentos"), where("tso", "==", tso));
+        const tsoSnapshot = await getDocs(tsoQuery);
+        if (!tsoSnapshot.empty) {
+          toast.error(`O TSO #${tso} já está cadastrado em outro atendimento.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const client = clients.find(c => c.id === selectedClientId);
       const isoDate = new Date().toISOString();
       const brDate = new Date().toLocaleDateString('pt-BR');
@@ -332,7 +371,7 @@ export default function Atendimentos() {
           }
       }
       
-      toast.success("Atendimento registrado e carnê gerado com sucesso!");
+      toast.success(isCarne ? "Atendimento registrado e carnê gerado com sucesso!" : "Atendimento registrado com sucesso!");
       resetSession();
       setActiveTab("historico");
 
@@ -641,7 +680,7 @@ Agradecemos a preferência! 👓💙`;
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço / Categoria</Label>
                                                         <Select value={order.serviceType} onValueChange={(val) => updateOrder(order.id, 'serviceType', val)}>
                                                             <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
-                                                                <SelectValue />
+                                                                <SelectValue placeholder="Selecione uma categoria" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                               {categorias.length === 0 ? (
@@ -858,7 +897,7 @@ Agradecemos a preferência! 👓💙`;
                                             </div>
                                         )}
 
-                                        <Button onClick={handleSave} disabled={isSaving || (selectedClientId === "")} className="w-full h-11 !rounded-none-none bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-xs tracking-wider shadow-lg shadow-slate-900/10">
+                                        <Button onClick={handleSave} disabled={isSaving} className="w-full h-11 !rounded-none-none bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase text-xs tracking-wider shadow-lg shadow-slate-900/10">
                                             {isSaving ? "PROCESSANDO..." : "FINALIZAR ATENDIMENTO"}
                                         </Button>
                                     </div>

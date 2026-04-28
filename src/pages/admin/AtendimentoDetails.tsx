@@ -1,12 +1,13 @@
 import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, query, deleteDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, query, deleteDoc, where, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
   ArrowLeft, User, ShoppingCart, 
   Clock, FileText, Activity, Printer, 
-  CreditCard, DollarSign, Calendar, Wrench, XCircle, Save, Trash2
+  CreditCard, DollarSign, Calendar, Wrench, XCircle, Save, Trash2, Download,
+  Menu, MoreVertical, Plus, CheckCircle, Package, ChevronDown, ChevronUp
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import html2pdf from 'html2pdf.js';
@@ -16,6 +17,27 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function AtendimentoDetails() {
   const { id } = useParams();
@@ -28,6 +50,27 @@ export default function AtendimentoDetails() {
   const [editNotes, setEditNotes] = React.useState("");
   const [editTso, setEditTso] = React.useState("");
   const [editRx, setEditRx] = React.useState<any>({});
+  const [linkedOrders, setLinkedOrders] = React.useState<any[]>([]);
+  const [categorias, setCategorias] = React.useState<any[]>([]);
+  const [fornecedores, setFornecedores] = React.useState<any[]>([]);
+  const [editOrders, setEditOrders] = React.useState<any[]>([]);
+  const [expandedOrderIndex, setExpandedOrderIndex] = React.useState<number | null>(null);
+  const [showRemovalConfirm, setShowRemovalConfirm] = React.useState(false);
+  const [showCancelOrderConfirm, setShowCancelOrderConfirm] = React.useState(false);
+  const [orderToDelete, setOrderToDelete] = React.useState<{id: string, idx: number} | null>(null);
+  const [editPaymentMethod, setEditPaymentMethod] = React.useState("pix");
+  const [editDiscountValue, setEditDiscountValue] = React.useState(0);
+  const [editDiscountType, setEditDiscountType] = React.useState<"fixed" | "percent">("fixed");
+  const [editFeeValue, setEditFeeValue] = React.useState(0);
+  const [editFeeType, setEditFeeType] = React.useState<"fixed" | "percent">("percent");
+
+  const formatDate = (value: string) => {
+    let v = value.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    if (v.length >= 5) v = v.replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3");
+    else if (v.length >= 3) v = v.replace(/(\d{2})(\d{1,2})/, "$1/$2");
+    return v;
+  };
 
   const calculateItemFinalPrice = (item: any) => {
     let price = item.price || 0;
@@ -35,6 +78,21 @@ export default function AtendimentoDetails() {
     const addition = item.feeType === "percent" ? (price * (item.fee / 100)) : (item.fee || 0);
     return Math.max(0, price - disc + addition);
   };
+
+  const currentSubtotal = isEditing 
+    ? editOrders.reduce((acc, curr) => acc + calculateItemFinalPrice(curr), 0)
+    : (atendimento?.subtotal || atendimento?.totalValue || 0);
+
+  const currentDiscount = isEditing ? editDiscountValue : (atendimento?.discount || 0);
+  const currentDiscountType = isEditing ? editDiscountType : (atendimento?.discountType || 'fixed');
+  const currentCalculatedDiscount = currentDiscountType === 'percent' ? (currentSubtotal * (currentDiscount / 100)) : currentDiscount;
+
+  const currentFeeValue = isEditing ? editFeeValue : (atendimento?.feeValue || 0);
+  const currentFeeType = isEditing ? editFeeType : (atendimento?.feeType || 'percent');
+  const currentCalculatedFee = currentFeeType === 'percent' ? (currentSubtotal * (currentFeeValue / 100)) : (atendimento?.fee || 0);
+
+  const currentTotal = Math.max(0, currentSubtotal - currentCalculatedDiscount + currentCalculatedFee);
+  const currentPaymentMethod = isEditing ? editPaymentMethod : (atendimento?.paymentMethod || 'pix');
 
   React.useEffect(() => {
     if (!id) return;
@@ -53,16 +111,145 @@ export default function AtendimentoDetails() {
       setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
+    const qOrders = query(collection(db, "orders"), where("atendimentoId", "==", id));
+    const unsubOrders = onSnapshot(qOrders, (snap) => {
+      setLinkedOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const unsubCats = onSnapshot(query(collection(db, "categorias")), (snap) => {
+      setCategorias(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const unsubFornecedores = onSnapshot(query(collection(db, "fornecedores")), (snap) => {
+      setFornecedores(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     return () => {
       unsub();
       unsubAtendentes();
+      unsubOrders();
+      unsubCats();
+      unsubFornecedores();
     };
   }, [id, navigate]);
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pendente': return 'bg-slate-100 text-slate-600 border-slate-200';
+      case 'em laboratório': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'pronto': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'entregue': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'cancelado': return 'bg-rose-50 text-rose-700 border-rose-200';
+      default: return 'bg-slate-50 text-slate-500 border-slate-100';
+    }
+  };
+
+  const handleRemoveOrder = (orderId: string, idx: number) => {
+    setOrderToDelete({ id: orderId, idx });
+    setShowRemovalConfirm(true);
+  };
+
+  const confirmRemoval = async () => {
+    if (!orderToDelete || !atendimento) return;
+    
+    try {
+      setSaving(true);
+      const orderBeingRemoved = linkedOrders.find(o => o.id === orderToDelete.id);
+      const newOrders = [...atendimento.orders];
+      newOrders.splice(orderToDelete.idx, 1);
+
+      const historyEntry = {
+        date: new Date().toISOString(),
+        action: `Alterações efetuadas: Item removido do atendimento: ${orderBeingRemoved?.serviceType || 'Serviço/Produto'}`,
+        user: "Administrador"
+      };
+
+      // Atualiza o atendimento
+      await updateDoc(doc(db, "atendimentos", id!), {
+        orders: newOrders,
+        history: arrayUnion(historyEntry)
+      });
+
+      setShowRemovalConfirm(false);
+      
+      toast.success("Item removido do atendimento!", {
+        onAutoClose: () => {
+          // Após a mensagem sumir, verifica se deve perguntar sobre o cancelamento do pedido
+          const order = linkedOrders.find(o => o.id === orderToDelete.id);
+          if (order && order.status !== "Cancelado") {
+            setShowCancelOrderConfirm(true);
+          } else {
+            setOrderToDelete(null);
+          }
+        }
+      });
+    } catch (error: any) {
+      toast.error("Erro ao remover item: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelOrderAction = async () => {
+    if (!orderToDelete || !atendimento) return;
+    
+    try {
+      setSaving(true);
+      const historyEntry = {
+        date: new Date().toISOString(),
+        action: `Pedido cancelado automaticamente ao ser removido do Atendimento #${atendimento.tso || id}`,
+        user: "Administrador"
+      };
+
+      await updateDoc(doc(db, "orders", orderToDelete.id), {
+        status: "Cancelado",
+        canceledAt: new Date().toISOString(),
+        history: arrayUnion(historyEntry)
+      });
+      toast.success("Pedido vinculado marcado como cancelado.");
+    } catch (error: any) {
+      toast.error("Erro ao cancelar pedido: " + error.message);
+    } finally {
+      setSaving(false);
+      setShowCancelOrderConfirm(false);
+      setOrderToDelete(null);
+    }
+  };
+
+  const updateEditOrder = (idx: number, field: string, value: any) => {
+    const newOrders = [...editOrders];
+    newOrders[idx] = { ...newOrders[idx], [field]: value };
+    setEditOrders(newOrders);
+  };
+
+  const addEmptyOrder = () => {
+    const newOrder = {
+      id: "TEMP-" + Date.now(),
+      serviceType: "",
+      price: 0,
+      discount: 0,
+      fee: 0,
+      discountType: "fixed",
+      feeType: "fixed",
+      items: "",
+      dueDate: "",
+      labNotes: "",
+      isNew: true
+    };
+    setEditOrders([...editOrders, newOrder]);
+    setExpandedOrderIndex(editOrders.length);
+  };
 
   const startEditing = () => {
     setEditNotes(atendimento.notes || "");
     setEditTso(atendimento.tso || "");
     setEditRx({ ...(atendimento.rxData || {}) });
+    setEditOrders([...(atendimento.orders || [])]);
+    setEditPaymentMethod(atendimento.paymentMethod || "pix");
+    setEditDiscountValue(atendimento.discount || 0);
+    setEditDiscountType(atendimento.discountType || "fixed");
+    setEditFeeValue(atendimento.feeValue || 0);
+    setEditFeeType(atendimento.feeType || "percent");
     setIsEditing(true);
   };
 
@@ -75,9 +262,31 @@ export default function AtendimentoDetails() {
     setSaving(true);
     
     try {
+      // Validação de TSO Único na Edição
+      if (atendimento.tso !== editTso && editTso) {
+        const tsoQuery = query(collection(db, "atendimentos"), where("tso", "==", editTso));
+        const tsoSnapshot = await getDocs(tsoQuery);
+        if (!tsoSnapshot.empty) {
+          toast.error(`O TSO #${editTso} já está sendo usado em outro atendimento.`);
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Validação de Categorias
+      const missingCategory = editOrders.some(o => !o.serviceType);
+      if (missingCategory) {
+        toast.error("Por favor, selecione uma categoria para todos os itens.");
+        setSaving(false);
+        return;
+      }
+
       const changes: string[] = [];
       if (atendimento.notes !== editNotes) changes.push(`Anotações atualizadas`);
       if (atendimento.tso !== editTso) changes.push(`TSO alterado para ${editTso}`);
+      if (atendimento.paymentMethod !== editPaymentMethod) changes.push(`Forma de pagamento alterada para ${editPaymentMethod.toUpperCase()}`);
+      if (atendimento.discount !== editDiscountValue || atendimento.discountType !== editDiscountType) changes.push(`Desconto global ajustado`);
+      if (atendimento.feeValue !== editFeeValue || atendimento.feeType !== editFeeType) changes.push(`Taxas/Acréscimos globais ajustados`);
       
       const rxData = atendimento.rxData || {};
       const newRxData = { ...editRx };
@@ -93,6 +302,30 @@ export default function AtendimentoDetails() {
       
       if (rxChanged) changes.push(`Receita Óptica (Grau) modificada`);
 
+      // Verifica mudanças nos pedidos (itens)
+      const originalOrders = atendimento.orders || [];
+      if (editOrders.length > originalOrders.length) {
+        const addedItems = editOrders.filter(o => o.isNew);
+        addedItems.forEach(item => {
+          changes.push(`Item adicionado no atendimento: ${item.serviceType || 'Não definido'}`);
+        });
+      } else if (editOrders.length < originalOrders.length) {
+        changes.push(`Lista de itens alterada (remoção)`);
+      } else {
+        const hasItemEdits = editOrders.some((order, idx) => {
+          const original = originalOrders[idx];
+          if (!original) return true;
+          return order.serviceType !== original.serviceType || 
+                 order.price !== original.price || 
+                 order.discount !== original.discount ||
+                 order.fee !== original.fee ||
+                 order.items !== original.items ||
+                 order.dueDate !== original.dueDate ||
+                 order.orderCode !== original.orderCode;
+        });
+        if (hasItemEdits) changes.push(`Detalhes de itens atualizados`);
+      }
+
       if (changes.length === 0) {
         toast.info("Nenhuma alteração detectada.");
         setIsEditing(false);
@@ -106,14 +339,61 @@ export default function AtendimentoDetails() {
         user: "Administrador"
       };
 
+      // Recalcula o total final baseado nos pedidos editados e ajustes globais
+      const finalOrders = editOrders.map(o => {
+        const { isNew, ...rest } = o;
+        return rest;
+      });
+      
+      const subtotal = finalOrders.reduce((acc, curr) => acc + calculateItemFinalPrice(curr), 0);
+      const calculatedDiscount = editDiscountType === "percent" ? (subtotal * (editDiscountValue / 100)) : editDiscountValue;
+      const calculatedFee = editFeeType === "percent" ? (subtotal * (editFeeValue / 100)) : editFeeValue;
+      const totalValue = Math.max(0, subtotal - (calculatedDiscount || 0) + (calculatedFee || 0));
+
+      // 1. Atualiza documentos na coleção 'orders'
+      const updatedOrdersForAtendimento = [];
+      for (const order of editOrders) {
+        const { isNew, ...orderData } = order;
+        
+        if (isNew) {
+          const realId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+          orderData.id = realId;
+          orderData.atendimentoId = id;
+          orderData.clientId = atendimento.clientId;
+          orderData.clientName = atendimento.clientName;
+          orderData.seller = atendimento.attendant;
+          orderData.status = "Pendente";
+          orderData.createdAt = new Date().toISOString();
+          orderData.paymentMethod = editPaymentMethod; // Sincroniza forma de pagamento
+          
+          await setDoc(doc(db, "orders", realId), orderData);
+          updatedOrdersForAtendimento.push(orderData);
+        } else {
+          // Atualiza forma de pagamento no pedido existente também
+          orderData.paymentMethod = editPaymentMethod;
+          await updateDoc(doc(db, "orders", order.id), orderData);
+          updatedOrdersForAtendimento.push(orderData);
+        }
+      }
+
+      // 2. Atualiza o atendimento principal
       await updateDoc(doc(db, "atendimentos", id), {
         notes: editNotes,
         tso: editTso,
         rxData: newRxData,
+        orders: updatedOrdersForAtendimento,
+        subtotal: subtotal,
+        discount: editDiscountValue,
+        discountType: editDiscountType,
+        fee: calculatedFee, // Valor em R$ para o histórico
+        feeValue: editFeeValue, // Valor original digitado
+        feeType: editFeeType,
+        totalValue: totalValue,
+        paymentMethod: editPaymentMethod,
         history: arrayUnion(historyEntry)
       });
 
-      toast.success("Atendimento atualizado!");
+      toast.success("Atendimento e Pedidos atualizados!");
       setIsEditing(false);
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
@@ -184,19 +464,21 @@ export default function AtendimentoDetails() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
           {/* HEADER */}
-          <div className="flex items-center justify-between print:hidden">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={() => navigate("/admin/atendimentos")} className="rounded-full">
+          <div className="flex items-center justify-between print:hidden px-4 md:px-0">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon" onClick={() => navigate("/admin/atendimentos")} className="rounded-full h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  Atendimento #{atendimento.tso || atendimento.id.slice(0, 8).toUpperCase()}
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-xl font-bold text-slate-900 flex items-center gap-2 truncate">
+                  Atendimento <span className="text-slate-500 font-medium">#{atendimento.tso || atendimento.id.slice(0, 8).toUpperCase()}</span>
                 </h1>
-                <p className="text-xs text-slate-500">{atendimento.date} às {atendimento.time}</p>
+                <p className="text-[10px] md:text-xs text-slate-500 truncate">{atendimento.date} às {atendimento.time}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+
+            {/* AÇÕES - DESKTOP */}
+            <div className="hidden md:flex gap-2">
               {isEditing ? (
                 <>
                   <Button type="button" onClick={cancelEditing} variant="outline" className="rounded font-bold text-xs h-9">
@@ -213,14 +495,14 @@ export default function AtendimentoDetails() {
                 </>
               ) : (
                 <>
-                  <Button type="button" onClick={handleDelete} variant="outline" className="rounded font-bold text-xs h-9 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
-                    <Trash2 className="mr-2 h-4 w-4" /> EXCLUIR
+                  <Button type="button" onClick={handleDelete} variant="outline" size="icon" className="rounded-full h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" title="Excluir">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                  <Button type="button" onClick={startEditing} variant="outline" className="rounded font-bold text-xs h-9">
-                    <Wrench className="mr-2 h-4 w-4" /> EDITAR
+                  <Button type="button" onClick={startEditing} variant="outline" size="icon" className="rounded-full h-9 w-9" title="Editar">
+                    <Wrench className="h-4 w-4" />
                   </Button>
-                  <Button type="button" onClick={handleDownloadPDF} variant="outline" className="rounded font-bold text-xs h-9 border-slate-300 text-slate-700">
-                    BAIXAR PDF
+                  <Button type="button" onClick={handleDownloadPDF} variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300 text-slate-700" title="Baixar PDF">
+                    <Download className="h-4 w-4" />
                   </Button>
                   <Button 
                     type="button"
@@ -265,12 +547,98 @@ export default function AtendimentoDetails() {
                       printWindow.document.close();
                     }} 
                     variant="outline" 
-                    className="rounded font-bold text-xs h-9"
+                    size="icon"
+                    className="rounded-full h-9 w-9"
+                    title="Imprimir Ficha Completa"
                   >
-                    <Printer className="mr-2 h-4 w-4" /> IMPRIMIR FICHA COMPLETA
+                    <Printer className="h-4 w-4" />
                   </Button>
                 </>
               )}
+            </div>
+
+            {/* AÇÕES - MOBILE (MENU) */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300">
+                    <MoreVertical className="h-4 w-4 text-slate-600" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px]">
+                  <SheetHeader>
+                    <SheetTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">Opções do Atendimento</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-3 py-6">
+                    {isEditing ? (
+                      <>
+                        <Button 
+                          type="button" 
+                          onClick={handleUpdate as any}
+                          disabled={saving}
+                          className="w-full justify-start font-bold text-xs h-12 bg-slate-900 text-white"
+                        >
+                          <Save className="mr-3 h-5 w-5" /> {saving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={cancelEditing} 
+                          variant="outline" 
+                          className="w-full justify-start font-bold text-xs h-12"
+                        >
+                          <XCircle className="mr-3 h-5 w-5" /> CANCELAR EDIÇÃO
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          type="button" 
+                          onClick={startEditing} 
+                          variant="outline" 
+                          className="w-full justify-start font-bold text-xs h-12"
+                        >
+                          <Wrench className="mr-3 h-5 w-5 text-slate-600" /> EDITAR INFORMAÇÕES
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={handleDownloadPDF} 
+                          variant="outline" 
+                          className="w-full justify-start font-bold text-xs h-12"
+                        >
+                          <Download className="mr-3 h-5 w-5 text-slate-600" /> BAIXAR FICHA (PDF)
+                        </Button>
+                        <Button 
+                          type="button"
+                          onClick={() => {
+                            // Reutiliza a lógica de impressão
+                            const content = document.getElementById('printable-area');
+                            if (!content) return;
+                            const printWindow = window.open('', '_blank');
+                            if (!printWindow) return;
+                            printWindow.document.write(`<html><head><title>Ficha</title></head><body>${content.innerHTML}</body></html>`);
+                            printWindow.document.close();
+                            printWindow.print();
+                            printWindow.close();
+                          }} 
+                          variant="outline" 
+                          className="w-full justify-start font-bold text-xs h-12"
+                        >
+                          <Printer className="mr-3 h-5 w-5 text-slate-600" /> IMPRIMIR FICHA
+                        </Button>
+                        <Separator className="my-2" />
+                        <Button 
+                          type="button" 
+                          onClick={handleDelete} 
+                          variant="outline" 
+                          className="w-full justify-start font-bold text-xs h-12 text-red-600 border-red-100 hover:bg-red-50"
+                        >
+                          <Trash2 className="mr-3 h-5 w-5" /> EXCLUIR REGISTRO
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
 
@@ -406,15 +774,154 @@ export default function AtendimentoDetails() {
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                           <ShoppingCart className="h-4 w-4" /> Itens do Atendimento
                       </h3>
+                      {isEditing && (
+                        <Button 
+                          onClick={addEmptyOrder} 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 text-[10px] font-bold uppercase bg-slate-900 text-white hover:bg-slate-800 border-none"
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" /> ADICIONAR ITEM
+                        </Button>
+                      )}
                   </div>
                   <div className="space-y-3">
-                      {atendimento.orders && atendimento.orders.length > 0 ? (
-                          atendimento.orders.map((order: any, idx: number) => (
+                      {isEditing ? (
+                          editOrders.map((order: any, idx: number) => (
+                              <Card key={order.id || idx} className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white transition-all !p-0 !gap-0">
+                                  <div 
+                                      className={`p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors ${expandedOrderIndex === idx ? 'bg-slate-50 border-b border-slate-100' : ''}`}
+                                      onClick={() => setExpandedOrderIndex(expandedOrderIndex === idx ? null : idx)}
+                                  >
+                                      <div className="flex items-center gap-4">
+                                          <div className="h-6 w-6 !rounded-none bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
+                                              {idx + 1}
+                                          </div>
+                                          <div className="flex flex-col">
+                                              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{order.serviceType}</span>
+                                              {expandedOrderIndex !== idx && order.items && <span className="text-[11px] text-slate-500 truncate max-w-[200px]">{order.items}</span>}
+                                          </div>
+                                      </div>
+                                      <div className="flex items-center gap-6">
+                                          <div className="text-right">
+                                              <span className="text-sm font-black text-emerald-600">R$ {calculateItemFinalPrice(order).toFixed(2)}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1 border-l border-slate-200 pl-4">
+                                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 !rounded-none" onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id, idx); }}>
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                              <div className="h-7 w-7 flex items-center justify-center text-slate-400">
+                                                  {expandedOrderIndex === idx ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  
+                                  {expandedOrderIndex === idx && (
+                                      <div className="p-5 space-y-5 bg-white">
+                                          <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                                              <div className="md:col-span-5 space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tipo de Serviço / Categoria</Label>
+                                                  <Select value={order.serviceType} onValueChange={(val) => updateEditOrder(idx, 'serviceType', val)}>
+                                                      <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
+                                                          <SelectValue placeholder="Selecione uma categoria" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {categorias.map(cat => (
+                                                          <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                                        ))}
+                                                        {categorias.length === 0 && <SelectItem value="Serviço">Serviço</SelectItem>}
+                                                      </SelectContent>
+                                                  </Select>
+                                              </div>
+                                              <div className="md:col-span-7 grid grid-cols-3 gap-3">
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Valor (R$)</Label>
+                                                      <Input type="number" step="0.01" value={order.price || ''} onChange={(e) => updateEditOrder(idx, 'price', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                  </div>
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Desc. ({order.discountType === 'percent' ? '%' : 'R$'})</Label>
+                                                      <div className="flex gap-1">
+                                                          <Input type="number" step="0.01" value={order.discount || ''} onChange={(e) => updateEditOrder(idx, 'discount', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                          <Button variant="outline" size="icon" className="h-9 w-9 !rounded-none border-slate-200 flex-none" onClick={(e) => { e.stopPropagation(); updateEditOrder(idx, 'discountType', order.discountType === 'percent' ? 'fixed' : 'percent'); }}>
+                                                              <span className="text-[10px] font-bold">{order.discountType === 'percent' ? '%' : '$'}</span>
+                                                          </Button>
+                                                      </div>
+                                                  </div>
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Acrés. ({order.feeType === 'percent' ? '%' : 'R$'})</Label>
+                                                      <div className="flex gap-1">
+                                                          <Input type="number" step="0.01" value={order.fee || ''} onChange={(e) => updateEditOrder(idx, 'fee', Number(e.target.value))} className="!rounded-none border-slate-200 h-9 text-sm font-bold" />
+                                                          <Button variant="outline" size="icon" className="h-9 w-9 !rounded-none border-slate-200 flex-none" onClick={(e) => { e.stopPropagation(); updateEditOrder(idx, 'feeType', order.feeType === 'percent' ? 'fixed' : 'percent'); }}>
+                                                              <span className="text-[10px] font-bold">{order.feeType === 'percent' ? '%' : '$'}</span>
+                                                          </Button>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                          <div className="space-y-1.5">
+                                              <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição Detalhada dos Itens</Label>
+                                              <Input value={order.items} onChange={(e) => updateEditOrder(idx, 'items', e.target.value)} placeholder="Ex: Armação RX5184 Preta + Lentes Kodak Anti-Reflexo" className="!rounded-none border-slate-200 h-9 text-xs" />
+                                          </div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                              <div className="space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
+                                                  <Input value={order.orderCode} onChange={(e) => updateEditOrder(idx, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                              </div>
+                                              <div className="space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
+                                                  <Select value={order.supplier} onValueChange={(val) => updateEditOrder(idx, 'supplier', val)}>
+                                                      <SelectTrigger className="!rounded-none border-slate-200 h-9 text-xs font-medium">
+                                                          <SelectValue placeholder="Selecione o fornecedor" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {fornecedores.map(f => (
+                                                          <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
+                                                        ))}
+                                                        {fornecedores.length === 0 && <SelectItem value="_none">Nenhum</SelectItem>}
+                                                      </SelectContent>
+                                                  </Select>
+                                              </div>
+                                          </div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                              <div className="space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data Prometida de Entrega</Label>
+                                                  <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={order.dueDate} onChange={(e) => updateEditOrder(idx, 'dueDate', formatDate(e.target.value))} className="!rounded-none border-slate-200 h-9 text-xs text-slate-600" />
+                                              </div>
+                                              <div className="space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Observações de Laboratório</Label>
+                                                  <Input value={order.labNotes} onChange={(e) => updateEditOrder(idx, 'labNotes', e.target.value)} placeholder="Ex: Montagem nylon cuidadosa..." className="!rounded-none border-slate-200 h-9 text-xs" />
+                                              </div>
+                                          </div>
+                                          <div className="flex justify-end pt-2">
+                                              <Button 
+                                                  onClick={(e) => { e.stopPropagation(); setExpandedOrderIndex(null); }} 
+                                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase h-8 px-4 !rounded-none"
+                                              >
+                                                  OK
+                                              </Button>
+                                          </div>
+                                      </div>
+                                  )}
+                              </Card>
+                          ))
+                      ) : (
+                          atendimento.orders && atendimento.orders.length > 0 ? (
+                              atendimento.orders.map((order: any, idx: number) => (
                               <Card key={idx} className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white">
                                   <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                                      <div className="flex flex-col gap-0.5">
-                                          <span className="text-sm font-bold text-slate-900">{order.serviceType}</span>
-                                          <span className="text-xs text-slate-500">{order.items || "Sem descrição"}</span>
+                                      <div className="flex items-center gap-4">
+                                          <div className="flex flex-col gap-0.5">
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-sm font-bold text-slate-900">{order.serviceType}</span>
+                                                {linkedOrders.find(lo => lo.id === order.id) && (
+                                                  <Badge className={`rounded-none border text-[9px] font-bold uppercase tracking-widest px-2 py-0 ${getStatusColor(linkedOrders.find(lo => lo.id === order.id).status)}`}>
+                                                    {linkedOrders.find(lo => lo.id === order.id).status}
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              <span className="text-xs text-slate-500">{order.items || "Sem descrição"}</span>
+                                          </div>
                                       </div>
                                       <div className="text-right flex items-center justify-end gap-3">
                                           <div className="flex flex-col items-end">
@@ -424,22 +931,35 @@ export default function AtendimentoDetails() {
                                               )}
                                               <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Entrega: {order.dueDate || 'Imediata'}</p>
                                           </div>
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="h-8 text-[10px] font-bold uppercase tracking-wider bg-slate-50 hover:bg-slate-100 border-slate-200" 
-                                            onClick={(e) => { e.preventDefault(); navigate(`/admin/pedidos/${order.id}`); }}
-                                          >
-                                              VER PEDIDO
-                                          </Button>
+                                          <div className="flex items-center gap-2">
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              className="h-8 text-[10px] font-bold uppercase tracking-wider bg-slate-50 hover:bg-slate-100 border-slate-200" 
+                                              onClick={(e) => { e.preventDefault(); navigate(`/admin/pedidos/${order.id}`); }}
+                                            >
+                                                DETALHES
+                                            </Button>
+                                            {isEditing && (
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-8 w-8 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50" 
+                                                onClick={() => handleRemoveOrder(order.id, idx)}
+                                              >
+                                                  <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            )}
+                                          </div>
                                       </div>
                                   </div>
                               </Card>
-                          ))
-                      ) : (
-                          <div className="p-8 text-center bg-white border border-slate-200 !rounded-none">
-                              <p className="text-sm text-slate-400 italic font-medium">Nenhum item ou venda vinculada.</p>
-                          </div>
+                              ))
+                          ) : (
+                              <div className="p-8 text-center bg-white border border-slate-200 !rounded-none">
+                                  <p className="text-sm text-slate-400 italic font-medium">Nenhum item ou venda vinculada.</p>
+                              </div>
+                          )
                       )}
                   </div>
               </div>
@@ -458,26 +978,77 @@ export default function AtendimentoDetails() {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-slate-500 text-[11px]">
                                 <span>Subtotal Bruto</span>
-                                <span className="font-semibold">R$ {atendimento.subtotal?.toFixed(2) || atendimento.totalValue?.toFixed(2)}</span>
+                                <span className="font-semibold">R$ {currentSubtotal.toFixed(2)}</span>
                             </div>
-                            {atendimento.discount > 0 && (
-                                <div className="flex justify-between items-center text-rose-500 text-[11px]">
-                                    <span>Desconto Aplicado</span>
-                                    <span className="font-semibold">- R$ {atendimento.discount.toFixed(2)}</span>
+                            
+                            {/* EDIÇÃO DE DESCONTO GLOBAL */}
+                            {isEditing ? (
+                                <div className="space-y-1.5 pt-2">
+                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Desconto Global</Label>
+                                    <div className="flex gap-1">
+                                        <Input 
+                                            type="number" 
+                                            step="0.01" 
+                                            value={editDiscountValue} 
+                                            onChange={(e) => setEditDiscountValue(Number(e.target.value))} 
+                                            className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
+                                        />
+                                        <Button 
+                                            variant="outline" 
+                                            size="icon" 
+                                            className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
+                                            onClick={() => setEditDiscountType(editDiscountType === 'percent' ? 'fixed' : 'percent')}
+                                        >
+                                            <span className="text-[10px] font-bold">{editDiscountType === 'percent' ? '%' : 'R$'}</span>
+                                        </Button>
+                                    </div>
                                 </div>
+                            ) : (
+                                currentCalculatedDiscount > 0 && (
+                                    <div className="flex justify-between items-center text-rose-500 text-[11px]">
+                                        <span>Desconto Global</span>
+                                        <span className="font-semibold">- R$ {currentCalculatedDiscount.toFixed(2)}</span>
+                                    </div>
+                                )
                             )}
-                            {atendimento.fee > 0 && (
-                                <div className="flex justify-between items-center text-emerald-600 text-[11px]">
-                                    <span>Taxas / Acréscimos</span>
-                                    <span className="font-semibold">+ R$ {atendimento.fee.toFixed(2)}</span>
+
+                            {/* EDIÇÃO DE TAXAS GLOBAIS */}
+                            {isEditing ? (
+                                <div className="space-y-1.5 pt-2">
+                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Taxas / Acréscimos</Label>
+                                    <div className="flex gap-1">
+                                        <Input 
+                                            type="number" 
+                                            step="0.01" 
+                                            value={editFeeValue} 
+                                            onChange={(e) => setEditFeeValue(Number(e.target.value))} 
+                                            className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
+                                        />
+                                        <Button 
+                                            variant="outline" 
+                                            size="icon" 
+                                            className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
+                                            onClick={() => setEditFeeType(editFeeType === 'percent' ? 'fixed' : 'percent')}
+                                        >
+                                            <span className="text-[10px] font-bold">{editFeeType === 'percent' ? '%' : 'R$'}</span>
+                                        </Button>
+                                    </div>
                                 </div>
+                            ) : (
+                                currentCalculatedFee > 0 && (
+                                    <div className="flex justify-between items-center text-emerald-600 text-[11px]">
+                                        <span>Taxas / Acréscimos</span>
+                                        <span className="font-semibold">+ R$ {currentCalculatedFee.toFixed(2)}</span>
+                                    </div>
+                                )
                             )}
-                            <Separator className="bg-slate-50" />
+
+                            <Separator className="bg-slate-100 my-4" />
                             <div className="flex justify-between items-center pt-2">
                                 <span className="text-xs font-bold text-slate-900 uppercase">Total Final</span>
                                 <span className="text-2xl font-black text-slate-900 tracking-tight">
                                     <span className="text-sm font-bold text-slate-400 mr-1">R$</span>
-                                    {atendimento.totalValue?.toFixed(2)}
+                                    {currentTotal.toFixed(2)}
                                 </span>
                             </div>
                         </div>
@@ -485,10 +1056,25 @@ export default function AtendimentoDetails() {
 
                     <div className="p-5 pt-0 space-y-4">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Método de Pagamento</Label>
-                            <div className="!rounded-none border border-slate-200 h-10 flex items-center px-3 text-sm font-semibold bg-slate-50/50 uppercase tracking-wide text-slate-700">
-                                {atendimento.paymentMethod || "NÃO INFORMADO"}
-                            </div>
+                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Forma de Pagamento</Label>
+                            {isEditing ? (
+                                <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
+                                    <SelectTrigger className="!rounded-none border-slate-200 h-10 text-xs font-bold uppercase">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="pix">PIX</SelectItem>
+                                        <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                                        <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                        <SelectItem value="carne">Carnê / Promissória</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <div className="!rounded-none border border-slate-200 h-10 flex items-center px-3 text-sm font-semibold bg-slate-50/50 uppercase tracking-wide text-slate-700">
+                                    {currentPaymentMethod || "NÃO INFORMADO"}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -505,79 +1091,77 @@ export default function AtendimentoDetails() {
                                 <p className="text-[10px] text-emerald-700 leading-relaxed font-medium">
                                     O carnê está ativo. O controle de baixas das parcelas pode ser feito no módulo <strong className="font-bold">Financeiro</strong>, e o cliente pode visualizar seu próprio carnê pela área digital exclusiva.
                                 </p>
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 h-8 text-[10px] font-bold uppercase tracking-wider"
-                                    onClick={() => window.open('/cliente/login', '_blank')}
-                                >
-                                    Acessar Portal do Cliente
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        className="flex-1 bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 h-8 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                        onClick={() => window.open('/cliente/login', '_blank')}
+                                    >
+                                        Portal do Cliente
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        className="flex-1 bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 h-8 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                        onClick={handleDownloadPDF}
+                                    >
+                                        <Download className="h-3 w-3" /> Baixar Carnê
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
                 </CardContent>
               </Card>
 
-              <Card className="!rounded-none border-slate-200 shadow-none bg-slate-50/50 p-5">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
-                                <Calendar className="h-4 w-4 text-slate-600" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Criado em</p>
-                                <p className="text-xs font-bold text-slate-700">{atendimento.date} - {atendimento.time}</p>
-                            </div>
-                        </div>
-                        <Separator className="bg-slate-200/50" />
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
-                                <Activity className="h-4 w-4 text-slate-600" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Origem</p>
-                                <p className="text-xs font-bold text-slate-700">Sistema Administrativo</p>
-                            </div>
-                        </div>
-                    </div>
-              </Card>
-
-              {atendimento.history && atendimento.history.length > 0 && (
-                <Card className="!rounded-none border-slate-200 shadow-sm overflow-hidden bg-white">
-                  <CardHeader className="bg-slate-50 border-b border-slate-100 p-4 !rounded-none">
-                    <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                      <Activity className="h-3.5 w-3.5" /> Histórico de Alterações
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
-                      {atendimento.history.map((h: any, i: number) => (
-                        <div key={i} className="p-4 space-y-1.5 hover:bg-slate-50 transition-colors">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{h.user}</span>
-                            <span className="text-[10px] font-medium text-slate-400">
-                              {new Date(h.date).toLocaleDateString('pt-BR')} às {new Date(h.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-                            </span>
+              {/* LINHA DO TEMPO / HISTÓRICO */}
+              <Card className="rounded border-slate-200 shadow-sm overflow-hidden bg-slate-50/30">
+                <CardHeader className="p-5 border-b border-slate-100">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <Activity className="h-3.5 w-3.5" /> Linha do Tempo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5 overflow-y-auto max-h-[400px]">
+                  <div className="space-y-6 relative before:absolute before:inset-0 before:left-2 before:w-px before:bg-slate-200">
+                    {/* Histórico de Alterações */}
+                    {atendimento.history && atendimento.history.length > 0 && (
+                      atendimento.history.slice().reverse().map((item: any, idx: number) => (
+                        <div key={idx} className="relative pl-8">
+                          <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-400 flex items-center justify-center z-10">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                           </div>
-                          <p className="text-xs text-slate-700 font-medium leading-relaxed">{h.action}</p>
+                          <p className="text-[11px] font-bold text-slate-900 leading-tight">{item.action}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {new Date(item.date).toLocaleDateString('pt-BR')} {new Date(item.date).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}
+                            </span>
+                            <span className="text-[10px] text-slate-400 border-l border-slate-200 pl-2 uppercase">{item.user}</span>
+                          </div>
                         </div>
-                      ))}
+                      ))
+                    )}
+
+                    {/* Registro Inicial (Criação) */}
+                    <div className="relative pl-8">
+                      <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-slate-900 border-2 border-slate-900 flex items-center justify-center z-10">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      </div>
+                      <p className="text-[11px] font-bold text-slate-900 leading-tight">Atendimento Criado no Sistema</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {atendimento.date} - {atendimento.time}
+                        </span>
+                        <span className="text-[10px] text-slate-400 border-l border-slate-200 pl-2 uppercase">SISTEMA ADMINISTRATIVO</span>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
         {/* FICHA FORMATADA PARA CONFERÊNCIA (PRÉVIA) */}
-        <div id="printable-area" className="mt-12 border-t pt-12 mx-auto" style={{ backgroundColor: 'white' }}>
+        <div id="printable-area" className="hidden print:block bg-white p-[5mm_12mm_10mm_12mm]" style={{fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", width: '210mm', minHeight: '297mm'}}>
           <div style={{
-            width: '210mm', 
-            minHeight: '297mm', 
-            padding: '10mm 12mm', 
-            backgroundColor: 'white', 
-            color: 'black',
-            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
             display: 'flex',
             flexDirection: 'column',
             gap: '4mm'
@@ -833,6 +1417,39 @@ export default function AtendimentoDetails() {
             </div>
           </div>
         </div>
+        
+
+        {/* POPUP DE CONFIRMAÇÃO DE REMOÇÃO DE ITEM */}
+        <Dialog open={showRemovalConfirm} onOpenChange={setShowRemovalConfirm}>
+          <DialogContent className="w-[95vw] sm:max-w-[400px] !rounded-none p-0 border-slate-200">
+            <DialogHeader className="bg-slate-900 p-6 text-white !rounded-none">
+              <DialogTitle className="text-sm font-bold uppercase tracking-wider">Confirmar Remoção</DialogTitle>
+            </DialogHeader>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 font-medium">Tem certeza que deseja remover este item da ficha de atendimento?</p>
+            </div>
+            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none">
+              <Button variant="ghost" onClick={() => setShowRemovalConfirm(false)} className="flex-1 text-[10px] font-bold h-10 !rounded-none">NÃO, VOLTAR</Button>
+              <Button onClick={confirmRemoval} className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold h-10 !rounded-none">SIM, REMOVER</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* POPUP DE CONFIRMAÇÃO DE CANCELAMENTO DO PEDIDO */}
+        <Dialog open={showCancelOrderConfirm} onOpenChange={setShowCancelOrderConfirm}>
+          <DialogContent className="w-[95vw] sm:max-w-[400px] !rounded-none p-0 border-slate-200">
+            <DialogHeader className="bg-amber-600 p-6 text-white !rounded-none">
+              <DialogTitle className="text-sm font-bold uppercase tracking-wider">Cancelar Pedido?</DialogTitle>
+            </DialogHeader>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 font-medium">O item foi removido da ficha. Deseja também <strong className="text-rose-600 uppercase">Cancelar</strong> o pedido vinculado no sistema?</p>
+            </div>
+            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none">
+              <Button variant="ghost" onClick={() => { setShowCancelOrderConfirm(false); setOrderToDelete(null); }} className="flex-1 text-[10px] font-bold h-10 !rounded-none">NÃO, APENAS REMOVER</Button>
+              <Button onClick={handleCancelOrderAction} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold h-10 !rounded-none">SIM, CANCELAR PEDIDO</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }

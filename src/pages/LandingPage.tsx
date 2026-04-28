@@ -199,8 +199,10 @@ function Header() {
         {/* Logo */}
         <div className="flex items-center gap-4 shrink-0">
           <Sheet>
-            <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" />}>
-              <Menu className="h-5 w-5" />
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] p-0 border-r-0">
               <div className="p-6 border-b border-border/50">
@@ -701,6 +703,50 @@ function LifestyleSection() {
   );
 }
 
+function FreeExamSection() {
+  return (
+    <section className="py-24 px-6 bg-[#FAFAFB]">
+      <div className="max-w-[1200px] mx-auto">
+        <div className="bg-white rounded-[24px] border border-[#ECECEC] shadow-[0_8px_30px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
+          <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-[#1C1C1C] text-white">
+            <Badge className="w-fit mb-8 bg-emerald-500 text-white border-none rounded-full px-5 py-1 font-bold text-[11px] tracking-widest">GRÁTIS TODOS OS SÁBADOS</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">Sua saúde visual é nossa prioridade absoluta.</h2>
+            <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame médico computadorizado sem custos adicionais. Tecnologia de ponta para sua melhor visão.</p>
+            <div className="flex items-center gap-4 text-sm font-bold">
+              <div className="flex -space-x-3">
+                {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-full border-4 border-[#1C1C1C] bg-slate-800" />)}
+              </div>
+              <span className="text-slate-300">+ de 500 agendamentos este mês</span>
+            </div>
+          </div>
+          <div className="md:w-1/2 p-12 md:p-20 bg-white">
+            <h3 className="text-2xl font-bold text-[#1C1C1C] mb-10">Solicitar Agendamento</h3>
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); toast.success("Agendamento solicitado!"); }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Nome</label>
+                  <Input placeholder="Nome completo" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">WhatsApp</label>
+                  <Input placeholder="(00) 00000-0000" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Data Preferencial</label>
+                <Input type="date" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
+              </div>
+              <Button className="w-full h-16 rounded-[14px] bg-[#1C1C1C] hover:bg-slate-800 text-white font-bold shadow-xl transition-all hover:-translate-y-1 mt-4">
+                AGENDAR AGORA
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white flex flex-col">
@@ -712,6 +758,7 @@ export default function LandingPage() {
         <Benefits />
         <NewArrivals />
         <CategoryBanners />
+        <FreeExamSection />
         <StoreSection />
         <LifestyleSection />
       </main>
