@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import html2pdf from "html2pdf.js";
 import {
   Search,
   Plus,
@@ -83,6 +84,21 @@ export default function Orders() {
   const [fornecedores, setFornecedores] = React.useState<any[]>([]);
   const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
   const [categorias, setCategorias] = React.useState<any[]>([]);
+  
+  // Estados para Filtros Avançados
+  const [filterStartDate, setFilterStartDate] = React.useState("");
+  const [filterEndDate, setFilterEndDate] = React.useState("");
+  const [filterStatus, setFilterStatus] = React.useState("todos");
+  const [filterSupplier, setFilterSupplier] = React.useState("todos");
+  const [filterPayment, setFilterPayment] = React.useState("todos");
+  const [showFilters, setShowFilters] = React.useState(false);
+
+  const formatDate = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    return v.replace(/(\d{2})(\d)/, "$1/$2")
+            .replace(/(\d{2})(\d)/, "$1/$2");
+  };
 
   React.useEffect(() => {
     const qOrders = query(collection(db, "orders"));
@@ -170,10 +186,128 @@ export default function Orders() {
     }
   };
 
-  const filteredOrders = orders.filter(o => 
-    o.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.id?.includes(searchTerm)
-  );
+  const filteredOrders = orders.filter(o => {
+    // Busca por texto
+    const matchesSearch = o.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || o.id?.includes(searchTerm);
+    
+    // Filtro por Status
+    const matchesStatus = filterStatus === "todos" || o.status === filterStatus;
+    
+    // Filtro por Fornecedor
+    const matchesSupplier = filterSupplier === "todos" || o.supplier === filterSupplier;
+    
+    // Filtro por Pagamento
+    const matchesPayment = filterPayment === "todos" || o.paymentMethod === filterPayment;
+
+    // Filtro por Data
+    let matchesDate = true;
+    if (filterStartDate || filterEndDate) {
+        if (o.date) {
+            const [d, m, y] = o.date.split("/").map(Number);
+            const itemDate = new Date(y, m - 1, d);
+            
+            if (filterStartDate) {
+                const [sd, sm, sy] = filterStartDate.split("/").map(Number);
+                const startDate = new Date(sy, sm - 1, sd);
+                if (itemDate < startDate) matchesDate = false;
+            }
+            if (filterEndDate) {
+                const [ed, em, ey] = filterEndDate.split("/").map(Number);
+                const endDate = new Date(ey, em - 1, ed);
+                if (itemDate > endDate) matchesDate = false;
+            }
+        } else {
+            matchesDate = false;
+        }
+    }
+
+    return matchesSearch && matchesStatus && matchesSupplier && matchesPayment && matchesDate;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterStatus("todos");
+    setFilterSupplier("todos");
+    setFilterPayment("todos");
+  };
+
+  const getStatusCount = (status: string) => {
+    return orders.filter(o => o.status === status).length;
+  };
+
+  const handlePrint = () => {
+    const totalValorFiltrado = filteredOrders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+    const element = document.createElement('div');
+    
+    element.innerHTML = `
+      <div style="font-family: sans-serif; color: #1e293b; padding: 40px; background: white;">
+        <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h1 style="margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">Relatório de Pedidos & Vendas</h1>
+            <p style="margin: 2px 0; font-size: 10px; color: #64748b; font-weight: 600;">ÓTICA MELISSA - GESTÃO OPERACIONAL</p>
+          </div>
+          <div style="text-align: right">
+            <p style="margin: 2px 0; font-size: 10px; color: #64748b; font-weight: 600;">Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            <p style="margin: 2px 0; font-size: 10px; color: #64748b; font-weight: 600;">Total de Registros: ${filteredOrders.length}</p>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9px;">
+          <thead>
+            <tr>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">ID Pedido</th>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Cód. Lab</th>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Data</th>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Cliente</th>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Itens / Descrição</th>
+              <th style="background: #f8fafc; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Status</th>
+              <th style="background: #f8fafc; text-align: right; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-weight: 800; color: #475569;">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredOrders.map(o => `
+              <tr>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 800;">#${o.id.substring(0, 8).toUpperCase()}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-family: monospace;">${o.orderCode || '—'}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9;">${o.date || '—'}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 700;">${o.clientName}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9;">${o.items}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-weight: 700;">${o.status}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 800;">R$ ${(Number(o.total) || 0).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 30px; border-top: 2px solid #f1f5f9; padding-top: 15px; display: flex; justify-content: space-between;">
+          <div style="background: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; display: inline-block; min-width: 200px;">
+            <p style="margin: 5px 0; font-size: 11px; font-weight: 600;">Resumo Financeiro</p>
+            <p style="margin: 5px 0; font-size: 11px; font-weight: 600;">Quantidade: <strong style="font-size: 14px; color: #0f172a;">${filteredOrders.length}</strong></p>
+            <p style="margin: 5px 0; font-size: 11px; font-weight: 600;">Total Bruto: <strong style="font-size: 14px; color: #0f172a;">R$ ${totalValorFiltrado.toFixed(2)}</strong></p>
+          </div>
+          <div style="font-size: 9px; color: #94a3b8; align-self: flex-end; margin-top: 40px;">
+            Assinatura: _________________________________________________
+          </div>
+        </div>
+      </div>
+    `;
+
+    const opt = {
+      margin: 0,
+      filename: `relatorio-pedidos-${new Date().getTime()}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const }
+    };
+
+    toast.promise(html2pdf().from(element).set(opt).save(), {
+      loading: 'Gerando PDF...',
+      success: 'Relatório baixado com sucesso!',
+      error: 'Erro ao gerar PDF.'
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -331,15 +465,22 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Workflow Overview */}
+      {/* Workflow Overview Dinâmico */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {["Pendente", "Em Produção", "Montagem", "Qualidade", "Pronto", "Entregue"].map((status, i) => (
-            <Card key={status} className="rounded border-slate-200 shadow-none bg-white">
+        {[
+            { label: "Pendente", key: "Pendente" },
+            { label: "Produção", key: "Em Produção" },
+            { label: "Qualidade", key: "Qualidade" },
+            { label: "Pronto", key: "Pronto para Entrega" },
+            { label: "Entregue", key: "Entregue" },
+            { label: "Cancelado", key: "Cancelado" }
+        ].map((item, i) => (
+            <Card key={item.key} className="rounded border-slate-200 shadow-none bg-white">
                 <CardContent className="p-3">
-                    <p className="text-[10px] font-semibold uppercase text-slate-400 mb-1">{status}</p>
+                    <p className="text-[10px] font-semibold uppercase text-slate-400 mb-1">{item.label}</p>
                     <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-slate-900">{Math.floor(Math.random() * 10)}</span>
-                        <div className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-slate-300' : i === 5 ? 'bg-emerald-500' : 'bg-slate-900'}`} />
+                        <span className="text-lg font-bold text-slate-900">{getStatusCount(item.key)}</span>
+                        <div className={`h-1.5 w-1.5 rounded-full ${item.key === 'Pendente' ? 'bg-slate-300' : item.key === 'Entregue' ? 'bg-emerald-500' : item.key === 'Cancelado' ? 'bg-red-500' : 'bg-slate-900'}`} />
                     </div>
                 </CardContent>
             </Card>
@@ -347,33 +488,118 @@ export default function Orders() {
       </div>
 
       <Card className="rounded border-slate-200 shadow-none">
-        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-3">
-          <div className="relative flex-1 group">
+        <div className="p-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 group max-w-md">
              <Input
                 placeholder="Buscar por cliente ou Nº do pedido..."
-                className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all"
+                className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           </div>
-          <div className="flex gap-2">
-             <Select defaultValue="todos">
-                <SelectTrigger className="w-[160px] h-9 rounded border-slate-200 font-medium text-xs text-slate-600">
-                    <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="rounded border-slate-200 shadow-xl text-xs">
-                    <SelectItem value="todos">Todos Status</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="producao">Em Produção</SelectItem>
-                    <SelectItem value="entrega">Pronto para Entrega</SelectItem>
-                </SelectContent>
-            </Select>
-            <Button variant="outline" className="rounded h-9 px-4 font-semibold text-xs border-slate-200 text-slate-600">
-                <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR
-            </Button>
-          </div>
+
+          <Button 
+              variant="outline" 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`h-9 rounded border-slate-200 text-xs font-bold transition-colors ${showFilters ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+          >
+              <Filter className="h-3.5 w-3.5 mr-2" />
+              {showFilters ? 'OCULTAR FILTROS' : 'FILTROS AVANÇADOS'}
+              {(filterStatus !== 'todos' || filterSupplier !== 'todos' || filterPayment !== 'todos' || filterStartDate || filterEndDate) && (
+                  <Badge className="ml-2 bg-emerald-500 text-white border-none h-4 px-1 min-w-[16px] flex items-center justify-center text-[9px]">
+                      !
+                  </Badge>
+              )}
+          </Button>
+
+          {(searchTerm || filterStatus !== 'todos' || filterSupplier !== 'todos' || filterPayment !== 'todos' || filterStartDate || filterEndDate) && (
+              <Button 
+                  variant="ghost" 
+                  onClick={clearFilters}
+                  className="h-9 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+              >
+                  LIMPAR
+              </Button>
+          )}
+
+          <Button 
+            variant="outline" 
+            onClick={handlePrint}
+            className="rounded h-9 px-4 font-semibold text-xs border-slate-200 text-slate-600 ml-auto"
+          >
+              <Printer className="h-3.5 w-3.5 mr-2" /> IMPRIMIR
+          </Button>
         </div>
+
+        {/* PAINEL DE FILTROS AVANÇADOS (PEDIDOS) */}
+        {showFilters && (
+            <div className="p-5 bg-slate-50/80 border-b border-slate-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Data Inicial</Label>
+                        <Input 
+                            placeholder="DD/MM/YYYY" 
+                            value={filterStartDate} 
+                            onChange={(e) => setFilterStartDate(formatDate(e.target.value))}
+                            className="h-9 rounded border-slate-200 bg-white text-xs font-medium"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Data Final</Label>
+                        <Input 
+                            placeholder="DD/MM/YYYY" 
+                            value={filterEndDate} 
+                            onChange={(e) => setFilterEndDate(formatDate(e.target.value))}
+                            className="h-9 rounded border-slate-200 bg-white text-xs font-medium"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status</Label>
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                            <SelectTrigger className="h-9 rounded border-slate-200 bg-white text-xs font-medium">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="text-xs">
+                                <SelectItem value="todos">Todos Status</SelectItem>
+                                {Object.keys(statusIcons).map(st => (
+                                    <SelectItem key={st} value={st}>{st}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Fornecedor</Label>
+                        <Select value={filterSupplier} onValueChange={setFilterSupplier}>
+                            <SelectTrigger className="h-9 rounded border-slate-200 bg-white text-xs font-medium">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="text-xs">
+                                <SelectItem value="todos">Todos</SelectItem>
+                                {fornecedores.map(f => (
+                                    <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Pagamento</Label>
+                        <Select value={filterPayment} onValueChange={setFilterPayment}>
+                            <SelectTrigger className="h-9 rounded border-slate-200 bg-white text-xs font-medium uppercase">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="text-xs">
+                                <SelectItem value="todos">Todas</SelectItem>
+                                <SelectItem value="pix">PIX</SelectItem>
+                                <SelectItem value="cartao">Cartão</SelectItem>
+                                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                <SelectItem value="carne">Carnê</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+        )}
         <CardContent className="p-0">
           <div className="overflow-x-auto custom-scrollbar">
             <Table className="min-w-[1000px]">
@@ -462,64 +688,6 @@ export default function Orders() {
         </CardContent>
       </Card>
 
-      {/* Production Workflow visualization */}
-      <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Acompanhamento de Produção</h2>
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-           <Card className="rounded border-slate-200 shadow-none bg-white p-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="h-8 w-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <Wrench className="h-4 w-4" />
-                    </div>
-                </div>
-                <div className="flex justify-between items-end">
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-900">Na Produção</h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">Lentes em laboratório.</p>
-                    </div>
-                    <span className="text-lg font-bold text-slate-900">4</span>
-                </div>
-           </Card>
-
-           <Card className="rounded border-slate-200 shadow-none bg-white p-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="h-8 w-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <ShoppingCart className="h-4 w-4" />
-                    </div>
-                </div>
-                <div className="flex justify-between items-end">
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-900">Montagem Local</h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">Aguardando montagem.</p>
-                    </div>
-                    <span className="text-lg font-bold text-slate-900">2</span>
-                </div>
-           </Card>
-
-           <Card className="rounded border-slate-200 shadow-none bg-white p-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="h-8 w-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <CheckCircle2 className="h-4 w-4" />
-                    </div>
-                </div>
-                <div className="flex justify-between items-end">
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-900">Prontos p/ Entrega</h3>
-                        <p className="text-[11px] text-slate-500 mt-0.5">Controle realizado.</p>
-                    </div>
-                    <span className="text-lg font-bold text-emerald-600">7</span>
-                </div>
-           </Card>
-
-           <Card className="rounded border-none bg-slate-900 p-5 text-white">
-                <div className="flex flex-col h-full justify-between">
-                    <div>
-                        <h3 className="text-sm font-semibold">Início Operacional</h3>
-                        <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">Clique para abrir o módulo de venda rápida e medição digital.</p>
-                    </div>
-                    <Button className="w-full mt-4 bg-white text-slate-900 font-bold hover:bg-slate-100 h-9 rounded text-xs uppercase">ABRIR PDV</Button>
-                </div>
-           </Card>
-       </div>
     </div>
   );
 }

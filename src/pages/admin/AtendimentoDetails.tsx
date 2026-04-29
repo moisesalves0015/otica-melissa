@@ -63,6 +63,9 @@ export default function AtendimentoDetails() {
   const [editDiscountType, setEditDiscountType] = React.useState<"fixed" | "percent">("fixed");
   const [editFeeValue, setEditFeeValue] = React.useState(0);
   const [editFeeType, setEditFeeType] = React.useState<"fixed" | "percent">("percent");
+  const [editEntrada, setEditEntrada] = React.useState(0);
+  const [editInstallmentsCount, setEditInstallmentsCount] = React.useState(1);
+  const [editFirstDueDate, setEditFirstDueDate] = React.useState("");
 
   const formatDate = (value: string) => {
     let v = value.replace(/\D/g, "");
@@ -89,7 +92,7 @@ export default function AtendimentoDetails() {
 
   const currentFeeValue = isEditing ? editFeeValue : (atendimento?.feeValue || 0);
   const currentFeeType = isEditing ? editFeeType : (atendimento?.feeType || 'percent');
-  const currentCalculatedFee = currentFeeType === 'percent' ? (currentSubtotal * (currentFeeValue / 100)) : (atendimento?.fee || 0);
+  const currentCalculatedFee = currentFeeType === 'percent' ? (currentSubtotal * (currentFeeValue / 100)) : currentFeeValue;
 
   const currentTotal = Math.max(0, currentSubtotal - currentCalculatedDiscount + currentCalculatedFee);
   const currentPaymentMethod = isEditing ? editPaymentMethod : (atendimento?.paymentMethod || 'pix');
@@ -250,6 +253,9 @@ export default function AtendimentoDetails() {
     setEditDiscountType(atendimento.discountType || "fixed");
     setEditFeeValue(atendimento.feeValue || 0);
     setEditFeeType(atendimento.feeType || "percent");
+    setEditEntrada(atendimento.entrada || 0);
+    setEditInstallmentsCount(atendimento.installmentsCount || 1);
+    setEditFirstDueDate(atendimento.firstDueDate || "");
     setIsEditing(true);
   };
 
@@ -287,6 +293,9 @@ export default function AtendimentoDetails() {
       if (atendimento.paymentMethod !== editPaymentMethod) changes.push(`Forma de pagamento alterada para ${editPaymentMethod.toUpperCase()}`);
       if (atendimento.discount !== editDiscountValue || atendimento.discountType !== editDiscountType) changes.push(`Desconto global ajustado`);
       if (atendimento.feeValue !== editFeeValue || atendimento.feeType !== editFeeType) changes.push(`Taxas/Acréscimos globais ajustados`);
+      if (atendimento.entrada !== editEntrada) changes.push(`Valor de entrada alterado`);
+      if (atendimento.installmentsCount !== editInstallmentsCount) changes.push(`Número de parcelas alterado`);
+      if (atendimento.firstDueDate !== editFirstDueDate) changes.push(`Data de vencimento alterada`);
       
       const rxData = atendimento.rxData || {};
       const newRxData = { ...editRx };
@@ -390,6 +399,10 @@ export default function AtendimentoDetails() {
         feeType: editFeeType,
         totalValue: totalValue,
         paymentMethod: editPaymentMethod,
+        isCarne: editPaymentMethod === 'carne',
+        entrada: editEntrada,
+        installmentsCount: editInstallmentsCount,
+        firstDueDate: editFirstDueDate,
         history: arrayUnion(historyEntry)
       });
 
@@ -981,69 +994,68 @@ export default function AtendimentoDetails() {
                                 <span className="font-semibold">R$ {currentSubtotal.toFixed(2)}</span>
                             </div>
                             
-                            {/* EDIÇÃO DE DESCONTO GLOBAL */}
+                            {/* EDIÇÃO DE DESCONTO E TAXA GLOBAL (LAYOUT GRADE) */}
                             {isEditing ? (
-                                <div className="space-y-1.5 pt-2">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Desconto Global</Label>
-                                    <div className="flex gap-1">
-                                        <Input 
-                                            type="number" 
-                                            step="0.01" 
-                                            value={editDiscountValue} 
-                                            onChange={(e) => setEditDiscountValue(Number(e.target.value))} 
-                                            className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
-                                        />
-                                        <Button 
-                                            variant="outline" 
-                                            size="icon" 
-                                            className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
-                                            onClick={() => setEditDiscountType(editDiscountType === 'percent' ? 'fixed' : 'percent')}
-                                        >
-                                            <span className="text-[10px] font-bold">{editDiscountType === 'percent' ? '%' : 'R$'}</span>
-                                        </Button>
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Desconto Global</Label>
+                                        <div className="flex gap-1">
+                                            <Input 
+                                                type="number" 
+                                                step="0.01" 
+                                                value={editDiscountValue} 
+                                                onChange={(e) => setEditDiscountValue(Number(e.target.value))} 
+                                                className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
+                                            />
+                                            <Button 
+                                                variant="outline" 
+                                                size="icon" 
+                                                className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
+                                                onClick={() => setEditDiscountType(editDiscountType === 'percent' ? 'fixed' : 'percent')}
+                                            >
+                                                <span className="text-[10px] font-bold">{editDiscountType === 'percent' ? '%' : '$'}</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Taxas / Acrésc.</Label>
+                                        <div className="flex gap-1">
+                                            <Input 
+                                                type="number" 
+                                                step="0.01" 
+                                                value={editFeeValue} 
+                                                onChange={(e) => setEditFeeValue(Number(e.target.value))} 
+                                                className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
+                                            />
+                                            <Button 
+                                                variant="outline" 
+                                                size="icon" 
+                                                className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
+                                                onClick={() => setEditFeeType(editFeeType === 'percent' ? 'fixed' : 'percent')}
+                                            >
+                                                <span className="text-[10px] font-bold">{editFeeType === 'percent' ? '%' : '$'}</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
-                                currentCalculatedDiscount > 0 && (
-                                    <div className="flex justify-between items-center text-rose-500 text-[11px]">
-                                        <span>Desconto Global</span>
-                                        <span className="font-semibold">- R$ {currentCalculatedDiscount.toFixed(2)}</span>
-                                    </div>
-                                )
+                                <>
+                                    {currentCalculatedDiscount > 0 && (
+                                        <div className="flex justify-between items-center text-rose-500 text-[11px]">
+                                            <span>Desconto Global</span>
+                                            <span className="font-semibold">- R$ {currentCalculatedDiscount.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {currentCalculatedFee > 0 && (
+                                        <div className="flex justify-between items-center text-emerald-600 text-[11px]">
+                                            <span>Taxas / Acréscimos</span>
+                                            <span className="font-semibold">+ R$ {currentCalculatedFee.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
 
-                            {/* EDIÇÃO DE TAXAS GLOBAIS */}
-                            {isEditing ? (
-                                <div className="space-y-1.5 pt-2">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Taxas / Acréscimos</Label>
-                                    <div className="flex gap-1">
-                                        <Input 
-                                            type="number" 
-                                            step="0.01" 
-                                            value={editFeeValue} 
-                                            onChange={(e) => setEditFeeValue(Number(e.target.value))} 
-                                            className="!rounded-none border-slate-200 h-9 text-xs font-bold" 
-                                        />
-                                        <Button 
-                                            variant="outline" 
-                                            size="icon" 
-                                            className="h-9 w-9 !rounded-none border-slate-200 flex-none" 
-                                            onClick={() => setEditFeeType(editFeeType === 'percent' ? 'fixed' : 'percent')}
-                                        >
-                                            <span className="text-[10px] font-bold">{editFeeType === 'percent' ? '%' : 'R$'}</span>
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                currentCalculatedFee > 0 && (
-                                    <div className="flex justify-between items-center text-emerald-600 text-[11px]">
-                                        <span>Taxas / Acréscimos</span>
-                                        <span className="font-semibold">+ R$ {currentCalculatedFee.toFixed(2)}</span>
-                                    </div>
-                                )
-                            )}
-
-                            <Separator className="bg-slate-100 my-4" />
+                            <Separator className="bg-slate-50 my-4" />
                             <div className="flex justify-between items-center pt-2">
                                 <span className="text-xs font-bold text-slate-900 uppercase">Total Final</span>
                                 <span className="text-2xl font-black text-slate-900 tracking-tight">
@@ -1063,11 +1075,10 @@ export default function AtendimentoDetails() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="pix">PIX</SelectItem>
+                                        <SelectItem value="pix">PIX (À Vista)</SelectItem>
                                         <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                                        <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
                                         <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                                        <SelectItem value="carne">Carnê / Promissória</SelectItem>
+                                        <SelectItem value="carne" className="font-bold text-emerald-700">Carnê / Crediário Próprio</SelectItem>
                                     </SelectContent>
                                 </Select>
                             ) : (
@@ -1076,6 +1087,36 @@ export default function AtendimentoDetails() {
                                 </div>
                             )}
                         </div>
+
+                        {/* CONFIGURAÇÃO DO CARNÊ DURANTE A EDIÇÃO */}
+                        {isEditing && editPaymentMethod === 'carne' && (
+                            <div className="p-4 bg-emerald-50/50 border border-emerald-100 !rounded-none space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 border-b border-emerald-100 pb-2">Configuração do Carnê</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Entrada (R$)</Label>
+                                        <Input type="number" step="0.01" value={editEntrada || ''} onChange={(e) => setEditEntrada(Number(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs font-semibold" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Parcelas</Label>
+                                        <Input type="number" min="1" max="24" value={editInstallmentsCount || ''} onChange={(e) => setEditInstallmentsCount(Number(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs font-semibold text-center" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">1º Vencimento</Label>
+                                    <Input type="text" placeholder="DD/MM/YYYY" maxLength={10} value={editFirstDueDate} onChange={(e) => setEditFirstDueDate(formatDate(e.target.value))} className="!rounded-none border-emerald-200 bg-white h-9 text-xs text-slate-700" />
+                                </div>
+                                
+                                <div className="mt-4 pt-3 border-t border-emerald-100 text-center">
+                                    <p className="text-[11px] text-emerald-600 font-medium">Saldo Devedor: <strong className="text-emerald-800">R$ {(currentTotal - editEntrada).toFixed(2)}</strong></p>
+                                    {editInstallmentsCount > 0 && (currentTotal - editEntrada) > 0 && (
+                                        <p className="text-lg font-black text-emerald-700 mt-1">
+                                            {editInstallmentsCount}x de R$ {((currentTotal - editEntrada) / editInstallmentsCount).toFixed(2)}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {atendimento.isCarne && (

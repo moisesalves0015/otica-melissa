@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { 
     Search, User, Printer, Clock, Activity, ShoppingCart, 
     DollarSign, FileText, Plus, Trash2, ChevronDown, ChevronUp, Scissors,
-    MessageCircle, Eye
+    MessageCircle, Eye, Filter
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,11 @@ export default function Atendimentos() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState("novo");
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [filterStartDate, setFilterStartDate] = React.useState("");
+  const [filterEndDate, setFilterEndDate] = React.useState("");
+  const [filterAttendant, setFilterAttendant] = React.useState("todos");
+  const [filterPayment, setFilterPayment] = React.useState("todos");
+  const [showFilters, setShowFilters] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   
   const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
@@ -449,10 +454,51 @@ Agradecemos a preferência! 👓💙`;
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  const filteredAtendimentos = atendimentos.filter(a => 
-    a.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.attendant?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAtendimentos = atendimentos.filter(a => {
+    // Busca por texto (Cliente, Atendente ou TSO)
+    const matchesSearch = 
+        a.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.attendant?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.tso?.toString().toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtro por Atendente
+    const matchesAttendant = filterAttendant === "todos" || a.attendant === filterAttendant;
+    
+    // Filtro por Pagamento
+    const matchesPayment = filterPayment === "todos" || a.paymentMethod === filterPayment;
+
+    // Filtro por Data
+    let matchesDate = true;
+    if (filterStartDate || filterEndDate) {
+        if (a.date) {
+            const [d, m, y] = a.date.split("/").map(Number);
+            const itemDate = new Date(y, m - 1, d);
+            
+            if (filterStartDate) {
+                const [sd, sm, sy] = filterStartDate.split("/").map(Number);
+                const startDate = new Date(sy, sm - 1, sd);
+                if (itemDate < startDate) matchesDate = false;
+            }
+            if (filterEndDate) {
+                const [ed, em, ey] = filterEndDate.split("/").map(Number);
+                const endDate = new Date(ey, em - 1, ed);
+                if (itemDate > endDate) matchesDate = false;
+            }
+        } else {
+            matchesDate = false;
+        }
+    }
+
+    return matchesSearch && matchesAttendant && matchesPayment && matchesDate;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterAttendant("todos");
+    setFilterPayment("todos");
+  };
 
   return (
     <div className="space-y-6">
@@ -910,17 +956,97 @@ Agradecemos a preferência! 👓💙`;
 
           <TabsContent value="historico" className="m-0 space-y-4 focus-visible:outline-none focus-visible:ring-0">
              <Card className="!rounded-none border-slate-200 shadow-none bg-white print:hidden">
-                <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-                <div className="relative flex-1 group max-w-md">
-                    <Input
-                        placeholder="Buscar por cliente ou atendente..."
-                        className="pl-9 h-9 bg-slate-50 border-slate-200 !rounded-none text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                </div>
-                </div>
+                 <div className="p-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 group max-w-md">
+                        <Input
+                            placeholder="Buscar por cliente, atendente ou TSO..."
+                            className="pl-9 h-9 bg-slate-50 border-slate-200 !rounded-none text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
+                    
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`h-9 !rounded-none border-slate-200 text-xs font-bold transition-colors ${showFilters ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                    >
+                        <Filter className="h-3.5 w-3.5 mr-2" />
+                        {showFilters ? 'OCULTAR FILTROS' : 'FILTROS AVANÇADOS'}
+                        {(filterAttendant !== 'todos' || filterPayment !== 'todos' || filterStartDate || filterEndDate) && (
+                            <Badge className="ml-2 bg-emerald-500 text-white border-none h-4 px-1 min-w-[16px] flex items-center justify-center text-[9px]">
+                                !
+                            </Badge>
+                        )}
+                    </Button>
+
+                    {(searchTerm || filterAttendant !== 'todos' || filterPayment !== 'todos' || filterStartDate || filterEndDate) && (
+                        <Button 
+                            variant="ghost" 
+                            onClick={clearFilters}
+                            className="h-9 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+                        >
+                            LIMPAR
+                        </Button>
+                    )}
+                 </div>
+
+                 {/* PAINEL DE FILTROS ROBUSTOS */}
+                 {showFilters && (
+                    <div className="p-5 bg-slate-50/80 border-b border-slate-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Período Inicial</Label>
+                                <Input 
+                                    placeholder="DD/MM/YYYY" 
+                                    value={filterStartDate} 
+                                    onChange={(e) => setFilterStartDate(formatDate(e.target.value))}
+                                    className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Período Final</Label>
+                                <Input 
+                                    placeholder="DD/MM/YYYY" 
+                                    value={filterEndDate} 
+                                    onChange={(e) => setFilterEndDate(formatDate(e.target.value))}
+                                    className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Filtrar por Atendente</Label>
+                                <Select value={filterAttendant} onValueChange={setFilterAttendant}>
+                                    <SelectTrigger className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todos">Todos os Atendentes</SelectItem>
+                                        {atendentes.map(at => (
+                                            <SelectItem key={at.id} value={at.name}>{at.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Forma de Pagamento</Label>
+                                <Select value={filterPayment} onValueChange={setFilterPayment}>
+                                    <SelectTrigger className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium uppercase">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todos">Todas as Formas</SelectItem>
+                                        <SelectItem value="pix">PIX</SelectItem>
+                                        <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                                        <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                        <SelectItem value="carne">Carnê / Crediário</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                 )}
                 <CardContent className="p-0">
                 <Table>
                     <TableHeader className="bg-slate-50/50">
