@@ -1,5 +1,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { collection, onSnapshot, query, addDoc, serverTimestamp, orderBy, doc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import {
   Search,
   User,
@@ -76,48 +78,7 @@ const BENEFITS = [
   { icon: MapPin, title: "Localizador de Lojas", description: "Encontre a Gassi perto de você" },
 ];
 
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Ray-Ban Aviator Classic",
-    originalPrice: 890,
-    price: 578.5,
-    installments: "12x de R$ 48,20",
-    image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=500",
-    badge: "35% OFF",
-    freeShipping: true,
-  },
-  {
-    id: 2,
-    name: "Oakley Holbrook Prizm",
-    originalPrice: 720,
-    price: 468,
-    installments: "12x de R$ 39,00",
-    image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?q=80&w=600",
-    badge: "35% OFF",
-    freeShipping: true,
-  },
-  {
-    id: 3,
-    name: "Vogue Eyewear Butterfly",
-    originalPrice: 650,
-    price: 422.5,
-    installments: "12x de R$ 35,20",
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600",
-    badge: "Novidade",
-    freeShipping: false,
-  },
-  {
-    id: 4,
-    name: "Carrera Grand Prix 2",
-    originalPrice: 950,
-    price: 617.5,
-    installments: "12x de R$ 51,45",
-    image: "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=500",
-    badge: "35% OFF",
-    freeShipping: true,
-  },
-];
+// Products will be fetched from Firestore
 
 const CATEGORIES = [
   {
@@ -440,7 +401,7 @@ function Benefits() {
   );
 }
 
-function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
+function ProductCard({ product }: { product: any }) {
   return (
     <Card className="group relative overflow-hidden border-none shadow-sm rounded-lg bg-white">
       <CardContent className="p-3">
@@ -457,9 +418,11 @@ function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
         <div className="space-y-1">
           <h3 className="font-bold text-xs truncate text-foreground">{product.name}</h3>
           <div className="flex flex-col">
-            <span className="text-muted-foreground text-[10px] line-through">
-              R$ {product.originalPrice.toFixed(2)}
-            </span>
+            {product.originalPrice > 0 && (
+              <span className="text-muted-foreground text-[10px] line-through">
+                R$ {product.originalPrice.toFixed(2)}
+              </span>
+            )}
             <span className="text-sm font-black text-primary">
               R$ {product.price.toFixed(2)}
             </span>
@@ -479,30 +442,7 @@ function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
   );
 }
 
-function NewArrivals() {
-  return (
-    <section className="py-16 bg-slate-50">
-      <div className="max-w-[1440px] mx-auto px-0 lg:px-10">
-        <div className="flex items-center justify-between mb-8 px-6 lg:px-0">
-          <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Mais Procurados</h2>
-          <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
-            Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </div>
 
-        <div className="pb-6 w-full max-w-full overflow-hidden">
-            <ResponsiveSlider autoplay={true} autoplayInterval={4500}>
-            {PRODUCTS.map((product) => (
-                <div key={product.id} className="py-2 px-1">
-                  <ProductCard product={product} />
-                </div>
-            ))}
-            </ResponsiveSlider>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function CategoryBanners() {
   return (
@@ -703,51 +643,58 @@ function LifestyleSection() {
   );
 }
 
-function FreeExamSection() {
-  return (
-    <section className="py-24 px-6 bg-[#FAFAFB]">
-      <div className="max-w-[1200px] mx-auto">
-        <div className="bg-white rounded-[24px] border border-[#ECECEC] shadow-[0_8px_30px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
-          <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-[#1C1C1C] text-white">
-            <Badge className="w-fit mb-8 bg-emerald-500 text-white border-none rounded-full px-5 py-1 font-bold text-[11px] tracking-widest">GRÁTIS TODOS OS SÁBADOS</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">Sua saúde visual é nossa prioridade absoluta.</h2>
-            <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame médico computadorizado sem custos adicionais. Tecnologia de ponta para sua melhor visão.</p>
-            <div className="flex items-center gap-4 text-sm font-bold">
-              <div className="flex -space-x-3">
-                {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-full border-4 border-[#1C1C1C] bg-slate-800" />)}
-              </div>
-              <span className="text-slate-300">+ de 500 agendamentos este mês</span>
-            </div>
-          </div>
-          <div className="md:w-1/2 p-12 md:p-20 bg-white">
-            <h3 className="text-2xl font-bold text-[#1C1C1C] mb-10">Solicitar Agendamento</h3>
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); toast.success("Agendamento solicitado!"); }}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Nome</label>
-                  <Input placeholder="Nome completo" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">WhatsApp</label>
-                  <Input placeholder="(00) 00000-0000" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Data Preferencial</label>
-                <Input type="date" className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" required />
-              </div>
-              <Button className="w-full h-16 rounded-[14px] bg-[#1C1C1C] hover:bg-slate-800 text-white font-bold shadow-xl transition-all hover:-translate-y-1 mt-4">
-                AGENDAR AGORA
-              </Button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+
 
 export default function LandingPage() {
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [appointmentData, setAppointmentData] = React.useState({
+    name: "",
+    whatsapp: "",
+    preferredDate: ""
+  });
+  const [availableDates, setAvailableDates] = React.useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    const q = query(collection(db, "landing_products"), orderBy("order", "asc"));
+    const unsubProducts = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProducts(data);
+    });
+
+    const unsubExams = onSnapshot(doc(db, "settings", "exams"), (doc) => {
+        if (doc.exists()) {
+            setAvailableDates(doc.data().availableDates || []);
+        }
+    });
+
+    return () => {
+        unsubProducts();
+        unsubExams();
+    };
+  }, []);
+
+  const handleAppointmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+        await addDoc(collection(db, "appointments"), {
+            ...appointmentData,
+            status: "Pendente",
+            source: "Landing Page",
+            createdAt: serverTimestamp()
+        });
+        toast.success(`Agendamento solicitado para ${appointmentData.preferredDate.split("-").reverse().join("/")}! Aguarde nossa confirmação via WhatsApp.`);
+        setAppointmentData({ name: "", whatsapp: "", preferredDate: "" });
+    } catch (error: any) {
+        toast.error("Erro ao solicitar agendamento: " + error.message);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white flex flex-col">
       <Toaster position="top-center" />
@@ -756,9 +703,112 @@ export default function LandingPage() {
       <main className="flex-1 overflow-x-hidden max-w-[1440px] mx-auto w-full">
         <Hero />
         <Benefits />
-        <NewArrivals />
+        
+        {/* NEW ARRIVALS WITH DYNAMIC DATA */}
+        <section className="py-16 bg-slate-50">
+          <div className="max-w-[1440px] mx-auto px-0 lg:px-10">
+            <div className="flex items-center justify-between mb-8 px-6 lg:px-0">
+              <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Mais Procurados</h2>
+              <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
+                Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+
+            <div className="pb-6 w-full max-w-full overflow-hidden">
+                {products.length > 0 ? (
+                    <ResponsiveSlider autoplay={true} autoplayInterval={4500}>
+                    {products.map((product) => (
+                        <div key={product.id} className="py-2 px-1">
+                          <ProductCard product={product} />
+                        </div>
+                    ))}
+                    </ResponsiveSlider>
+                ) : (
+                    <div className="text-center py-10 text-slate-400">Carregando vitrine...</div>
+                )}
+            </div>
+          </div>
+        </section>
+
         <CategoryBanners />
-        <FreeExamSection />
+
+        {/* FREE EXAM SECTION WITH FORM LOGIC */}
+        <section className="py-24 px-6 bg-[#FAFAFB]">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="bg-white rounded-[24px] border border-[#ECECEC] shadow-[0_8px_30px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
+              <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-[#1C1C1C] text-white">
+                <Badge className="w-fit mb-8 bg-emerald-500 text-white border-none rounded-full px-5 py-1 font-bold text-[11px] tracking-widest">GRÁTIS TODOS OS SÁBADOS</Badge>
+                <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">Sua saúde visual é nossa prioridade absoluta.</h2>
+                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame médico computadorizado sem custos adicionais. Tecnologia de ponta para sua melhor visão.</p>
+                <div className="flex items-center gap-4 text-sm font-bold">
+                  <div className="flex -space-x-3">
+                    {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-full border-4 border-[#1C1C1C] bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
+                  </div>
+                  <span className="text-slate-300">+ de 500 agendamentos este mês</span>
+                </div>
+              </div>
+              <div className="md:w-1/2 p-12 md:p-20 bg-white">
+                <h3 className="text-2xl font-bold text-[#1C1C1C] mb-10">Solicitar Agendamento</h3>
+                <form className="space-y-6" onSubmit={handleAppointmentSubmit}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Nome</label>
+                      <Input 
+                        placeholder="Nome completo" 
+                        className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
+                        value={appointmentData.name}
+                        onChange={e => setAppointmentData({...appointmentData, name: e.target.value})}
+                        required 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">WhatsApp</label>
+                      <Input 
+                        placeholder="(00) 00000-0000" 
+                        className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
+                        value={appointmentData.whatsapp}
+                        onChange={e => setAppointmentData({...appointmentData, whatsapp: e.target.value})}
+                        required 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Data Preferencial</label>
+                    {availableDates.length > 0 ? (
+                        <select 
+                            className="w-full h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB] px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            value={appointmentData.preferredDate}
+                            onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
+                            required
+                        >
+                            <option value="">Selecione uma data disponível</option>
+                            {availableDates.map(date => (
+                                <option key={date} value={date}>{date.split("-").reverse().join("/")}</option>
+                            ))}
+                        </select>
+                    ) : (
+                        <Input 
+                            type="date" 
+                            className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
+                            value={appointmentData.preferredDate}
+                            onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
+                            required 
+                        />
+                    )}
+                  </div>
+                  <Button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full h-16 rounded-[14px] bg-[#1C1C1C] hover:bg-slate-800 text-white font-bold shadow-xl transition-all hover:-translate-y-1 mt-4 disabled:opacity-50 disabled:translate-y-0"
+                  >
+                    {isSubmitting ? "SOLICITANDO..." : "AGENDAR AGORA"}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <StoreSection />
         <LifestyleSection />
       </main>

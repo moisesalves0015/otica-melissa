@@ -15,6 +15,8 @@ import {
   ChevronDown,
   LogOut,
   Zap,
+  Layout,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,8 @@ const sidebarLinks = [
   { name: "Lista de Clientes", icon: Users, path: "/admin/clientes" },
   { name: "Pedidos", icon: ShoppingCart, path: "/admin/pedidos" },
   { name: "Gestão Financeira", icon: DollarSign, path: "/admin/financeiro" },
+  { name: "Landing Page", icon: Layout, path: "/admin/landing-cms" },
+  { name: "Agendamentos", icon: Calendar, path: "/admin/agendamentos" },
   { name: "Configurações", icon: Settings, path: "/admin/configuracoes" },
 ];
 
@@ -57,7 +61,9 @@ export default function AdminLayout() {
       const collectionMap: Record<string, string> = {
         clientes: "clients",
         atendimentos: "atendimentos",
-        pedidos: "orders"
+        pedidos: "orders",
+        "landing-cms": "landing_products",
+        agendamentos: "appointments"
       };
       const collectionName = collectionMap[parts[1]];
       const docId = parts[2];

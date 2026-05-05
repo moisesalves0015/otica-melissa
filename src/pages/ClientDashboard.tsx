@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Package, LogOut, Calendar, Clock, ChevronRight, ShoppingBag, CreditCard, CheckCircle2, AlertTriangle, MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
@@ -86,11 +86,20 @@ export default function ClientDashboard() {
   const [apptOpen, setApptOpen] = React.useState(false);
   const [whatsapp, setWhatsapp] = React.useState("5511999999999");
   const [activeTab, setActiveTab] = React.useState<"pedidos" | "parcelas">("pedidos");
+  const [availableDates, setAvailableDates] = React.useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     const session = getClientSession();
     if (!session) { navigate("/cliente/login"); return; }
     load(session.id);
+
+    const unsubExams = onSnapshot(doc(db, "settings", "exams"), (doc) => {
+        if (doc.exists()) {
+            setAvailableDates(doc.data().availableDates || []);
+        }
+    });
+    return () => unsubExams();
   }, [navigate]);
 
   const load = async (id: string) => {
@@ -125,14 +134,29 @@ export default function ClientDashboard() {
 
   const handleAppt = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const fd = new FormData(e.currentTarget);
-    const date = toDisplay(fd.get("date") as string);
+    const date = fd.get("date") as string;
     const period = fd.get("period") as string;
+    
+    setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "appointments"), { clientId: client.id, clientName: client.name, date, period, status: "Pendente", createdAt: new Date().toISOString() });
-      toast.success("Agendamento solicitado!");
+      await addDoc(collection(db, "appointments"), { 
+        clientId: client.id, 
+        clientName: client.name, 
+        name: client.name,
+        whatsapp: client.phone || client.whatsapp || "",
+        preferredDate: date, 
+        period, 
+        status: "Pendente", 
+        source: "Portal do Cliente",
+        createdAt: new Date().toISOString() 
+      });
+      toast.success(`Agendamento solicitado para ${date.includes("-") ? date.split("-").reverse().join("/") : date}!`);
       setApptOpen(false);
     } catch { toast.error("Erro ao agendar."); }
+    finally { setIsSubmitting(false); }
   };
 
   if (isLoading) return (
@@ -339,7 +363,16 @@ export default function ClientDashboard() {
             <form onSubmit={handleAppt} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "12px", fontWeight: 500, color: S.textSec }}>Data preferencial</label>
-                <input type="date" name="date" required style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }} />
+                {availableDates.length > 0 ? (
+                    <select name="date" required style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }}>
+                        <option value="">Selecione uma data</option>
+                        {availableDates.map(date => (
+                            <option key={date} value={date}>{date.split("-").reverse().join("/")}</option>
+                        ))}
+                    </select>
+                ) : (
+                    <input type="date" name="date" required style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }} />
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "12px", fontWeight: 500, color: S.textSec }}>Período preferido</label>
@@ -349,8 +382,8 @@ export default function ClientDashboard() {
                 </select>
               </div>
               <p style={{ fontSize: "12px", color: S.textMuted, margin: "4px 0 0", textAlign: "center" }}>Sujeito à confirmação da equipe.</p>
-              <button type="submit" style={{ height: "44px", borderRadius: "12px", background: S.primary, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
-                Confirmar solicitação
+              <button type="submit" disabled={isSubmitting} style={{ height: "44px", borderRadius: "12px", background: S.primary, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", opacity: isSubmitting ? 0.5 : 1 }}>
+                {isSubmitting ? "Solicitando..." : "Confirmar solicitação"}
               </button>
             </form>
           </div>

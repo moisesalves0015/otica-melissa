@@ -11,6 +11,8 @@ import OrderDetails from "./pages/admin/OrderDetails";
 import AtendimentoDetails from "./pages/admin/AtendimentoDetails";
 import AdminLogin from "./pages/admin/Login";
 import Configuracoes from "./pages/admin/Configuracoes";
+import LandingCMS from "./pages/admin/LandingCMS";
+import Appointments from "./pages/admin/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ClientProtectedRoute from "./components/ClientProtectedRoute";
 import Rastreio from "./pages/Rastreio";
@@ -46,6 +48,8 @@ export default function App() {
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="atendimentos" element={<Atendimentos />} />
               <Route path="atendimentos/:id" element={<AtendimentoDetails />} />
+              <Route path="landing-cms" element={<LandingCMS />} />
+              <Route path="agendamentos" element={<Appointments />} />
             </Route>
           </Route>
           <Route path="/rastreio" element={<Rastreio />} />
