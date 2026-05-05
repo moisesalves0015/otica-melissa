@@ -237,6 +237,7 @@ export default function AtendimentoDetails() {
       items: "",
       dueDate: "",
       labNotes: "",
+      labCode: "",
       isNew: true
     };
     setEditOrders([...editOrders, newOrder]);
@@ -361,9 +362,18 @@ export default function AtendimentoDetails() {
 
       // 1. Atualiza documentos na coleção 'orders'
       const updatedOrdersForAtendimento = [];
-      for (const order of editOrders) {
+      for (let i = 0; i < editOrders.length; i++) {
+        const order = editOrders[i];
         const { isNew, ...orderData } = order;
         
+        const baseTso = editTso || atendimento.tso || id.slice(0,6).toUpperCase();
+        const itemNumber = String(i + 1).padStart(3, '0');
+        const generatedCode = `${baseTso}${itemNumber}`;
+        
+        orderData.orderCode = generatedCode;
+        orderData.labCode = orderData.labCode || "";
+        orderData.tso = baseTso;
+
         if (isNew) {
           const realId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
           orderData.id = realId;
@@ -443,7 +453,8 @@ export default function AtendimentoDetails() {
       filename:     `Atendimento_${clientName.replace(/\s+/g, '_')}_${dateStr}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] }
     };
 
     toast.info("Gerando PDF, aguarde...");
@@ -876,10 +887,14 @@ export default function AtendimentoDetails() {
                                               <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Descrição Detalhada dos Itens</Label>
                                               <Input value={order.items} onChange={(e) => updateEditOrder(idx, 'items', e.target.value)} placeholder="Ex: Armação RX5184 Preta + Lentes Kodak Anti-Reflexo" className="!rounded-none border-slate-200 h-9 text-xs" />
                                           </div>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                               <div className="space-y-1.5">
-                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
-                                                  <Input value={order.orderCode} onChange={(e) => updateEditOrder(idx, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Laboratório (Opcional)</Label>
+                                                  <Input value={order.labCode || ""} onChange={(e) => updateEditOrder(idx, 'labCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="h-9 rounded border-slate-200 text-xs font-mono disabled:opacity-70 disabled:bg-slate-50" />
+                                              </div>
+                                              <div className="space-y-1.5">
+                                                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Sistema</Label>
+                                                  <Input value={order.orderCode} onChange={(e) => updateEditOrder(idx, 'orderCode', e.target.value)} placeholder="Ex: PED-2024-001" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
                                               </div>
                                               <div className="space-y-1.5">
                                                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
@@ -1316,7 +1331,7 @@ export default function AtendimentoDetails() {
                 </thead>
                 <tbody>
                   {atendimento.orders && atendimento.orders.map((o: any, i: number) => (
-                    <tr key={i} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
+                    <tr key={i} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', pageBreakInside: 'avoid'}}>
                       <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#000000'}}>{o.serviceType}</td>
                       <td style={{padding: '2mm 3mm', color: '#000000', fontWeight: '500'}}>{o.items || "—"}</td>
                       <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#000000', fontWeight: '600'}}>{(() => {

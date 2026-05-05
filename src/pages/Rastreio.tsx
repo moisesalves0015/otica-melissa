@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, query, where, getDocs, orderBy, addDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { toast } from "sonner";
 import { Clock, Package, CheckCircle2, Eye, Truck, Wrench, ShieldCheck, MapPin, Calendar, ShoppingBag, CreditCard, FileText, X, ChevronLeft, MessageCircle } from "lucide-react";
@@ -73,12 +73,14 @@ export default function Rastreio() {
       if (settSnap.exists() && settSnap.data().whatsappPhone) setWhatsapp(settSnap.data().whatsappPhone.replace(/\D/g,""));
       const [iSnap, aSnap] = await Promise.all([
         getDocs(query(collection(db,"installments"), where("clientId","==",cId))),
-        getDocs(query(collection(db,"atendimentos"), where("clientId","==",cId), orderBy("createdAt","desc"))),
+        getDocs(query(collection(db,"atendimentos"), where("clientId","==",cId))),
       ]);
       const il = iSnap.docs.map(d=>({id:d.id,...d.data()}));
       il.sort((a:any,b:any)=>{ const p=(s:string)=>{ if(!s)return 0; if(s.includes("/")){ const[dd,m,y]=s.split("/").map(Number); return new Date(y,m-1,dd).getTime(); } return new Date(s).getTime(); }; return p(a.dueDate)-p(b.dueDate); });
       setInstallments(il);
-      setAtendimentos(aSnap.docs.map(d=>({id:d.id,...d.data()})));
+      const al = aSnap.docs.map(d=>({id:d.id,...d.data()}));
+      al.sort((a:any,b:any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setAtendimentos(al);
     } catch(e){ console.error(e); }
     finally { setLoading(false); }
   };
@@ -156,7 +158,7 @@ export default function Rastreio() {
               <div style={{background:S.text,padding:"24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
                   <p style={{fontSize:"11px",fontWeight:500,color:"rgba(255,255,255,0.5)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.1em"}}>Pedido</p>
-                  <p style={{fontSize:"20px",fontWeight:700,color:"#fff",margin:0}}>#{order.tso || order.id.slice(0,8).toUpperCase()}</p>
+                  <p style={{fontSize:"20px",fontWeight:700,color:"#fff",margin:0}}>#{order.orderCode || order.tso || order.id.slice(0,8).toUpperCase()}</p>
                 </div>
                 <span style={{fontSize:"12px",fontWeight:600,borderRadius:"999px",padding:"5px 14px",
                   background: order.status==="Entregue"?"#ECFDF3": order.status==="Pronto para Entrega"?"#D1FAE5": order.status==="Qualidade"?"#EDE9FE": order.status==="Em Produção"?"#DBEAFE": order.status==="Cancelado"?"#FEE2E2":"#FEF3C7",

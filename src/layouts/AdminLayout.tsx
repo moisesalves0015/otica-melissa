@@ -12,6 +12,7 @@ import {
   Bell,
   Search,
   ChevronRight,
+  ChevronDown,
   LogOut,
   Zap,
 } from "lucide-react";
@@ -19,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../contexts/AuthContext";
+import { collection, onSnapshot, query, doc, getDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 const sidebarLinks = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
@@ -36,6 +39,48 @@ export default function AdminLayout() {
   const [isDesktopCollapsed, setIsDesktopCollapsed] = React.useState(false);
   const location = useLocation();
   const { logout } = useAuth();
+
+  const [atendentes, setAtendentes] = React.useState<any[]>([]);
+  const [selectedAtendente, setSelectedAtendente] = React.useState("Administrador");
+  const [dynamicBreadcrumb, setDynamicBreadcrumb] = React.useState("");
+
+  React.useEffect(() => {
+    const unsub = onSnapshot(query(collection(db, "atendentes")), (snap) => {
+      setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  React.useEffect(() => {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length >= 3) {
+      const collectionMap: Record<string, string> = {
+        clientes: "clients",
+        atendimentos: "atendimentos",
+        pedidos: "orders"
+      };
+      const collectionName = collectionMap[parts[1]];
+      const docId = parts[2];
+      if (collectionName && docId) {
+         getDoc(doc(db, collectionName, docId)).then(snap => {
+           if (snap.exists()) {
+              const data = snap.data();
+              if (collectionName === "atendimentos") {
+                 setDynamicBreadcrumb(`TSO #${data.tso || docId.slice(0, 8).toUpperCase()}`);
+              } else if (collectionName === "orders") {
+                 setDynamicBreadcrumb(`Pedido #${data.orderCode || data.tso || docId.slice(0, 6).toUpperCase()}`);
+              } else {
+                 setDynamicBreadcrumb(data.name || data.clientName || docId);
+              }
+           }
+         }).catch(() => setDynamicBreadcrumb(""));
+      } else {
+        setDynamicBreadcrumb("");
+      }
+    } else {
+      setDynamicBreadcrumb("");
+    }
+  }, [location.pathname]);
 
   // Fecha o drawer mobile ao trocar de rota
   React.useEffect(() => {
@@ -206,38 +251,61 @@ export default function AdminLayout() {
             </Button>
 
             <div className="hidden md:flex items-center gap-2 text-xs text-slate-400">
-              <span className="hover:text-slate-600 cursor-pointer">Início</span>
-              <ChevronRight size={12} />
-              <span className="text-slate-900 font-medium capitalize">
-                {location.pathname.split("/").filter(Boolean).pop() || "Dashboard"}
-              </span>
+              <span className="hover:text-slate-600 cursor-pointer"><Link to="/admin">Início</Link></span>
+              {(() => {
+                const parts = location.pathname.split("/").filter(Boolean);
+                if (parts.length === 1) {
+                  return (
+                    <>
+                      <ChevronRight size={12} />
+                      <span className="text-slate-900 font-medium capitalize">Dashboard</span>
+                    </>
+                  );
+                }
+                
+                return parts.slice(1).map((part, idx) => {
+                  const isLast = idx === parts.slice(1).length - 1;
+                  let displayName = decodeURIComponent(part).replace(/-/g, ' ');
+                  if (isLast && dynamicBreadcrumb) {
+                    displayName = dynamicBreadcrumb;
+                  }
+                  
+                  return (
+                    <React.Fragment key={idx}>
+                      <ChevronRight size={12} />
+                      {isLast ? (
+                        <span className="text-slate-900 font-medium capitalize">{displayName}</span>
+                      ) : (
+                        <Link to={`/admin/${part}`} className="hover:text-slate-600 capitalize">{displayName}</Link>
+                      )}
+                    </React.Fragment>
+                  );
+                });
+              })()}
             </div>
           </div>
 
           <div className="flex items-center gap-2 lg:gap-4">
-            <div className="relative hidden lg:block">
-              <Input
-                type="search"
-                placeholder="Buscar no sistema..."
-                className="w-48 xl:w-64 pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            </div>
-
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 text-slate-400 hover:text-slate-600">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
-            </Button>
-
-            <Separator orientation="vertical" className="h-5 hidden sm:block" />
-
-            <div className="flex items-center gap-2 lg:gap-3 cursor-pointer">
+            <div className="flex items-center gap-2 lg:gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold text-slate-700 leading-none">Administrador</p>
-                <p className="text-[10px] text-slate-400 mt-0.5 uppercase font-medium">Loja Matriz</p>
+                <div className="relative flex items-center justify-end group">
+                  <select 
+                    className="text-xs font-semibold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none text-right appearance-none py-0 pl-2 pr-4 m-0 z-10"
+                    value={selectedAtendente}
+                    onChange={(e) => setSelectedAtendente(e.target.value)}
+                    style={{ textAlignLast: "right" }}
+                  >
+                    <option value="Administrador">Administrador</option>
+                    {atendentes.map(a => (
+                      <option key={a.id} value={a.name}>{a.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none group-hover:text-slate-600" />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5 uppercase font-medium">Administrador</p>
               </div>
-              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0">
-                AD
+              <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0 uppercase">
+                {selectedAtendente === "Administrador" ? "AD" : selectedAtendente.substring(0, 2)}
               </div>
             </div>
           </div>

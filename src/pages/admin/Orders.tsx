@@ -171,6 +171,7 @@ export default function Orders() {
         paymentMethod: data.paymentMethod || "Pendente",
         status: "Pendente",
         orderCode: data.orderCode || "",
+        labCode: data.labCode || "",
         supplier: data.supplier || "",
         linkedAtendimentoId: data.linkedAtendimentoId || "",
         createdAt: new Date().toISOString(),
@@ -268,8 +269,8 @@ export default function Orders() {
           </thead>
           <tbody>
             ${filteredOrders.map(o => `
-              <tr>
-                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 800;">#${o.id.substring(0, 8).toUpperCase()}</td>
+              <tr style="page-break-inside: avoid;">
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 800;">#${o.orderCode || o.tso || o.id.substring(0, 8).toUpperCase()}</td>
                 <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-family: monospace;">${o.orderCode || '—'}</td>
                 <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9;">${o.date || '—'}</td>
                 <td style="padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 700;">${o.clientName}</td>
@@ -298,8 +299,9 @@ export default function Orders() {
       margin: 0,
       filename: `relatorio-pedidos-${new Date().getTime()}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const }
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
 
     toast.promise(html2pdf().from(element).set(opt).save(), {
@@ -362,10 +364,14 @@ export default function Orders() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
-                                <Input name="orderCode" placeholder="Ex: LAB-2024-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido</Label>
+                                <Input name="orderCode" placeholder="Ex: PED-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código Lab</Label>
+                                <Input name="labCode" placeholder="Ex: LAB-001" className="rounded border-slate-200 h-9 text-xs font-mono font-semibold" />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
@@ -622,7 +628,7 @@ export default function Orders() {
                 return (
                   <TableRow key={order.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
                     <TableCell className="px-6 py-3">
-                      <span className="font-semibold text-slate-900">#{order.id}</span>
+                      <span className="font-semibold text-slate-900">#{order.orderCode || order.tso || order.id.substring(0, 8).toUpperCase()}</span>
                     </TableCell>
                     <TableCell className="px-6 py-3">
                       <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{order.orderCode || "—"}</span>

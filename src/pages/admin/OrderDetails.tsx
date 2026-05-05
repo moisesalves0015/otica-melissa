@@ -93,12 +93,13 @@ export default function OrderDetails() {
       if (order.status !== data.status) changes.push(`Status: ${order.status} -> ${data.status}`);
       if (order.seller !== data.seller) changes.push(`Vendedor: ${order.seller} -> ${data.seller}`);
       if (order.orderCode !== data.orderCode) changes.push(`Código: ${order.orderCode || 'Vazio'} -> ${data.orderCode}`);
+      if (order.labCode !== data.labCode) changes.push(`Cód. Lab: ${order.labCode || 'Vazio'} -> ${data.labCode}`);
       if (order.supplier !== data.supplier) changes.push(`Fornecedor: ${order.supplier || 'Vazio'} -> ${data.supplier}`);
       if (order.serviceType !== data.serviceType) changes.push(`Serviço: ${order.serviceType} -> ${data.serviceType}`);
       if (order.items !== data.items) changes.push(`Itens: alterados`);
       if (order.dueDate !== data.dueDate) changes.push(`Entrega: ${order.dueDate} -> ${data.dueDate}`);
       if (order.notes !== data.notes) changes.push(`Observações: alteradas`);
-      
+
       const historyEntry = {
         date: new Date().toISOString(),
         action: changes.length > 0 ? `Alterações: ${changes.join(', ')}` : "Pedido atualizado sem mudanças visíveis",
@@ -108,6 +109,7 @@ export default function OrderDetails() {
       await updateDoc(doc(db, "orders", id), {
         seller: data.seller,
         orderCode: data.orderCode,
+        labCode: data.labCode || "",
         supplier: data.supplier,
         serviceType: data.serviceType,
         items: data.items,
@@ -140,14 +142,15 @@ export default function OrderDetails() {
     }
 
     const clientName = order.clientName || "Cliente";
-    const orderNum = order.tso || order.id.slice(0, 8).toUpperCase();
+    const orderNum = order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase();
 
     const opt = {
       margin:       0,
       filename:     `OS_${orderNum}_${clientName.replace(/\s+/g, '_')}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] }
     };
 
     toast.info("Gerando PDF, aguarde...");
@@ -188,7 +191,7 @@ export default function OrderDetails() {
           </Button>
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              Pedido #{order.tso || order.id.slice(0, 8).toUpperCase()}
+              Pedido #{order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase()}
               <Badge className={`rounded ${statusColors[order.status]} text-[10px] font-bold uppercase tracking-wider`}>
                 {order.status}
               </Badge>
@@ -262,10 +265,14 @@ export default function OrderDetails() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-3 gap-5">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido</Label>
                   <Input name="orderCode" defaultValue={order.orderCode} disabled={!isEditing} className="h-9 rounded border-slate-200 text-sm font-mono disabled:opacity-70 disabled:bg-slate-50" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Lab.</Label>
+                  <Input name="labCode" defaultValue={order.labCode} disabled={!isEditing} className="h-9 rounded border-slate-200 text-sm font-mono disabled:opacity-70 disabled:bg-slate-50" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
@@ -460,7 +467,7 @@ export default function OrderDetails() {
             
             <div style={{textAlign: 'right', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px'}}>
               <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', margin: 0}}>Nº do Pedido</p>
-              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{order.tso || order.id.slice(0, 8).toUpperCase()}</p>
+              <p style={{fontSize: '13pt', fontWeight: '900', color: '#000000', margin: 0}}>#{order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase()}</p>
               <p style={{fontSize: '6.5pt', color: '#334155', margin: 0, fontWeight: '700'}}>Data: {order.date}</p>
             </div>
           </div>
@@ -485,8 +492,11 @@ export default function OrderDetails() {
           </div>
           <div style={{padding: '4mm', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm'}}>
             <div>
-              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código / Lab</p>
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código Pedido</p>
               <p style={{fontSize: '10pt', fontWeight: '900', color: '#000000', margin: '0 0 2mm'}}>{order.orderCode || "NÃO INFORMADO"}</p>
+              
+              <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Código Laboratório</p>
+              <p style={{fontSize: '10pt', fontWeight: '900', color: '#000000', margin: '0 0 2mm'}}>{order.labCode || "NÃO INFORMADO"}</p>
               
               <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 1.5mm'}}>Fornecedor</p>
               <p style={{fontSize: '9pt', fontWeight: '800', color: '#000000', margin: 0}}>{order.supplier || "NÃO INFORMADO"}</p>

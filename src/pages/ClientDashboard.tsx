@@ -226,7 +226,7 @@ export default function ClientDashboard() {
                   </div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 600, color: S.primary }}>#{order.tso || order.id.slice(0, 8).toUpperCase()}</span>
+                      <span style={{ fontSize: "12px", fontWeight: 600, color: S.primary }}>#{order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase()}</span>
                       <span style={statusStyle(order.status)}>{order.status}</span>
                     </div>
                     <p style={{ fontSize: "15px", fontWeight: 600, color: S.text, margin: "0 0 2px 0" }}>{order.serviceType || "Serviço Óptico"}</p>

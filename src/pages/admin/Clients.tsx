@@ -50,14 +50,28 @@ import { useNavigate } from "react-router-dom";
 export default function Clients() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [filterCredit, setFilterCredit] = React.useState("todos");
+  const [filterStartDate, setFilterStartDate] = React.useState("");
+  const [filterEndDate, setFilterEndDate] = React.useState("");
+  const [showFilters, setShowFilters] = React.useState(false);
+  const [quickAccessModal, setQuickAccessModal] = React.useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [clients, setClients] = React.useState<any[]>([]);
 
   // Estados para os campos com máscara
+  const [nameValue, setNameValue] = React.useState("");
   const [cpfValue, setCpfValue] = React.useState("");
   const [phoneValue, setPhoneValue] = React.useState("");
   const [birthValue, setBirthValue] = React.useState("");
+  const [cepValue, setCepValue] = React.useState("");
+  const [addressValue, setAddressValue] = React.useState("");
+  const [bairroValue, setBairroValue] = React.useState("");
+  const [cityValue, setCityValue] = React.useState("");
+  const [numberValue, setNumberValue] = React.useState("");
+  const [complementValue, setComplementValue] = React.useState("");
+  const [atendimentos, setAtendimentos] = React.useState<any[]>([]);
+  const [installments, setInstallments] = React.useState<any[]>([]);
 
   const formatCPF = (v: string) => {
     v = v.replace(/\D/g, "");
@@ -65,6 +79,39 @@ export default function Clients() {
     return v.replace(/(\d{3})(\d)/, "$1.$2")
             .replace(/(\d{3})(\d)/, "$1.$2")
             .replace(/(\d{3})(\d{1,2})/, "$1-$2");
+  };
+
+  const formatCEP = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    return v.replace(/(\d{5})(\d)/, "$1-$2");
+  };
+
+  const capitalizeName = (str: string) => {
+    const preposicoes = ['da', 'de', 'do', 'das', 'dos', 'e'];
+    return str.split(' ').map((word, index) => {
+        if (!word) return '';
+        const lower = word.toLowerCase();
+        if (preposicoes.includes(lower) && index !== 0) return lower;
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  };
+
+  const handleCepBlur = async () => {
+    const cep = cepValue.replace(/\D/g, "");
+    if (cep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setAddressValue(data.logradouro || "");
+          setBairroValue(data.bairro || "");
+          setCityValue(`${data.localidade || ""} - ${data.uf || ""}`);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err);
+      }
+    }
   };
 
   const formatPhone = (v: string) => {
@@ -93,7 +140,32 @@ export default function Clients() {
       });
       setClients(data);
     });
-    return () => unsubscribe();
+
+    const unsubAtend = onSnapshot(query(collection(db, "atendimentos")), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a: any, b: any) => {
+        const parseDate = (s: string) => {
+          if (!s) return 0;
+          if (s.includes("/")) {
+              const [d, m, y] = s.split("/").map(Number);
+              return new Date(y, m - 1, d).getTime();
+          }
+          return new Date(s).getTime();
+        };
+        return parseDate(b.date) - parseDate(a.date);
+      });
+      setAtendimentos(data);
+    });
+
+    const unsubInst = onSnapshot(query(collection(db, "installments")), (snapshot) => {
+      setInstallments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubAtend();
+      unsubInst();
+    };
   }, []);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -130,7 +202,7 @@ export default function Clients() {
 
       const uniqueId = Math.floor(100000 + Math.random() * 900000).toString();
       
-      const password = data.password ? String(data.password) : String(data.cpf || "").replace(/\D/g, "").slice(-4);
+      const password = String(data.cpf || "").replace(/\D/g, "").slice(-4);
 
       let lastConsultDate = data.lastConsultation ? String(data.lastConsultation) : "";
       if (lastConsultDate.includes("-") && lastConsultDate.split("-")[0].length === 4) {
@@ -144,7 +216,14 @@ export default function Clients() {
         birthDate: String(data.birth || ""),
         phone: String(data.phone || ""),
         email: String(data.email || ""),
+        profession: String(data.profession || ""),
         password: password, // Padrão: 4 últimos dígitos do CPF
+        cep: cepValue,
+        address: addressValue,
+        number: numberValue,
+        complement: complementValue,
+        bairro: bairroValue,
+        city: cityValue,
         lastConsultation: lastConsultDate,
         createdAt: new Date().toISOString(),
         creditStatus: "Em Análise",
@@ -154,6 +233,9 @@ export default function Clients() {
       
       toast.success("Cliente cadastrado com sucesso!");
       setIsDialogOpen(false);
+      // Reset form states
+      setNameValue(""); setCpfValue(""); setPhoneValue(""); setBirthValue(""); setCepValue("");
+      setAddressValue(""); setBairroValue(""); setCityValue(""); setNumberValue(""); setComplementValue("");
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
@@ -161,10 +243,153 @@ export default function Clients() {
     }
   };
 
-  const filteredClients = clients.filter(client => 
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.cpf?.includes(searchTerm)
-  );
+  const calculateCreditScore = (client: any) => {
+      if (client.manualCreditStatus) {
+          return {
+              status: client.manualCreditStatus,
+              isManual: true,
+              reason: client.creditStatusReason || "Alterado manualmente pelo administrador."
+          };
+      }
+
+      const clientInsts = installments.filter(i => i.clientId === client.id && !i.isDownPayment);
+      
+      if (!clientInsts || clientInsts.length === 0) {
+          return { status: "Em Análise", isManual: false, reason: "Cliente sem histórico de parcelas ou compras no crediário." };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let hasOverdue30 = false;
+      let hasOverdue = false;
+      let hasPaid = false;
+      
+      clientInsts.forEach(inst => {
+          if (inst.status === "Pago" || inst.status === "Paga") {
+              hasPaid = true;
+          } else if (inst.status === "Pendente") {
+              if (inst.dueDate) {
+                  const [d, m, y] = inst.dueDate.split("/");
+                  if (d && m && y) {
+                      const due = new Date(Number(y), Number(m) - 1, Number(d));
+                      const diffTime = today.getTime() - due.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays > 0) {
+                          hasOverdue = true;
+                          if (diffDays > 30) {
+                              hasOverdue30 = true;
+                          }
+                      }
+                  }
+              }
+          }
+      });
+
+      if (hasOverdue30) {
+          return { status: "Inadimplente", isManual: false, reason: "Possui parcelas atrasadas há mais de 30 dias." };
+      }
+      if (hasOverdue) {
+          return { status: "Atenção", isManual: false, reason: "Possui parcelas com atraso recente." };
+      }
+      if (hasPaid) {
+          return { status: "Excelente", isManual: false, reason: "Possui histórico de pagamentos sem atrasos pendentes." };
+      }
+      
+      return { status: "Bom", isManual: false, reason: "Possui compras no crediário sem atrasos pendentes." };
+  };
+
+  const getDynamicClientData = (client: any) => {
+    const clientAtendimentos = atendimentos.filter(a => a.clientId === client.id);
+    const lastVisit = clientAtendimentos.length > 0 ? clientAtendimentos[0].date : (client.lastVisit || "Primeiro Acesso");
+    
+    const clientInstallments = installments.filter(i => i.clientId === client.id && i.status !== 'Pago');
+    const dynamicBalance = clientInstallments.reduce((acc, curr) => acc + (curr.value || 0), 0);
+    
+    return { lastVisit, dynamicBalance };
+  };
+
+  const filteredClients = clients.filter(client => {
+    const { dynamicBalance } = getDynamicClientData(client);
+    const matchesSearch = 
+      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.cpf?.includes(searchTerm);
+
+    const score = calculateCreditScore(client);
+    const matchesCredit = filterCredit === "todos" || 
+      (filterCredit === 'inadimplente' ? (dynamicBalance > 0 || score.status === 'Atenção' || score.status === 'Inadimplente') : score.status?.toLowerCase() === filterCredit);
+
+    let matchesDate = true;
+    if (filterStartDate || filterEndDate) {
+      if (client.createdAt) {
+        const itemDateStr = client.createdAt.includes('T') ? client.createdAt.split('T')[0] : client.createdAt;
+        let itemDate: Date;
+        if (itemDateStr.includes("-")) {
+            itemDate = new Date(itemDateStr);
+        } else if (itemDateStr.includes("/")) {
+            const [d, m, y] = itemDateStr.split("/").map(Number);
+            itemDate = new Date(y, m - 1, d);
+        } else {
+            itemDate = new Date(itemDateStr);
+        }
+        itemDate.setHours(0,0,0,0);
+
+        if (filterStartDate) {
+          const [sy, sm, sd] = filterStartDate.split("-").map(Number);
+          const startDate = new Date(sy, sm - 1, sd);
+          startDate.setHours(0,0,0,0);
+          if (itemDate < startDate) matchesDate = false;
+        }
+        if (filterEndDate) {
+          const [ey, em, ed] = filterEndDate.split("-").map(Number);
+          const endDate = new Date(ey, em - 1, ed);
+          endDate.setHours(0,0,0,0);
+          if (itemDate > endDate) matchesDate = false;
+        }
+      } else {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCredit && matchesDate;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterCredit("todos");
+    setFilterStartDate("");
+    setFilterEndDate("");
+  };
+
+  const currentMonth = new Date().getMonth() + 1;
+  const aniversariantesList = clients.filter(c => {
+    if (!c.birthDate) return false;
+    const parts = c.birthDate.split('/');
+    if (parts.length === 3) {
+      return parseInt(parts[1], 10) === currentMonth;
+    }
+    return false;
+  });
+
+  const inadimplentesList = clients.filter(c => {
+    const { dynamicBalance } = getDynamicClientData(c);
+    const score = calculateCreditScore(c);
+    return score.status === 'Atenção' || 
+    score.status === 'Inadimplente' || 
+    dynamicBalance > 0
+  });
+
+  const cityCount: Record<string, number> = {};
+  clients.forEach(c => {
+      const city = c.city ? c.city.split('-')[0].trim().toUpperCase() : '';
+      if (city && city !== 'N/A') {
+          cityCount[city] = (cityCount[city] || 0) + 1;
+      }
+  });
+  const citiesArray = Object.entries(cityCount).sort((a, b) => b[1] - a[1]);
+  const uniqueCities = citiesArray.length;
+  const localizacaoSub = uniqueCities > 0 ? `${uniqueCities} cidades atendidas` : 'Mapa de densidade';
 
   return (
     <div className="space-y-6">
@@ -198,7 +423,7 @@ export default function Clients() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5 md:col-span-2">
                       <Label htmlFor="c-name" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Nome Completo</Label>
-                      <Input id="c-name" name="name" placeholder="Ex: João da Silva Santos" className="rounded border-slate-200 h-9 text-sm" required />
+                      <Input id="c-name" name="name" value={nameValue} onChange={(e) => setNameValue(capitalizeName(e.target.value))} placeholder="Ex: João da Silva Santos" className="rounded border-slate-200 h-9 text-sm" required />
                     </div>
                      <div className="space-y-1.5">
                        <Label htmlFor="c-cpf" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CPF</Label>
@@ -220,11 +445,6 @@ export default function Clients() {
                       <Label htmlFor="c-profession" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Profissão / Ocupação</Label>
                       <Input id="c-profession" name="profession" placeholder="Ex: Engenheiro" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-1.5 md:col-span-2">
-                      <Label htmlFor="c-password" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Senha de Acesso (Área do Cliente)</Label>
-                      <Input id="c-password" name="password" type="password" placeholder="Mínimo 4 dígitos" className="rounded border-slate-200 h-9 text-sm" />
-                      <p className="text-[9px] text-slate-400 italic">* Se vazio, será os 4 últimos dígitos do CPF.</p>
-                    </div>
                   </div>
                 </div>
 
@@ -233,26 +453,30 @@ export default function Clients() {
                     <MapPin className="h-4 w-4 text-slate-400" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Endereço</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
+                    <div className="space-y-1.5 md:col-span-2">
                       <Label htmlFor="c-cep" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">CEP</Label>
-                      <Input id="c-cep" placeholder="00000-000" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-cep" value={cepValue} onChange={e => setCepValue(formatCEP(e.target.value))} onBlur={handleCepBlur} placeholder="00000-000" className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-4">
+                      <Label htmlFor="c-address" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Logradouro / Rua</Label>
+                      <Input id="c-address" value={addressValue} onChange={e => setAddressValue(e.target.value)} placeholder="Av. Principal..." className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
-                      <Label htmlFor="c-address" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Logradouro / Rua</Label>
-                      <Input id="c-address" placeholder="Av. Principal..." className="rounded border-slate-200 h-9 text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
                       <Label htmlFor="c-number" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Número</Label>
-                      <Input id="c-number" placeholder="123" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-number" value={numberValue} onChange={e => setNumberValue(e.target.value)} placeholder="123" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 md:col-span-4">
+                      <Label htmlFor="c-complement" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Complemento</Label>
+                      <Input id="c-complement" value={complementValue} onChange={e => setComplementValue(e.target.value)} placeholder="Apto, Sala, Bloco..." className="rounded border-slate-200 h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-3">
                       <Label htmlFor="c-bairro" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Bairro</Label>
-                      <Input id="c-bairro" placeholder="Centro" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-bairro" value={bairroValue} onChange={e => setBairroValue(e.target.value)} placeholder="Centro" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 md:col-span-3">
                       <Label htmlFor="c-city" className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cidade / UF</Label>
-                      <Input id="c-city" placeholder="São Paulo - SP" className="rounded border-slate-200 h-9 text-sm" />
+                      <Input id="c-city" value={cityValue} onChange={e => setCityValue(e.target.value)} placeholder="São Paulo - SP" className="rounded border-slate-200 h-9 text-sm" />
                     </div>
                   </div>
                 </div>
@@ -355,35 +579,84 @@ export default function Clients() {
       </div>
 
       {/* Filters & Table */}
-      <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
-        <div className="p-4 flex flex-col md:flex-row md:items-center gap-3 border-b border-slate-100">
-           <div className="relative flex-1 group">
-            <Input
-              type="search"
-              placeholder="Buscar por nome ou CPF..."
-              className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded h-9 px-4 font-semibold text-xs border-slate-200 text-slate-600 flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" /> FILTROS
-            </Button>
-             <Select defaultValue="todos">
-              <SelectTrigger className="w-[160px] rounded h-9 border-slate-200 font-medium text-xs text-slate-600">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded border-slate-200 shadow-xl text-xs">
-                <SelectItem value="todos">Todos Status</SelectItem>
-                <SelectItem value="ativo">Ativos</SelectItem>
-                <SelectItem value="inativo">Inativos</SelectItem>
-                <SelectItem value="inadimplente">Inadimplentes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <Card className="!rounded-none border-slate-200 shadow-none overflow-hidden bg-white">
+                 <div className="p-4 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-white">
+                    <div className="relative flex-1 group max-w-md">
+                        <Input
+                            placeholder="Buscar por nome ou CPF..."
+                            className="pl-9 h-9 bg-slate-50 border-slate-200 !rounded-none text-xs focus:ring-0 focus:border-slate-400 transition-all font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
+                    
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`h-9 !rounded-none border-slate-200 text-xs font-bold transition-colors ${showFilters ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                    >
+                        <Filter className="h-3.5 w-3.5 mr-2" />
+                        {showFilters ? 'OCULTAR FILTROS' : 'FILTROS AVANÇADOS'}
+                        {(filterCredit !== 'todos' || filterStartDate || filterEndDate) && (
+                            <Badge className="ml-2 bg-emerald-500 text-white border-none h-4 px-1 min-w-[16px] flex items-center justify-center text-[9px]">
+                                !
+                            </Badge>
+                        )}
+                    </Button>
+
+                    {(searchTerm || filterCredit !== 'todos' || filterStartDate || filterEndDate) && (
+                        <Button 
+                            variant="ghost" 
+                            onClick={clearFilters}
+                            className="h-9 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+                        >
+                            LIMPAR
+                        </Button>
+                    )}
+                 </div>
+
+                 {/* PAINEL DE FILTROS ROBUSTOS */}
+                 {showFilters && (
+                    <div className="p-5 bg-slate-50/80 border-b border-slate-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Período Inicial</Label>
+                                <Input 
+                                    type="date"
+                                    value={filterStartDate} 
+                                    onChange={(e) => setFilterStartDate(e.target.value)}
+                                    className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Período Final</Label>
+                                <Input 
+                                    type="date"
+                                    value={filterEndDate} 
+                                    onChange={(e) => setFilterEndDate(e.target.value)}
+                                    className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status de Crédito</Label>
+                                <Select value={filterCredit} onValueChange={setFilterCredit}>
+                                    <SelectTrigger className="h-9 !rounded-none border-slate-200 bg-white text-xs font-medium">
+                                        <SelectValue placeholder="Status de Crédito" />
+                                    </SelectTrigger>
+                                    <SelectContent className="!rounded-none">
+                                        <SelectItem value="todos">Todos Status</SelectItem>
+                                        <SelectItem value="excelente">Excelente</SelectItem>
+                                        <SelectItem value="bom">Bom</SelectItem>
+                                        <SelectItem value="em análise">Em Análise</SelectItem>
+                                        <SelectItem value="atenção">Atenção</SelectItem>
+                                        <SelectItem value="inadimplente">Inadimplentes</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                 )}
         <CardContent className="p-0">
           <div className="overflow-x-auto custom-scrollbar">
             <Table className="min-w-[800px]">
@@ -398,7 +671,9 @@ export default function Clients() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.map((client) => (
+              {filteredClients.map((client) => {
+                const { lastVisit, dynamicBalance } = getDynamicClientData(client);
+                return (
                 <TableRow key={client.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
                   <TableCell className="px-6 py-3">
                     <div className="flex items-center gap-3">
@@ -418,22 +693,27 @@ export default function Clients() {
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-3">
-                    <Badge className={`rounded ${
-                      client.creditStatus === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
-                      client.creditStatus === 'Bom' ? 'bg-blue-100 text-blue-700' :
-                      client.creditStatus === 'Atenção' ? 'bg-amber-100 text-amber-700' :
-                      (client.creditStatus === 'Em Análise' || !client.creditStatus) ? 'bg-purple-100 text-purple-700' :
-                      'bg-red-100 text-red-700'
-                    } text-[10px] font-semibold uppercase tracking-wider border-none px-2 py-0.5 shadow-none inline-flex items-center`}>
-                      {client.creditStatus || 'Em Análise'}
-                    </Badge>
+                    {(() => {
+                        const score = calculateCreditScore(client);
+                        return (
+                            <Badge className={`rounded ${
+                              score.status === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
+                              score.status === 'Bom' ? 'bg-blue-100 text-blue-700' :
+                              score.status === 'Atenção' ? 'bg-amber-100 text-amber-700' :
+                              (score.status === 'Em Análise' || !score.status) ? 'bg-slate-100 text-slate-700' :
+                              'bg-red-100 text-red-700'
+                            } text-[10px] font-semibold uppercase tracking-wider border-none px-2 py-0.5 shadow-none inline-flex items-center`}>
+                              {score.status}
+                            </Badge>
+                        );
+                    })()}
                   </TableCell>
                   <TableCell className="px-6 py-3">
-                     <span className="text-slate-500">{client.lastVisit || "Primeiro Acesso"}</span>
+                     <span className="text-slate-500">{lastVisit}</span>
                   </TableCell>
                   <TableCell className="px-6 py-3 text-right">
-                    <span className={`font-bold ${(client.balance || 0) > 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                      {!(client.balance) ? '-' : `R$ ${client.balance.toFixed(2)}`}
+                    <span className={`font-bold ${dynamicBalance > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                      {dynamicBalance === 0 ? '-' : `R$ ${dynamicBalance.toFixed(2)}`}
                     </span>
                   </TableCell>
                   <TableCell className="px-6 py-3 text-center">
@@ -447,7 +727,8 @@ export default function Clients() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {filteredClients.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-slate-500 font-medium">
@@ -463,11 +744,11 @@ export default function Clients() {
 
       {/* Quick Access Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[{ label: 'Aniversariantes', sub: '8 este mês', icon: Calendar, color: 'bg-amber-50 text-amber-600' },
-            { label: 'Inadimplentes', sub: '12 pendências', icon: AlertCircle, color: 'bg-red-50 text-red-600' },
-            { label: 'Localização', sub: 'Mapa de densidade', icon: MapPin, color: 'bg-slate-50 text-slate-600' }
-          ].map((item, i) => (
-            <Card key={i} className="rounded border-slate-200 shadow-none hover:bg-slate-50/50 transition-colors cursor-pointer bg-white group border-dashed">
+          {[{ id: 'aniversariantes', label: 'Aniversariantes', sub: `${aniversariantesList.length} este mês`, icon: Calendar, color: 'bg-amber-50 text-amber-600' },
+            { id: 'inadimplentes', label: 'Inadimplentes', sub: `${inadimplentesList.length} pendências`, icon: AlertCircle, color: 'bg-red-50 text-red-600' },
+            { id: 'localizacao', label: 'Localização', sub: localizacaoSub, icon: MapPin, color: 'bg-slate-50 text-slate-600' }
+          ].map((item) => (
+            <Card key={item.id} onClick={() => setQuickAccessModal(item.id)} className="rounded border-slate-200 shadow-none hover:bg-slate-50/50 transition-colors cursor-pointer bg-white group border-dashed">
                 <CardContent className="p-4 flex items-center gap-4">
                     <div className={`h-10 w-10 rounded border border-slate-100 flex items-center justify-center shrink-0 ${item.color}`}>
                         <item.icon className="h-5 w-5" />
@@ -481,6 +762,88 @@ export default function Clients() {
             </Card>
           ))}
       </div>
+
+      <Dialog open={!!quickAccessModal} onOpenChange={(open) => !open && setQuickAccessModal(null)}>
+        <DialogContent className="sm:max-w-[600px] rounded border-slate-200 p-0 overflow-hidden">
+          <DialogHeader className="bg-slate-900 p-6 border-b border-slate-800 text-white">
+            <DialogTitle className="text-base font-bold uppercase tracking-wide flex items-center gap-2">
+                {quickAccessModal === 'aniversariantes' && <><Calendar className="h-4 w-4" /> Aniversariantes do Mês</>}
+                {quickAccessModal === 'inadimplentes' && <><AlertCircle className="h-4 w-4 text-red-400" /> Clientes Inadimplentes</>}
+                {quickAccessModal === 'localizacao' && <><MapPin className="h-4 w-4" /> Mapa de Densidade (Cidades)</>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto p-0 bg-white">
+             {quickAccessModal === 'aniversariantes' && (
+                <div className="divide-y divide-slate-100">
+                    {aniversariantesList.length === 0 ? (
+                        <p className="p-6 text-center text-sm text-slate-500 font-medium">Nenhum aniversariante encontrado este mês.</p>
+                    ) : (
+                        aniversariantesList.map(c => (
+                            <div key={c.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors cursor-pointer group" onClick={() => { setQuickAccessModal(null); navigate(`/admin/clientes/${c.id}`); }}>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 group-hover:text-slate-600 transition-colors">{c.name}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">Nascimento: <strong className="text-slate-700">{c.birthDate}</strong></p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold shadow-none border-none pointer-events-none">🎂 PARABÉNS</Badge>
+                                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-600" />
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+             )}
+
+             {quickAccessModal === 'inadimplentes' && (
+                <div className="divide-y divide-slate-100">
+                    {inadimplentesList.length === 0 ? (
+                        <p className="p-6 text-center text-sm text-slate-500 font-medium">Nenhum cliente com pendências financeiras encontrado.</p>
+                    ) : (
+                        inadimplentesList.map(c => (
+                            <div key={c.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors cursor-pointer group" onClick={() => { setQuickAccessModal(null); navigate(`/admin/clientes/${c.id}`); }}>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 group-hover:text-slate-600 transition-colors">{c.name}</p>
+                                    <p className="text-xs text-red-600 font-semibold mt-0.5">Saldo Devedor: R$ {getDynamicClientData(c).dynamicBalance.toFixed(2)}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge className="bg-red-100 text-red-700 text-[10px] font-bold uppercase shadow-none border-none pointer-events-none">{calculateCreditScore(c).status}</Badge>
+                                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-600" />
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+             )}
+
+             {quickAccessModal === 'localizacao' && (
+                 <div className="divide-y divide-slate-100 p-6">
+                     {citiesArray.length === 0 ? (
+                         <p className="text-center text-sm text-slate-500 font-medium">Nenhum dado de localização encontrado nos cadastros.</p>
+                     ) : (
+                         <div className="space-y-6">
+                             {citiesArray.map(([city, count], idx) => (
+                                 <div key={city} className="flex flex-col gap-2">
+                                     <div className="flex justify-between text-xs font-bold text-slate-700 uppercase tracking-wide">
+                                         <span className="flex items-center gap-2">
+                                             <span className="text-[10px] text-slate-400 font-medium">#{idx + 1}</span> {city}
+                                         </span>
+                                         <span className="text-slate-500">{count} {count === 1 ? 'cliente' : 'clientes'}</span>
+                                     </div>
+                                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                         <div className="h-full bg-slate-900 rounded-full" style={{ width: `${(count / clients.length) * 100}%` }} />
+                                     </div>
+                                 </div>
+                             ))}
+                         </div>
+                     )}
+                 </div>
+             )}
+          </div>
+          <DialogFooter className="bg-slate-50 p-4 border-t border-slate-100">
+            <Button onClick={() => setQuickAccessModal(null)} variant="outline" className="rounded font-semibold text-xs border-slate-200 text-slate-600 hover:bg-slate-100">FECHAR</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

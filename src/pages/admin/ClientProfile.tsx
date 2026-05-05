@@ -2,12 +2,14 @@ import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import html2pdf from 'html2pdf.js';
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Printer, FileText, User, Phone, Calendar, ShoppingBag, MapPin, Activity } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Printer, FileText, User, Phone, Calendar, ShoppingBag, MapPin, Activity, Download, Wrench, Save, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientProfile() {
@@ -15,7 +17,65 @@ export default function ClientProfile() {
   const navigate = useNavigate();
   const [client, setClient] = React.useState<any>(null);
   const [history, setHistory] = React.useState<any[]>([]);
+  const [dynamicBalance, setDynamicBalance] = React.useState<number>(0);
   const [loading, setLoading] = React.useState(true);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [editData, setEditData] = React.useState<any>({});
+
+  const capitalizeName = (str: string) => {
+    const preposicoes = ['da', 'de', 'do', 'das', 'dos', 'e'];
+    return str.split(' ').map((word, index) => {
+        if (!word) return '';
+        const lower = word.toLowerCase();
+        if (preposicoes.includes(lower) && index !== 0) return lower;
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  };
+
+  const startEditing = () => {
+    setEditData({ ...client });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const handleCepBlur = async () => {
+    if (!editData.cep) return;
+    const cep = editData.cep.replace(/\D/g, "");
+    if (cep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setEditData((prev: any) => ({
+            ...prev,
+            address: data.logradouro || prev.address || "",
+            bairro: data.bairro || prev.bairro || "",
+            city: `${data.localidade || ""} - ${data.uf || ""}` || prev.city || ""
+          }));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err);
+      }
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!client || !id) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "clients", id), editData);
+      toast.success("Perfil do cliente atualizado com sucesso!");
+      setIsEditing(false);
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!id) return;
@@ -45,6 +105,13 @@ export default function ClientProfile() {
         };
         records.sort((a: any, b: any) => parseDate(b.date) - parseDate(a.date));
         setHistory(records);
+
+        // Fetch installments for dynamic balance
+        const qInst = query(collection(db, "installments"), where("clientId", "==", id));
+        const instSnapshot = await getDocs(qInst);
+        const unpaidInst = instSnapshot.docs.map(d => d.data()).filter(i => i.status !== 'Pago');
+        const balance = unpaidInst.reduce((acc, curr) => acc + (curr.value || 0), 0);
+        setDynamicBalance(balance);
       } catch (error) {
         console.error("Erro ao buscar histórico", error);
       } finally {
@@ -109,7 +176,8 @@ export default function ClientProfile() {
       filename:     `Prontuario_${client.name.replace(/\s+/g, '_')}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] }
     };
 
     toast.info("Gerando PDF, aguarde...");
@@ -156,12 +224,28 @@ export default function ClientProfile() {
           </div>
         </div>
         <div className="flex gap-2">
-            <Button onClick={handleDownloadPDF} variant="outline" className="border-slate-300 text-slate-700 rounded font-bold uppercase text-xs tracking-wider">
-                BAIXAR PDF
-            </Button>
-            <Button onClick={handlePrint} className="bg-slate-900 hover:bg-slate-800 text-white rounded font-bold uppercase text-xs tracking-wider">
-                <Printer className="mr-2 h-4 w-4" /> Imprimir
-            </Button>
+            {isEditing ? (
+              <>
+                  <Button onClick={cancelEditing} variant="outline" className="rounded font-bold text-xs h-9">
+                      <XCircle className="mr-2 h-4 w-4" /> CANCELAR
+                  </Button>
+                  <Button onClick={handleUpdate} disabled={saving} className="rounded font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white">
+                      <Save className="mr-2 h-4 w-4" /> {saving ? "SALVANDO..." : "SALVAR ALTERAÇÕES"}
+                  </Button>
+              </>
+            ) : (
+              <>
+                  <Button onClick={startEditing} variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300 text-slate-700" title="Editar Perfil">
+                      <Wrench className="h-4 w-4" />
+                  </Button>
+                  <Button onClick={handleDownloadPDF} variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300 text-slate-700" title="Baixar PDF">
+                      <Download className="h-4 w-4" />
+                  </Button>
+                  <Button onClick={handlePrint} variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300 text-slate-700" title="Imprimir Prontuário">
+                      <Printer className="h-4 w-4" />
+                  </Button>
+              </>
+            )}
         </div>
       </div>
 
@@ -183,29 +267,103 @@ export default function ClientProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4">
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400">Nome Completo</p>
-                <p className="font-semibold text-slate-900">{client.name}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400">CPF</p>
-                <p className="font-medium text-slate-700">{client.cpf || "Não informado"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400">Data de Nascimento</p>
-                <p className="font-medium text-slate-700">
-                  {client.birthDate ? (client.birthDate.includes('-') ? new Date(client.birthDate + 'T12:00:00').toLocaleDateString('pt-BR') : client.birthDate) : "Não informado"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone / WhatsApp</p>
-                <p className="font-medium text-slate-700">{client.phone || "Não informado"}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400">Email</p>
-                <p className="font-medium text-slate-700">{client.email || "Não informado"}</p>
-              </div>
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4`}>
+              {isEditing ? (
+                <>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Nome Completo</Label>
+                    <Input value={editData.name || ''} onChange={e => setEditData({...editData, name: capitalizeName(e.target.value)})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">CPF</Label>
+                    <Input value={editData.cpf || ''} onChange={e => setEditData({...editData, cpf: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Data de Nascimento</Label>
+                    <Input value={editData.birthDate || ''} onChange={e => setEditData({...editData, birthDate: e.target.value})} placeholder="DD/MM/YYYY" className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Telefone / WhatsApp</Label>
+                    <Input value={editData.phone || ''} onChange={e => setEditData({...editData, phone: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Email</Label>
+                    <Input value={editData.email || ''} onChange={e => setEditData({...editData, email: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5 lg:col-span-3">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Profissão</Label>
+                    <Input value={editData.profession || ''} onChange={e => setEditData({...editData, profession: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">CEP</Label>
+                    <Input value={editData.cep || ''} onChange={e => setEditData({...editData, cep: e.target.value})} onBlur={handleCepBlur} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Endereço</Label>
+                    <Input value={editData.address || ''} onChange={e => setEditData({...editData, address: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Número</Label>
+                    <Input value={editData.number || ''} onChange={e => setEditData({...editData, number: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Complemento</Label>
+                    <Input value={editData.complement || ''} onChange={e => setEditData({...editData, complement: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Bairro</Label>
+                    <Input value={editData.bairro || ''} onChange={e => setEditData({...editData, bairro: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label className="text-[10px] uppercase font-bold text-slate-400">Cidade / UF</Label>
+                    <Input value={editData.city || ''} onChange={e => setEditData({...editData, city: e.target.value})} className="h-8 text-sm font-semibold rounded" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="md:col-span-2">
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Nome Completo</p>
+                    <p className="font-semibold text-slate-900">{client.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400">CPF</p>
+                    <p className="font-medium text-slate-700">{client.cpf || "Não informado"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Data de Nascimento</p>
+                    <p className="font-medium text-slate-700">
+                      {client.birthDate ? (client.birthDate.includes('-') ? new Date(client.birthDate + 'T12:00:00').toLocaleDateString('pt-BR') : client.birthDate) : "Não informado"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone / WhatsApp</p>
+                    <p className="font-medium text-slate-700">{client.phone || "Não informado"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Email</p>
+                    <p className="font-medium text-slate-700">{client.email || "Não informado"}</p>
+                  </div>
+                  {client.profession && (
+                    <div className="lg:col-span-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Profissão</p>
+                      <p className="font-medium text-slate-700">{client.profession}</p>
+                    </div>
+                  )}
+                  {(client.address || client.cep) && (
+                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-4 pt-4 border-t border-slate-100">
+                      <div className="md:col-span-3">
+                        <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><MapPin className="h-3 w-3" /> Endereço Completo</p>
+                        <p className="font-medium text-slate-700">
+                          {client.address || "Endereço não informado"}{client.number ? `, ${client.number}` : ""}{client.complement ? ` - ${client.complement}` : ""}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {client.bairro ? `${client.bairro} - ` : ""}{client.city ? client.city : ""}{client.cep ? ` | CEP: ${client.cep}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Calendar className="h-3 w-3" /> Cliente Desde</p>
                 <p className="font-medium text-slate-700">
@@ -242,14 +400,21 @@ export default function ClientProfile() {
               </Badge>
             </div>
             <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Saldo Devedor Ativo</p>
-              <p className={`text-2xl font-black ${(client.balance || 0) > 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                {!(client.balance) ? 'R$ 0,00' : `R$ ${(client.balance).toFixed(2)}`}
+              <div className="flex items-center gap-2 mb-1">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Saldo Financeiro</p>
+                  {dynamicBalance > 0 ? (
+                      <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[9px] px-1.5 py-0 font-bold border-none shadow-none uppercase">Saldo Devedor Ativo</Badge>
+                  ) : (
+                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-[9px] px-1.5 py-0 font-bold border-none shadow-none uppercase">Crédito</Badge>
+                  )}
+              </div>
+              <p className={`text-2xl font-black ${dynamicBalance > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                {dynamicBalance === 0 ? 'R$ 0,00' : `R$ ${dynamicBalance.toFixed(2)}`}
               </p>
             </div>
             <div>
               <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Última Visita</p>
-              <p className="font-medium text-slate-700">{client.lastVisit || "-"}</p>
+              <p className="font-medium text-slate-700">{history.length > 0 ? history[0].date : (client.lastVisit || "-")}</p>
             </div>
           </CardContent>
         </Card>
@@ -395,13 +560,16 @@ export default function ClientProfile() {
 
         {/* STATUS FINANCEIRO */}
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '4mm'}}>
-          <div style={{border: '1px solid #cbd5e1', borderLeft: '4px solid #000000', borderRadius: '8px', padding: '4mm'}}>
-            <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Saldo Devedor Ativo</p>
-            <p style={{fontSize: '16pt', fontWeight: '900', color: (client.balance || 0) > 0 ? '#991b1b' : '#000000', margin: 0}}>R$ {(client.balance || 0).toFixed(2)}</p>
+          <div style={{border: '1px solid #cbd5e1', borderLeft: `4px solid ${dynamicBalance > 0 ? '#991b1b' : '#166534'}`, borderRadius: '8px', padding: '4mm'}}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5mm'}}>
+                <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: 0}}>Saldo Financeiro</p>
+                <span style={{fontSize: '6pt', fontWeight: '800', textTransform: 'uppercase', color: dynamicBalance > 0 ? '#991b1b' : '#166534', backgroundColor: dynamicBalance > 0 ? '#fee2e2' : '#dcfce7', padding: '0.5mm 1.5mm', borderRadius: '4px'}}>{dynamicBalance > 0 ? 'Saldo Devedor' : 'Crédito'}</span>
+            </div>
+            <p style={{fontSize: '16pt', fontWeight: '900', color: dynamicBalance > 0 ? '#991b1b' : '#000000', margin: 0}}>R$ {dynamicBalance.toFixed(2)}</p>
           </div>
           <div style={{border: '1px solid #cbd5e1', borderLeft: '4px solid #334155', borderRadius: '8px', padding: '4mm'}}>
             <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 1.5mm'}}>Última Visita Registrada</p>
-            <p style={{fontSize: '12pt', fontWeight: '800', color: '#000000', margin: 0}}>{client.lastVisit || "—"}</p>
+            <p style={{fontSize: '12pt', fontWeight: '800', color: '#000000', margin: 0}}>{history.length > 0 ? history[0].date : (client.lastVisit || "—")}</p>
           </div>
         </div>
 

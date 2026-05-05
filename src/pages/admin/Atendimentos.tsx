@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { 
     Search, User, Printer, Clock, Activity, ShoppingCart, 
     DollarSign, FileText, Plus, Trash2, ChevronDown, ChevronUp, Scissors,
-    MessageCircle, Eye, Filter
+    MessageCircle, Eye, Filter, X
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,12 +33,34 @@ interface OrderSession {
     feeType: "fixed" | "percent";
     expanded: boolean;
     orderCode: string;
+    labCode: string;
     supplier: string;
+}
+
+interface DraftSession {
+    id: string;
+    label: string;
+    selectedClientId: string;
+    attendant: string;
+    prescription: string;
+    notes: string;
+    tso: string;
+    sessionOrders: OrderSession[];
+    rxData: any;
+    paymentMethod: string;
+    entrada: number;
+    installmentsCount: number;
+    discountValue: number;
+    discountType: "fixed" | "percent";
+    feeValue: number;
+    feeType: "fixed" | "percent";
+    firstDueDate: string;
+    lastUpdatedAt: number;
 }
 
 export default function Atendimentos() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = React.useState("novo");
+  const [activeTab, setActiveTab] = React.useState(localStorage.getItem("atendimentosTab") || "novo");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [filterStartDate, setFilterStartDate] = React.useState("");
   const [filterEndDate, setFilterEndDate] = React.useState("");
@@ -55,6 +77,16 @@ export default function Atendimentos() {
 
   // State for Print
   const [printData, setPrintData] = React.useState<any>(null);
+
+  // --- DRAFTS STATE ---
+  const [drafts, setDrafts] = React.useState<DraftSession[]>(() => {
+      try {
+          const stored = localStorage.getItem("atendimentos_drafts");
+          return stored ? JSON.parse(stored) : [];
+      } catch { return []; }
+  });
+  const [activeDraftId, setActiveDraftId] = React.useState<string | null>(null);
+  const isSwappingRef = React.useRef(false);
 
   // --- SESSION STATE ---
   const [selectedClientId, setSelectedClientId] = React.useState<string>("");
@@ -83,6 +115,153 @@ export default function Atendimentos() {
   const [feeValue, setFeeValue] = React.useState<number>(0);
   const [feeType, setFeeType] = React.useState<"fixed" | "percent">("percent");
   const [firstDueDate, setFirstDueDate] = React.useState<string>("");
+
+  // --- DRAFT HELPERS ---
+  const createNewDraft = () => {
+    const newId = Date.now().toString();
+    const newDraft: DraftSession = {
+      id: newId,
+      label: "Novo Atendimento",
+      selectedClientId: "",
+      attendant: "",
+      prescription: "",
+      notes: "",
+      tso: "",
+      sessionOrders: [],
+      rxData: {
+        longe_od_esf: "", longe_od_cil: "", longe_od_eixo: "", longe_od_dp: "",
+        longe_oe_esf: "", longe_oe_cil: "", longe_oe_eixo: "", longe_oe_dp: "",
+        perto_od_esf: "", perto_od_cil: "", perto_od_eixo: "", perto_od_dp: "",
+        perto_oe_esf: "", perto_oe_cil: "", perto_oe_eixo: "", perto_oe_dp: "",
+      },
+      paymentMethod: "pix",
+      entrada: 0,
+      installmentsCount: 1,
+      discountValue: 0,
+      discountType: "fixed",
+      feeValue: 0,
+      feeType: "percent",
+      firstDueDate: "",
+      lastUpdatedAt: Date.now()
+    };
+    const updatedDrafts = [...drafts, newDraft];
+    setDrafts(updatedDrafts);
+    localStorage.setItem("atendimentos_drafts", JSON.stringify(updatedDrafts));
+    switchDraft(newId, updatedDrafts);
+  };
+
+  const switchDraft = (id: string, currentDrafts = drafts) => {
+    const draft = currentDrafts.find(d => d.id === id);
+    if (!draft) return;
+
+    isSwappingRef.current = true;
+    setActiveDraftId(id);
+    
+    // Load states
+    setSelectedClientId(draft.selectedClientId);
+    setAttendant(draft.attendant);
+    setPrescription(draft.prescription);
+    setNotes(draft.notes);
+    setTso(draft.tso);
+    setSessionOrders(draft.sessionOrders);
+    setRxData(draft.rxData);
+    setPaymentMethod(draft.paymentMethod);
+    setEntrada(draft.entrada);
+    setInstallmentsCount(draft.installmentsCount);
+    setDiscountValue(draft.discountValue);
+    setDiscountType(draft.discountType);
+    setFeeValue(draft.feeValue);
+    setFeeType(draft.feeType);
+    setFirstDueDate(draft.firstDueDate);
+    
+    // Rebuild client search text (security: CPF not saved in localStorage)
+    if (draft.selectedClientId) {
+        // We might need to wait for clients to load, but the component will re-render
+        const client = clients.find(c => c.id === draft.selectedClientId);
+        if (client) {
+            setClientSearch(`${client.name} - ${client.cpf}`);
+        } else {
+            setClientSearch("");
+        }
+    } else {
+        setClientSearch("");
+    }
+
+    setTimeout(() => {
+      isSwappingRef.current = false;
+    }, 100);
+  };
+
+  const closeDraft = (id: string) => {
+    const updatedDrafts = drafts.filter(d => d.id !== id);
+    setDrafts(updatedDrafts);
+    localStorage.setItem("atendimentos_drafts", JSON.stringify(updatedDrafts));
+    
+    if (activeDraftId === id) {
+      if (updatedDrafts.length > 0) {
+        switchDraft(updatedDrafts[0].id, updatedDrafts);
+      } else {
+        setActiveDraftId(null);
+        resetSession();
+      }
+    }
+  };
+
+  // Initial load effect
+  React.useEffect(() => {
+    if (activeTab === "novo" && !activeDraftId) {
+      if (drafts.length > 0) {
+        switchDraft(drafts[0].id);
+      } else {
+        createNewDraft();
+      }
+    }
+  }, [activeTab, clients.length]); // Re-run when clients load to fix search text
+
+  // Auto-save effect
+  React.useEffect(() => {
+    if (!activeDraftId || isSwappingRef.current) return;
+
+    const saveTimeout = setTimeout(() => {
+      const selectedClient = clients.find(c => c.id === selectedClientId);
+      const draftLabel = selectedClient ? `Atend. ${selectedClient.name.split(' ')[0]}` : "Novo Atendimento";
+
+      const updatedDrafts = drafts.map(d => {
+        if (d.id === activeDraftId) {
+          return {
+            ...d,
+            label: draftLabel,
+            selectedClientId,
+            attendant,
+            prescription,
+            notes,
+            tso,
+            sessionOrders,
+            rxData,
+            paymentMethod,
+            entrada,
+            installmentsCount,
+            discountValue,
+            discountType,
+            feeValue,
+            feeType,
+            firstDueDate,
+            lastUpdatedAt: Date.now()
+          };
+        }
+        return d;
+      });
+
+      setDrafts(updatedDrafts);
+      localStorage.setItem("atendimentos_drafts", JSON.stringify(updatedDrafts));
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(saveTimeout);
+  }, [
+    selectedClientId, attendant, prescription, notes, tso, sessionOrders, 
+    rxData, paymentMethod, entrada, installmentsCount, discountValue, 
+    discountType, feeValue, feeType, firstDueDate
+  ]);
 
   React.useEffect(() => {
     const qAtend = query(collection(db, "atendimentos"));
@@ -156,6 +335,7 @@ export default function Atendimentos() {
           feeType: "fixed",
           expanded: true,
           orderCode: "",
+          labCode: "",
           supplier: "",
       }]);
   };
@@ -258,6 +438,11 @@ export default function Atendimentos() {
       const brDate = new Date().toLocaleDateString('pt-BR');
       const brTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+      // Gerar orderCode sequencial para cada item antes de salvar
+      sessionOrders.forEach((order, index) => {
+          order.orderCode = `${tso}${String(index + 1).padStart(3, '0')}`;
+      });
+
       // 1. Gravar Atendimento Principal
       const atendimentoDoc = await addDoc(collection(db, "atendimentos"), {
         clientId: selectedClientId,
@@ -302,7 +487,8 @@ export default function Atendimentos() {
             status: "Pendente",
             createdAt: isoDate,
             date: brDate,
-            orderCode: order.orderCode || "",
+            orderCode: order.orderCode,
+            labCode: order.labCode || "",
             supplier: order.supplier || "",
             tso: tso,
           });
@@ -377,7 +563,11 @@ export default function Atendimentos() {
       }
       
       toast.success(isCarne ? "Atendimento registrado e carnê gerado com sucesso!" : "Atendimento registrado com sucesso!");
-      resetSession();
+      if (activeDraftId) {
+          closeDraft(activeDraftId);
+      } else {
+          resetSession();
+      }
       setActiveTab("historico");
 
     } catch (error: any) {
@@ -411,6 +601,7 @@ export default function Atendimentos() {
                         * { box-sizing: border-box; }
                         @media print {
                             body { -webkit-print-color-adjust: exact; }
+                            tr, .avoid-break { page-break-inside: avoid; break-inside: avoid; }
                         }
                     </style>
                 </head>
@@ -507,7 +698,7 @@ Agradecemos a preferência! 👓💙`;
         <p className="text-xs text-slate-500">Múltiplos pedidos, geração de carnês e canhoto de retirada.</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full print:hidden">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem("atendimentosTab", v); }} className="w-full print:hidden">
           <div className="flex justify-start mb-6 overflow-x-auto custom-scrollbar">
             <TabsList className="bg-transparent p-0 border-b border-slate-200 h-auto w-full justify-start rounded-none gap-2 min-w-max">
               <TabsTrigger value="novo" className="rounded-none border-b-2 border-transparent px-4 justify-center h-10 font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
@@ -520,6 +711,47 @@ Agradecemos a preferência! 👓💙`;
           </div>
 
           <TabsContent value="novo" className="m-0 focus-visible:outline-none focus-visible:ring-0">
+                {/* DRAFTS BAR (Múltiplas Sessões) */}
+                <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar no-scrollbar scroll-smooth">
+                  {drafts.map((draft) => (
+                    <div 
+                      key={draft.id}
+                      className={`
+                        flex items-center gap-2 px-4 py-2.5 border cursor-pointer transition-all shrink-0
+                        ${activeDraftId === draft.id 
+                          ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'}
+                      `}
+                      onClick={() => switchDraft(draft.id)}
+                    >
+                      <Activity className={`h-3 w-3 ${activeDraftId === draft.id ? 'text-slate-400' : 'text-slate-400'}`} />
+                      <span className="text-[11px] font-bold uppercase tracking-wider truncate max-w-[150px]">
+                        {draft.label}
+                      </span>
+                      {drafts.length > 1 && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Deseja cancelar este rascunho de atendimento?")) {
+                                closeDraft(draft.id);
+                            }
+                          }}
+                          className={`ml-1 p-0.5 rounded-full hover:bg-white/20 transition-colors ${activeDraftId === draft.id ? 'text-white/60 hover:text-white' : 'text-slate-300 hover:text-slate-600'}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    onClick={createNewDraft}
+                    className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 text-slate-500 hover:border-slate-900 hover:text-slate-900 transition-all shrink-0 bg-slate-50/50"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Novo Atendimento</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                     
                     {/* COLUNA ESQUERDA: DADOS CLÍNICOS E PEDIDOS */}
@@ -772,8 +1004,8 @@ Agradecemos a preferência! 👓💙`;
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Pedido / Lab</Label>
-                                                        <Input value={order.orderCode} onChange={(e) => updateOrder(order.id, 'orderCode', e.target.value)} placeholder="Ex: LAB-2024-001" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
+                                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Código do Laboratório</Label>
+                                                        <Input value={order.labCode || ""} onChange={(e) => updateOrder(order.id, 'labCode', e.target.value)} placeholder="Ex: LAB-2024-001 (Opcional)" className="!rounded-none border-slate-200 h-9 text-xs font-mono font-semibold" />
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Fornecedor</Label>
@@ -1316,7 +1548,7 @@ Agradecemos a preferência! 👓💙`;
                 </thead>
                 <tbody>
                   {printData.orders && printData.orders.map((o: any, i: number) => (
-                    <tr key={i} style={{borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc'}}>
+                    <tr key={i} className="avoid-break" style={{borderBottom: '1px solid #f1f5f9', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', pageBreakInside: 'avoid'}}>
                       <td style={{padding: '3mm 4mm', fontWeight: '700', color: '#0f172a'}}>{o.serviceType}</td>
                       <td style={{padding: '3mm 4mm', color: '#64748b'}}>{o.items || "—"}</td>
                       <td style={{padding: '3mm 4mm', textAlign: 'center', color: '#475569'}}>{(() => {
@@ -1347,7 +1579,7 @@ Agradecemos a preferência! 👓💙`;
             </div>
 
             {/* ASSINATURAS */}
-            <div style={{display: 'flex', justifyContent: 'space-around', marginTop: '8mm', paddingTop: '4mm', borderTop: '1px solid #e2e8f0'}}>
+            <div className="avoid-break" style={{display: 'flex', justifyContent: 'space-around', marginTop: '8mm', paddingTop: '4mm', borderTop: '1px solid #e2e8f0', pageBreakInside: 'avoid'}}>
               <div style={{textAlign: 'center', width: '70mm'}}>
                 <div style={{borderBottom: '1px solid #0f172a', marginBottom: '2mm', height: '10mm'}}></div>
                 <p style={{fontSize: '6.5pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', margin: 0}}>Assinatura do Paciente / Cliente</p>
@@ -1359,7 +1591,7 @@ Agradecemos a preferência! 👓💙`;
             </div>
 
             {/* CANHOTO */}
-            <div style={{marginTop: '8mm', borderTop: '2px dashed #cbd5e1', paddingTop: '5mm', position: 'relative'}}>
+            <div className="avoid-break" style={{marginTop: '8mm', borderTop: '2px dashed #cbd5e1', paddingTop: '5mm', position: 'relative', pageBreakInside: 'avoid'}}>
               <div style={{position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'white', padding: '0 6px'}}>
                 <span style={{fontSize: '8pt', color: '#94a3b8'}}>✂</span>
               </div>

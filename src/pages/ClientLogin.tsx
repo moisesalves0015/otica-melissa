@@ -61,7 +61,6 @@ export default function ClientLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt — CPF:", cpf, "| Data:", birthDate);
 
     if (!cpf.trim() || !birthDate.trim()) {
       toast.error("Preencha CPF e Data de Nascimento.");
@@ -80,7 +79,6 @@ export default function ClientLogin() {
       const snap1 = await getDocs(query(collection(db, "clients"), where("cpf", "==", fmtCpf), limit(1)));
       if (!snap1.empty) {
         foundClient = { id: snap1.docs[0].id, ...snap1.docs[0].data() };
-        console.log("Encontrado com CPF formatado");
       }
 
       // Busca com CPF sem máscara (12345678900)
@@ -88,34 +86,18 @@ export default function ClientLogin() {
         const snap2 = await getDocs(query(collection(db, "clients"), where("cpf", "==", cleanCpf), limit(1)));
         if (!snap2.empty) {
           foundClient = { id: snap2.docs[0].id, ...snap2.docs[0].data() };
-          console.log("Encontrado com CPF limpo");
         }
       }
 
-      // Fallback: full-scan (garante compatibilidade com qualquer formato no DB)
-      if (!foundClient) {
-        console.log("Tentando full-scan como fallback...");
-        const snapAll = await getDocs(collection(db, "clients"));
-        snapAll.forEach((d) => {
-          const data = d.data();
-          const dbCpf = (data.cpf || "").replace(/\D/g, "");
-          if (dbCpf === cleanCpf) {
-            foundClient = { id: d.id, ...data };
-          }
-        });
-        if (foundClient) console.log("Encontrado via full-scan");
-      }
+      // Fallback removido por segurança (o sistema não deve baixar todos os clientes).
+      // Se o CPF não for encontrado com a máscara correta ou limpo, o login falha de forma segura.
 
       if (!foundClient) {
-        console.log("Cliente não encontrado.");
         toast.error("Cliente não encontrado. Verifique o CPF informado.");
         return;
       }
 
-      console.log("Cliente encontrado:", foundClient.name, "| birthDate no DB:", foundClient.birthDate);
-
       const dbBirth = (foundClient.birthDate || "").replace(/\D/g, "");
-      console.log("Comparando datas — input:", cleanBirth, "| db:", dbBirth);
 
       if (dbBirth === cleanBirth) {
         const expiresAt = Date.now() + SESSION_DURATION_HOURS * 60 * 60 * 1000;
@@ -130,7 +112,6 @@ export default function ClientLogin() {
         toast.error("Data de nascimento não confere.");
       }
     } catch (err: any) {
-      console.error("Erro no login:", err);
       toast.error("Erro ao realizar login: " + err.message);
     } finally {
       setIsLoading(false);

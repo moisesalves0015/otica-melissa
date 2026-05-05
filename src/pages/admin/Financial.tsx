@@ -14,11 +14,16 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
-  Printer,
   History,
   QrCode,
   Plus,
   Search,
+  UserCheck,
+  ShieldAlert,
+  Edit,
+  Printer,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import {
   Table,
@@ -59,15 +64,24 @@ import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Financial() {
+  const [activeTab, setActiveTab] = React.useState(localStorage.getItem('financialTab') || "caixa");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [groupedInstallments, setGroupedInstallments] = React.useState<any[]>([]);
+  const [rawInstallments, setRawInstallments] = React.useState<any[]>([]);
+  const [clients, setClients] = React.useState<any[]>([]);
   const [receivingInstallment, setReceivingInstallment] = React.useState<any>(null);
   const [receivedByName, setReceivedByName] = React.useState("");
+
+  const [isCreditDialogOpen, setIsCreditDialogOpen] = React.useState(false);
+  const [editingCreditClient, setEditingCreditClient] = React.useState<any>(null);
+  const [newCreditStatus, setNewCreditStatus] = React.useState("auto");
+  const [newCreditReason, setNewCreditReason] = React.useState("");
 
   React.useEffect(() => {
     // 1. Transações (Fluxo de Caixa)
@@ -86,6 +100,7 @@ export default function Financial() {
     const qInst = query(collection(db, "installments"));
     const unsubInst = onSnapshot(qInst, (snapshot) => {
         const allInsts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setRawInstallments(allInsts);
         
         // Agrupar por atendimentoId
         const groups: Record<string, any> = {};
@@ -123,9 +138,16 @@ export default function Financial() {
         setGroupedInstallments(groupsArray);
     });
 
+    // 3. Clientes
+    const qClients = query(collection(db, "clients"));
+    const unsubClients = onSnapshot(qClients, (snapshot) => {
+        setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     return () => {
         unsubTrans();
         unsubInst();
+        unsubClients();
     };
   }, []);
 
@@ -195,7 +217,8 @@ export default function Financial() {
       filename:     `Carne_${clientName.replace(/\s+/g, '_')}_${carneId.substring(0,6)}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] }
     };
 
     toast.info("Gerando PDF do carnê, aguarde...");
@@ -248,6 +271,82 @@ export default function Financial() {
     }
   };
 
+  const calculateCreditScore = (client: any) => {
+      if (client.manualCreditStatus) {
+          return {
+              status: client.manualCreditStatus,
+              isManual: true,
+              reason: client.creditStatusReason || "Alterado manualmente pelo administrador."
+          };
+      }
+
+      const clientInsts = rawInstallments.filter(i => i.clientId === client.id && !i.isDownPayment);
+      
+      if (!clientInsts || clientInsts.length === 0) {
+          return { status: "Em Análise", isManual: false, reason: "Cliente sem histórico de parcelas ou compras no crediário." };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let hasOverdue30 = false;
+      let hasOverdue = false;
+      let hasPaid = false;
+      
+      clientInsts.forEach(inst => {
+          if (inst.status === "Pago" || inst.status === "Paga") {
+              hasPaid = true;
+          } else if (inst.status === "Pendente") {
+              if (inst.dueDate) {
+                  const [d, m, y] = inst.dueDate.split("/");
+                  if (d && m && y) {
+                      const due = new Date(Number(y), Number(m) - 1, Number(d));
+                      const diffTime = today.getTime() - due.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays > 0) {
+                          hasOverdue = true;
+                          if (diffDays > 30) {
+                              hasOverdue30 = true;
+                          }
+                      }
+                  }
+              }
+          }
+      });
+
+      if (hasOverdue30) {
+          return { status: "Inadimplente", isManual: false, reason: "Possui parcelas atrasadas há mais de 30 dias." };
+      }
+      if (hasOverdue) {
+          return { status: "Atenção", isManual: false, reason: "Possui parcelas com atraso recente." };
+      }
+      if (hasPaid) {
+          return { status: "Excelente", isManual: false, reason: "Possui histórico de pagamentos sem atrasos pendentes." };
+      }
+      
+      return { status: "Bom", isManual: false, reason: "Possui compras no crediário sem atrasos pendentes." };
+  };
+
+  const handleSaveCreditOverride = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingCreditClient) return;
+      setIsSaving(true);
+      try {
+          const isAuto = newCreditStatus === "auto";
+          await updateDoc(doc(db, "clients", editingCreditClient.id), {
+              manualCreditStatus: isAuto ? null : newCreditStatus,
+              creditStatusReason: isAuto ? null : newCreditReason
+          });
+          toast.success("Status de crédito atualizado!");
+          setEditingCreditClient(null);
+      } catch (err: any) {
+          toast.error("Erro ao atualizar status: " + err.message);
+      } finally {
+          setIsSaving(false);
+      }
+  };
+
   const filteredTransactions = transactions.filter(t => 
     t.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -256,6 +355,36 @@ export default function Financial() {
   const totalReceitas = transactions.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + Number(curr.amount), 0);
   const totalDespesas = transactions.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + Number(curr.amount), 0);
   const saldo = totalReceitas - totalDespesas;
+
+  const expensesByCategory = transactions
+      .filter(t => t.type === 'Saída')
+      .reduce((acc, curr) => {
+          acc[curr.category] = (acc[curr.category] || 0) + Math.abs(Number(curr.amount));
+          return acc;
+      }, {} as Record<string, number>);
+  
+  const categoryChartData = Object.keys(expensesByCategory).map(key => ({
+      name: key,
+      value: expensesByCategory[key]
+  })).sort((a, b) => b.value - a.value);
+
+  const monthlyFlow = transactions.reduce((acc, curr) => {
+      if (!curr.date) return acc;
+      const parts = curr.date.split('/');
+      if (parts.length === 3) {
+          const monthYear = `${parts[1]}/${parts[2]}`;
+          if (!acc[monthYear]) acc[monthYear] = { name: monthYear, receitas: 0, despesas: 0 };
+          if (curr.type === 'Entrada') acc[monthYear].receitas += Number(curr.amount);
+          if (curr.type === 'Saída') acc[monthYear].despesas += Math.abs(Number(curr.amount));
+      }
+      return acc;
+  }, {} as Record<string, any>);
+  
+  const monthlyChartData = Object.values(monthlyFlow).sort((a: any, b: any) => {
+      const [mA, yA] = a.name.split('/');
+      const [mB, yB] = b.name.split('/');
+      return new Date(Number(yA), Number(mA)-1).getTime() - new Date(Number(yB), Number(mB)-1).getTime();
+  });
 
   return (
     <div className="space-y-6">
@@ -417,11 +546,11 @@ export default function Financial() {
           </Card>
       </div>
 
-      <Tabs defaultValue="caixa" className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem('financialTab', v); }} className="w-full">
           <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start rounded-none gap-8 mb-6">
             <TabsTrigger value="caixa" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Fluxo de Caixa</TabsTrigger>
             <TabsTrigger value="carnes" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Carnês & Parcelas</TabsTrigger>
-            <TabsTrigger value="relatorios" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Relatórios</TabsTrigger>
+            <TabsTrigger value="analise-credito" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Análise de Crédito</TabsTrigger>
           </TabsList>
 
           <TabsContent value="caixa" className="m-0 space-y-4">
@@ -767,7 +896,7 @@ export default function Financial() {
                                           })();
 
                                           return (
-                                            <tr key={parc.id} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc')}}>
+                                            <tr key={parc.id} style={{borderBottom: '1px solid #cbd5e1', backgroundColor: displayStatus === 'Pago' ? '#f0fdf4' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), pageBreakInside: 'avoid'}}>
                                               <td style={{padding: '2mm 3mm', fontWeight: '800', color: '#000000'}}>Parcela {parc.number} / {parc.totalInstallments}</td>
                                               <td style={{padding: '2mm 3mm', textAlign: 'center', color: '#000000', fontWeight: '700'}}>{formattedDate}</td>
                                               <td style={{padding: '2mm 3mm', textAlign: 'right', fontWeight: '900', color: '#000000'}}>R$ {parc.value.toFixed(2)}</td>
@@ -895,6 +1024,246 @@ export default function Financial() {
                     </Card>
                 </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="analise-credito" className="m-0 space-y-6">
+            <Card className="rounded border-slate-200 shadow-none overflow-hidden bg-white">
+                <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-3">
+                    <div className="relative flex-1 group">
+                        <Input
+                            placeholder="Buscar cliente por nome ou CPF..."
+                            className="pl-9 h-9 bg-slate-50 border-slate-200 rounded text-xs focus:ring-0 focus:border-slate-400 transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    </div>
+                </div>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <Table className="min-w-[800px]">
+                            <TableHeader className="bg-slate-50/50">
+                                <TableRow className="border-slate-100 hover:bg-transparent">
+                                    <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Cliente</TableHead>
+                                    <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-center">Status de Crédito</TableHead>
+                                    <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Motivo / Histórico</TableHead>
+                                    <TableHead className="px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 text-center">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {clients
+                                    .filter(c => !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf?.includes(searchTerm))
+                                    .map((client) => {
+                                        const score = calculateCreditScore(client);
+                                        return (
+                                            <TableRow key={client.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
+                                                <TableCell className="px-6 py-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold text-slate-900">{client.name}</span>
+                                                        <span className="text-[10px] text-slate-500">{client.cpf}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-3 text-center">
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <Badge className={`
+                                                            ${score.status === 'Excelente' ? 'bg-emerald-100 text-emerald-700' : ''}
+                                                            ${score.status === 'Bom' ? 'bg-blue-100 text-blue-700' : ''}
+                                                            ${score.status === 'Em Análise' ? 'bg-slate-100 text-slate-700' : ''}
+                                                            ${score.status === 'Atenção' ? 'bg-amber-100 text-amber-700' : ''}
+                                                            ${score.status === 'Inadimplente' ? 'bg-red-100 text-red-700' : ''}
+                                                            border-none shadow-none font-bold uppercase tracking-wider text-[9px] px-2 py-0.5
+                                                        `}>
+                                                            {score.status}
+                                                        </Badge>
+                                                        {score.isManual && (
+                                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                                <UserCheck className="h-2 w-2" /> OVERRIDE MANUAL
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-3">
+                                                    <span className="text-xs text-slate-600">{score.reason}</span>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-3 text-center">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setEditingCreditClient(client);
+                                                            setNewCreditStatus(client.manualCreditStatus || "auto");
+                                                            setNewCreditReason(client.creditStatusReason || "");
+                                                            setIsCreditDialogOpen(true);
+                                                        }}
+                                                        className="h-8 text-[10px] font-bold text-slate-500 hover:text-slate-900 border-slate-200"
+                                                    >
+                                                        <Edit className="h-3 w-3 mr-1" /> ANALISAR
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* DIALOG DE OVERRIDE */}
+            <Dialog open={isCreditDialogOpen && !!editingCreditClient} onOpenChange={(open) => {
+                if (!open) {
+                    setEditingCreditClient(null);
+                    setIsCreditDialogOpen(false);
+                }
+            }}>
+                <DialogContent className="w-full sm:max-w-[95vw] md:max-w-[1100px] !rounded-none border-slate-200 shadow-2xl p-0 overflow-hidden">
+                    <DialogHeader className="bg-slate-900 p-6 text-white border-b border-slate-800">
+                        <DialogTitle className="text-lg font-semibold flex items-center gap-3">
+                            <ShieldAlert className="h-5 w-5" /> Análise de Crédito — {editingCreditClient?.name}
+                        </DialogTitle>
+                        <p className="text-slate-400 text-xs font-medium mt-1">Visualize o histórico e justifique alterações manuais de score.</p>
+                    </DialogHeader>
+                    
+                    <form onSubmit={handleSaveCreditOverride}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 max-h-[75vh] md:max-h-[85vh] overflow-y-auto md:overflow-hidden bg-white w-full">
+                            {/* LADO ESQUERDO: REGRAS E OVERRIDE */}
+                            <div className="p-8 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-start md:overflow-y-auto space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Status pelo Algoritmo</p>
+                                        <Badge className="bg-slate-100 text-slate-700 border-none shadow-none text-xs px-3 py-1 uppercase tracking-widest">
+                                            {editingCreditClient && !editingCreditClient.manualCreditStatus ? calculateCreditScore(editingCreditClient).status : calculateCreditScore({...editingCreditClient, manualCreditStatus: null}).status}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="bg-slate-50 p-4 rounded border border-slate-200 space-y-3">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Checklist de Requisitos</p>
+                                        
+                                        {(() => {
+                                            const clientInsts = editingCreditClient ? rawInstallments.filter(i => i.clientId === editingCreditClient.id && !i.isDownPayment) : [];
+                                            const today = new Date(); today.setHours(0, 0, 0, 0);
+                                            let hasOverdue30 = false; let hasOverdue = false; let hasPaid = false;
+                                            clientInsts.forEach(inst => {
+                                                if (inst.status === "Pago" || inst.status === "Paga") hasPaid = true;
+                                                else if (inst.status === "Pendente" && inst.dueDate) {
+                                                    const [d, m, y] = inst.dueDate.split("/");
+                                                    if (d && m && y) {
+                                                        const diffDays = Math.ceil((today.getTime() - new Date(Number(y), Number(m) - 1, Number(d)).getTime()) / (1000 * 60 * 60 * 24));
+                                                        if (diffDays > 0) { hasOverdue = true; if (diffDays > 30) hasOverdue30 = true; }
+                                                    }
+                                                }
+                                            });
+
+                                            return (
+                                                <div className="space-y-2">
+                                                    <div className="flex items-start gap-2">
+                                                        {!hasOverdue30 ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
+                                                        <span className="text-[11px] font-medium text-slate-700">Não possuir atrasos severos ({'>'}30 dias) <br/> <span className="text-[9px] text-slate-400 font-normal">Essencial para evitar Inadimplência.</span></span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        {!hasOverdue ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
+                                                        <span className="text-[11px] font-medium text-slate-700">Não possuir nenhum atraso pendente <br/> <span className="text-[9px] text-slate-400 font-normal">Essencial para evitar status de Atenção.</span></span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        {hasPaid ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />}
+                                                        <span className="text-[11px] font-medium text-slate-700">Ter histórico de parcelas pagas <br/> <span className="text-[9px] text-slate-400 font-normal">Essencial para atingir o status Excelente.</span></span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                    
+                                    <div className="space-y-1.5 pt-4 border-t border-slate-100">
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Substituir Status Manualmente</Label>
+                                        <Select value={newCreditStatus} onValueChange={setNewCreditStatus}>
+                                            <SelectTrigger className="rounded border-slate-200 h-9 font-medium text-xs text-slate-600 bg-white">
+                                                <SelectValue placeholder="Selecione o status" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded border-slate-200 shadow-2xl text-xs">
+                                                <SelectItem value="auto" className="font-bold">Usar Algoritmo Automático</SelectItem>
+                                                <SelectItem value="Excelente">Excelente</SelectItem>
+                                                <SelectItem value="Bom">Bom</SelectItem>
+                                                <SelectItem value="Em Análise">Em Análise</SelectItem>
+                                                <SelectItem value="Atenção">Atenção</SelectItem>
+                                                <SelectItem value="Inadimplente">Inadimplente</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {newCreditStatus !== "auto" && (
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Motivo / Observação da Mudança</Label>
+                                            <Input 
+                                                value={newCreditReason} 
+                                                onChange={(e) => setNewCreditReason(e.target.value)} 
+                                                placeholder="Justifique a sobreposição..." 
+                                                className="rounded border-slate-200 h-9 text-sm" 
+                                                required={newCreditStatus !== "auto"} 
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* LADO DIREITO: HISTÓRICO DE PARCELAS */}
+                            <div className="p-0 bg-slate-50 flex flex-col h-[500px] md:h-full md:max-h-full min-h-[400px]">
+                                <div className="p-6 border-b border-slate-200 bg-white">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Histórico de Movimentações</p>
+                                </div>
+                                <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                                    {(() => {
+                                        const clientInsts = editingCreditClient ? rawInstallments.filter(i => i.clientId === editingCreditClient.id && !i.isDownPayment) : [];
+                                        if (clientInsts.length === 0) {
+                                            return <p className="text-xs text-slate-400 text-center mt-10">Nenhuma parcela cadastrada no histórico deste cliente.</p>;
+                                        }
+
+                                        // Ordenar do mais antigo ao mais novo pela data de vencimento
+                                        const sorted = clientInsts.sort((a,b) => {
+                                            const [d1,m1,y1] = (a.dueDate || "01/01/2000").split("/");
+                                            const [d2,m2,y2] = (b.dueDate || "01/01/2000").split("/");
+                                            return new Date(Number(y1), Number(m1)-1, Number(d1)).getTime() - new Date(Number(y2), Number(m2)-1, Number(d2)).getTime();
+                                        });
+
+                                        const today = new Date(); today.setHours(0,0,0,0);
+
+                                        return sorted.map((inst, index) => {
+                                            const isPaid = inst.status === "Pago" || inst.status === "Paga";
+                                            let isLate = false;
+                                            if (!isPaid && inst.dueDate) {
+                                                const [d,m,y] = inst.dueDate.split("/");
+                                                if (new Date(Number(y), Number(m)-1, Number(d)) < today) isLate = true;
+                                            }
+
+                                            return (
+                                                <div key={inst.id} className={`p-3 rounded border text-xs flex justify-between items-center ${isPaid ? 'bg-emerald-50/50 border-emerald-100' : isLate ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'}`}>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="font-semibold text-slate-700">Parcela {inst.number}/{inst.totalInstallments}</span>
+                                                        <span className="text-[10px] text-slate-500">Vencimento: {inst.dueDate}</span>
+                                                        {isPaid && inst.receivedAtBr && <span className="text-[9px] text-emerald-600 font-medium">Paga em: {inst.receivedAtBr}</span>}
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="font-bold text-slate-900">R$ {inst.value?.toFixed(2)}</span>
+                                                        <Badge className={`border-none shadow-none text-[9px] uppercase px-1.5 py-0 ${isPaid ? 'bg-emerald-100 text-emerald-700' : isLate ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                            {isPaid ? "Paga" : isLate ? "Atrasada" : "Pendente"}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3 !rounded-none">
+                            <Button type="button" variant="ghost" className="!rounded-none px-6 font-semibold text-slate-500 text-xs h-10 hover:bg-slate-100" onClick={() => { setIsCreditDialogOpen(false); setEditingCreditClient(null); }}>CANCELAR</Button>
+                            <Button type="submit" disabled={isSaving} className="!rounded-none bg-slate-900 hover:bg-slate-800 text-white px-8 font-semibold text-xs h-10 shadow-lg">
+                                {isSaving ? "SALVANDO..." : "SALVAR ALTERAÇÃO"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
           </TabsContent>
       </Tabs>
     </div>
