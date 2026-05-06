@@ -44,6 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, addDoc, setDoc, doc, onSnapshot, query, orderBy, where, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { calculateCreditScore, getCreditStatusColor } from "../../lib/credit";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -243,62 +244,7 @@ export default function Clients() {
     }
   };
 
-  const calculateCreditScore = (client: any) => {
-      if (client.manualCreditStatus) {
-          return {
-              status: client.manualCreditStatus,
-              isManual: true,
-              reason: client.creditStatusReason || "Alterado manualmente pelo administrador."
-          };
-      }
 
-      const clientInsts = installments.filter(i => i.clientId === client.id && !i.isDownPayment);
-      
-      if (!clientInsts || clientInsts.length === 0) {
-          return { status: "Em Análise", isManual: false, reason: "Cliente sem histórico de parcelas ou compras no crediário." };
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      let hasOverdue30 = false;
-      let hasOverdue = false;
-      let hasPaid = false;
-      
-      clientInsts.forEach(inst => {
-          if (inst.status === "Pago" || inst.status === "Paga") {
-              hasPaid = true;
-          } else if (inst.status === "Pendente") {
-              if (inst.dueDate) {
-                  const [d, m, y] = inst.dueDate.split("/");
-                  if (d && m && y) {
-                      const due = new Date(Number(y), Number(m) - 1, Number(d));
-                      const diffTime = today.getTime() - due.getTime();
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      
-                      if (diffDays > 0) {
-                          hasOverdue = true;
-                          if (diffDays > 30) {
-                              hasOverdue30 = true;
-                          }
-                      }
-                  }
-              }
-          }
-      });
-
-      if (hasOverdue30) {
-          return { status: "Inadimplente", isManual: false, reason: "Possui parcelas atrasadas há mais de 30 dias." };
-      }
-      if (hasOverdue) {
-          return { status: "Atenção", isManual: false, reason: "Possui parcelas com atraso recente." };
-      }
-      if (hasPaid) {
-          return { status: "Excelente", isManual: false, reason: "Possui histórico de pagamentos sem atrasos pendentes." };
-      }
-      
-      return { status: "Bom", isManual: false, reason: "Possui compras no crediário sem atrasos pendentes." };
-  };
 
   const getDynamicClientData = (client: any) => {
     const clientAtendimentos = atendimentos.filter(a => a.clientId === client.id);
@@ -316,7 +262,7 @@ export default function Clients() {
       client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.cpf?.includes(searchTerm);
 
-    const score = calculateCreditScore(client);
+    const score = calculateCreditScore(client, installments);
     const matchesCredit = filterCredit === "todos" || 
       (filterCredit === 'inadimplente' ? (dynamicBalance > 0 || score.status === 'Atenção' || score.status === 'Inadimplente') : score.status?.toLowerCase() === filterCredit);
 
@@ -374,7 +320,7 @@ export default function Clients() {
 
   const inadimplentesList = clients.filter(c => {
     const { dynamicBalance } = getDynamicClientData(c);
-    const score = calculateCreditScore(c);
+    const score = calculateCreditScore(c, installments);
     return score.status === 'Atenção' || 
     score.status === 'Inadimplente' || 
     dynamicBalance > 0
@@ -694,15 +640,9 @@ export default function Clients() {
                   </TableCell>
                   <TableCell className="px-6 py-3">
                     {(() => {
-                        const score = calculateCreditScore(client);
+                        const score = calculateCreditScore(client, installments);
                         return (
-                            <Badge className={`rounded ${
-                              score.status === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
-                              score.status === 'Bom' ? 'bg-blue-100 text-blue-700' :
-                              score.status === 'Atenção' ? 'bg-amber-100 text-amber-700' :
-                              (score.status === 'Em Análise' || !score.status) ? 'bg-slate-100 text-slate-700' :
-                              'bg-red-100 text-red-700'
-                            } text-[10px] font-semibold uppercase tracking-wider border-none px-2 py-0.5 shadow-none inline-flex items-center`}>
+                            <Badge className={`rounded ${getCreditStatusColor(score.status)} text-[10px] font-semibold uppercase tracking-wider border-none px-2 py-0.5 shadow-none inline-flex items-center`}>
                               {score.status}
                             </Badge>
                         );
@@ -806,7 +746,7 @@ export default function Clients() {
                                     <p className="text-xs text-red-600 font-semibold mt-0.5">Saldo Devedor: R$ {getDynamicClientData(c).dynamicBalance.toFixed(2)}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Badge className="bg-red-100 text-red-700 text-[10px] font-bold uppercase shadow-none border-none pointer-events-none">{calculateCreditScore(c).status}</Badge>
+                                    <Badge className="bg-red-100 text-red-700 text-[10px] font-bold uppercase shadow-none border-none pointer-events-none">{calculateCreditScore(c, installments).status}</Badge>
                                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-600" />
                                 </div>
                             </div>

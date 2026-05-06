@@ -55,26 +55,26 @@ function statusStyle(status: string): React.CSSProperties {
 }
 
 const S = {
-  bg: "#F7F7F8",
+  bg: "#F8FAFC",
   white: "#FFFFFF",
-  border: "#ECECEC",
-  surface: "#FAFAFB",
+  border: "#E2E8F0",
+  surface: "#F8FAFC",
   primary: "#c4121a",
-  primaryLight: "#FEE2E2",
-  primaryHover: "#a50f16",
-  text: "#1C1C1C",
-  textSec: "#6F6F6F",
-  textMuted: "#9A9A9A",
-  success: "#22C55E",
-  successBg: "#ECFDF3",
+  primaryLight: "#FEF2F2",
+  primaryHover: "#991B1B",
+  text: "#0F172A",
+  textSec: "#475569",
+  textMuted: "#94A3B8",
+  success: "#10B981",
+  successBg: "#ECFDF5",
   warning: "#F59E0B",
   danger: "#EF4444",
   dangerBg: "#FEF2F2",
 };
 
 const card: React.CSSProperties = {
-  background: S.white, borderRadius: "20px", border: `1px solid ${S.border}`,
-  boxShadow: "0 4px 20px rgba(0,0,0,0.03)", padding: "24px",
+  background: S.white, borderRadius: "0px", border: `1px solid ${S.border}`,
+  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.02), 0 4px 6px -2px rgba(0,0,0,0.01)", padding: "24px",
 };
 
 export default function ClientDashboard() {
@@ -86,8 +86,10 @@ export default function ClientDashboard() {
   const [apptOpen, setApptOpen] = React.useState(false);
   const [whatsapp, setWhatsapp] = React.useState("5511999999999");
   const [activeTab, setActiveTab] = React.useState<"pedidos" | "parcelas">("pedidos");
-  const [availableDates, setAvailableDates] = React.useState<string[]>([]);
+  const [availableDates, setAvailableDates] = React.useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState("");
+  const [selectedPeriod, setSelectedPeriod] = React.useState("");
 
   React.useEffect(() => {
     const session = getClientSession();
@@ -96,7 +98,16 @@ export default function ClientDashboard() {
 
     const unsubExams = onSnapshot(doc(db, "settings", "exams"), (doc) => {
         if (doc.exists()) {
-            setAvailableDates(doc.data().availableDates || []);
+            const dates = doc.data().availableDates || [];
+            const today = new Date().toISOString().split('T')[0];
+            const activeDates = dates.filter((d: any) => {
+                const dateStr = typeof d === 'string' ? d : d.date;
+                return dateStr >= today;
+            }).map((d: any) => {
+                if (typeof d === 'string') return { date: d, period: "Ambos" };
+                return d;
+            });
+            setAvailableDates(activeDates);
         }
     });
     return () => unsubExams();
@@ -175,14 +186,17 @@ export default function ClientDashboard() {
       <style>{MOBILE_CSS}</style>
 
       {/* Header */}
-      <header className="dash-header" style={{ background: S.white, borderBottom: `1px solid ${S.border}`, padding: "0 40px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
-        <img src="/logo.png" alt="Ótica Melissa" style={{ height: "36px", objectFit: "contain", cursor: "pointer" }} onClick={() => navigate("/")} />
+      <header className="dash-header" style={{ background: S.white, borderBottom: `1px solid ${S.border}`, padding: "0 40px", height: "72px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+        <img src="/logo.png" alt="Ótica Melissa" style={{ height: "40px", objectFit: "contain", cursor: "pointer", transition: "transform 0.2s" }} 
+             onClick={() => navigate("/")}
+             onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+             onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ textAlign: "right" }}>
             <p style={{ fontSize: "12px", color: S.textMuted, fontWeight: 500, margin: 0, lineHeight: "18px" }}>Olá,</p>
             <p style={{ fontSize: "14px", color: S.text, fontWeight: 600, margin: 0, lineHeight: "22px" }}>{firstName}</p>
           </div>
-          <button onClick={logout} title="Sair" style={{ width: "36px", height: "36px", borderRadius: "10px", border: `1px solid ${S.border}`, background: S.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted, transition: "all 0.15s" }}
+          <button onClick={logout} title="Sair" style={{ width: "36px", height: "36px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted, transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = S.dangerBg; e.currentTarget.style.color = S.danger; e.currentTarget.style.borderColor = "#FECACA"; }}
             onMouseLeave={e => { e.currentTarget.style.background = S.white; e.currentTarget.style.color = S.textMuted; e.currentTarget.style.borderColor = S.border; }}>
             <LogOut style={{ width: "15px", height: "15px" }} />
@@ -206,7 +220,7 @@ export default function ClientDashboard() {
             ...(overdue.length > 0 ? [{ label: "Vencidas", value: overdue.length, icon: <AlertTriangle style={{ width: "18px", height: "18px", color: S.danger }} />, bg: S.dangerBg }] : []),
           ].map((stat, i) => (
             <div key={i} style={{ ...card, display: "flex", alignItems: "center", gap: "16px", padding: "20px 24px" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "12px", border: `1px solid ${S.border}`, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: "40px", height: "40px", borderRadius: "0px", border: `1px solid ${S.border}`, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {stat.icon}
               </div>
               <div>
@@ -218,15 +232,15 @@ export default function ClientDashboard() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: "4px", marginBottom: "24px", background: S.white, border: `1px solid ${S.border}`, borderRadius: "14px", padding: "4px", width: "fit-content" }}>
+        <div style={{ display: "flex", gap: "6px", marginBottom: "32px", background: S.white, border: `1px solid ${S.border}`, borderRadius: "0px", padding: "6px", width: "fit-content", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
           {(["pedidos", "parcelas"] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              height: "36px", padding: "0 20px", borderRadius: "10px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
+              height: "36px", padding: "0 20px", borderRadius: "0px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
               background: activeTab === tab ? S.primary : "transparent",
               color: activeTab === tab ? "#fff" : S.textSec,
               transition: "all 0.15s", display: "flex", alignItems: "center", gap: "8px",
             }}>
-              {tab === "pedidos" ? <><Package style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Pedidos</span></> : <><CreditCard style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Parcelas</span> {overdue.length > 0 && <span style={{ background: S.danger, color: "#fff", borderRadius: "999px", fontSize: "10px", fontWeight: 700, padding: "0 6px", height: "16px", display: "flex", alignItems: "center" }}>{overdue.length}</span>}</>}
+              {tab === "pedidos" ? <><Package style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Pedidos</span></> : <><CreditCard style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Parcelas</span> {overdue.length > 0 && <span style={{ background: S.danger, color: "#fff", borderRadius: "0px", fontSize: "10px", fontWeight: 700, padding: "0 6px", height: "16px", display: "flex", alignItems: "center" }}>{overdue.length}</span>}</>}
             </button>
           ))}
         </div>
@@ -245,8 +259,8 @@ export default function ClientDashboard() {
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.07)"; e.currentTarget.style.borderColor = "#D8D8FF"; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.03)"; e.currentTarget.style.borderColor = S.border; }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <div style={{ width: "44px", height: "44px", borderRadius: "12px", border: `1px solid ${S.primaryLight}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Package style={{ width: "18px", height: "18px", color: S.primary }} />
+                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", border: `1px solid ${S.primaryLight}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Package style={{ width: "20px", height: "20px", color: S.primary }} />
                   </div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -302,9 +316,9 @@ export default function ClientDashboard() {
                   </div>
                   {!isPaid && (
                     <button onClick={() => wa(`Olá! Quero pagar a parcela ${inst.number} (R$ ${Number(inst.value).toFixed(2)}).`)}
-                      style={{ height: "40px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600, background: ov ? S.danger : S.primary, color: "#fff", transition: "opacity 0.15s" }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                      style={{ height: "44px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "14px", fontWeight: 700, background: ov ? S.danger : S.primary, color: "#fff", transition: "all 0.2s", boxShadow: `0 4px 10px ${ov ? "rgba(239,68,68,0.2)" : "rgba(196,18,26,0.2)"}` }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = `0 6px 15px ${ov ? "rgba(239,68,68,0.3)" : "rgba(196,18,26,0.3)"}`; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 4px 10px ${ov ? "rgba(239,68,68,0.2)" : "rgba(196,18,26,0.2)"}`; }}>
                       {ov ? "Regularizar via WhatsApp" : "Pagar via Pix"}
                     </button>
                   )}
@@ -316,29 +330,29 @@ export default function ClientDashboard() {
 
         {/* Bottom Banners */}
         <div className="dash-banners" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "32px" }}>
-          <div style={{ background: S.primary, borderRadius: "20px", padding: "32px", color: "#fff", display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MessageCircle style={{ width: "20px", height: "20px" }} />
+          <div style={{ background: S.primary, borderRadius: "16px", padding: "32px", color: "#fff", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 25px -5px rgba(196,18,26,0.15)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MessageCircle style={{ width: "22px", height: "22px" }} />
             </div>
             <div>
-              <h3 style={{ fontSize: "18px", fontWeight: 600, margin: "0 0 4px 0" }}>Precisa de ajuda?</h3>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.7)", margin: 0 }}>Fale com nossa equipe pelo WhatsApp.</p>
+              <h3 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 4px 0" }}>Precisa de ajuda?</h3>
+              <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)", margin: 0, fontWeight: 400 }}>Fale com nossa equipe pelo WhatsApp.</p>
             </div>
-            <button onClick={() => wa("Olá! Preciso de suporte com meu pedido.")} style={{ height: "40px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", transition: "background 0.15s", width: "fit-content", padding: "0 20px" }}
+            <button onClick={() => wa("Olá! Preciso de suporte com meu pedido.")} style={{ height: "44px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s", width: "fit-content", padding: "0 24px" }}
               onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
               onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}>
               Suporte online
             </button>
           </div>
           <div style={{ ...card, display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Calendar style={{ width: "20px", height: "20px", color: S.primary }} />
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Calendar style={{ width: "22px", height: "22px", color: S.primary }} />
             </div>
             <div>
-              <h3 style={{ fontSize: "18px", fontWeight: 600, color: S.text, margin: "0 0 4px 0" }}>Agendar exame</h3>
-              <p style={{ fontSize: "13px", color: S.textSec, margin: 0 }}>Renove sua receita com um novo exame de vista.</p>
+              <h3 style={{ fontSize: "20px", fontWeight: 700, color: S.text, margin: "0 0 4px 0" }}>Agendar exame</h3>
+              <p style={{ fontSize: "14px", color: S.textSec, margin: 0, fontWeight: 400 }}>Renove sua receita com um novo exame de vista.</p>
             </div>
-            <button onClick={() => setApptOpen(true)} style={{ height: "40px", borderRadius: "12px", background: S.primary, border: "none", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", transition: "background 0.15s", width: "fit-content", padding: "0 20px" }}
+            <button onClick={() => setApptOpen(true)} style={{ height: "44px", borderRadius: "0px", background: S.primary, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s", width: "fit-content", padding: "0 24px", boxShadow: "0 4px 10px rgba(196,18,26,0.1)" }}
               onMouseEnter={e => (e.currentTarget.style.background = S.primaryHover)}
               onMouseLeave={e => (e.currentTarget.style.background = S.primary)}>
               Solicitar agendamento
@@ -349,40 +363,70 @@ export default function ClientDashboard() {
 
       {/* Appointment Modal */}
       {apptOpen && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "24px" }}>
-          <div style={{ background: S.white, borderRadius: "20px", border: `1px solid ${S.border}`, boxShadow: "0 8px 30px rgba(0,0,0,0.10)", width: "100%", maxWidth: "420px", overflow: "hidden" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "24px" }}>
+          <div style={{ background: S.white, borderRadius: "0px", border: `1px solid ${S.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)", width: "100%", maxWidth: "440px", overflow: "hidden" }}>
             <div style={{ padding: "24px 24px 20px", borderBottom: `1px solid ${S.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: "20px", fontWeight: 700, color: S.text, margin: "0 0 2px 0" }}>Agendar Exame</h2>
                 <p style={{ fontSize: "13px", color: S.textMuted, margin: 0 }}>Escolha data e período de preferência</p>
               </div>
-              <button onClick={() => setApptOpen(false)} style={{ width: "32px", height: "32px", borderRadius: "8px", border: `1px solid ${S.border}`, background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted }}>
+              <button onClick={() => setApptOpen(false)} style={{ width: "32px", height: "32px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted }}>
                 <X style={{ width: "14px", height: "14px" }} />
               </button>
             </div>
-            <form onSubmit={handleAppt} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={handleAppt} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, color: S.textSec }}>Data preferencial</label>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: S.textSec, textTransform: "uppercase", letterSpacing: "0.05em" }}>Data preferencial</label>
                 {availableDates.length > 0 ? (
-                    <select name="date" required style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }}>
+                    <select 
+                        name="date" 
+                        required 
+                        value={selectedDate}
+                        onChange={(e) => {
+                            const date = e.target.value;
+                            setSelectedDate(date);
+                            const dateObj = availableDates.find(d => d.date === date);
+                            setSelectedPeriod(dateObj?.period !== "Ambos" ? dateObj?.period || "" : "");
+                        }} 
+                        style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+                    >
                         <option value="">Selecione uma data</option>
-                        {availableDates.map(date => (
-                            <option key={date} value={date}>{date.split("-").reverse().join("/")}</option>
+                        {availableDates.map(d => (
+                            <option key={d.date} value={d.date}>{d.date?.includes("-") ? d.date.split("-").reverse().join("/") : d.date}</option>
                         ))}
                     </select>
                 ) : (
-                    <input type="date" name="date" required style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }} />
+                    <input type="date" name="date" required style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit" }} />
                 )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, color: S.textSec }}>Período preferido</label>
-                <select name="period" style={{ height: "44px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "14px", color: S.text, outline: "none", fontFamily: "inherit" }}>
-                  <option value="Manhã">Manhã (09:00 – 12:00)</option>
-                  <option value="Tarde">Tarde (13:00 – 18:00)</option>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: S.textSec, textTransform: "uppercase", letterSpacing: "0.05em" }}>Período preferido</label>
+                <select 
+                    name="period" 
+                    required 
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+                >
+                  <option value="">Qualquer período</option>
+                  {(() => {
+                      const selected = availableDates.find(d => d.date === selectedDate);
+                      if (!selected || selected.period === "Ambos") {
+                          return (
+                              <>
+                                  <option value="Manhã">Manhã</option>
+                                  <option value="Tarde">Tarde</option>
+                              </>
+                          );
+                      }
+                      return <option value={selected.period}>{selected.period}</option>;
+                  })()}
                 </select>
               </div>
-              <p style={{ fontSize: "12px", color: S.textMuted, margin: "4px 0 0", textAlign: "center" }}>Sujeito à confirmação da equipe.</p>
-              <button type="submit" disabled={isSubmitting} style={{ height: "44px", borderRadius: "12px", background: S.primary, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", opacity: isSubmitting ? 0.5 : 1 }}>
+              <p style={{ fontSize: "12px", color: S.textMuted, margin: "4px 0 0", textAlign: "center", fontWeight: 500 }}>Sujeito à confirmação da equipe.</p>
+              <button type="submit" disabled={isSubmitting} style={{ height: "52px", borderRadius: "0px", background: S.primary, border: "none", color: "#fff", fontSize: "16px", fontWeight: 700, cursor: "pointer", opacity: isSubmitting ? 0.5 : 1, transition: "all 0.2s", boxShadow: "0 10px 15px -3px rgba(196,18,26,0.2)" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 15px 20px -5px rgba(196,18,26,0.3)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(196,18,26,0.2)"; }}>
                 {isSubmitting ? "Solicitando..." : "Confirmar solicitação"}
               </button>
             </form>

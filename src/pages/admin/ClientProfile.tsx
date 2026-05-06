@@ -4,6 +4,7 @@ import html2pdf from 'html2pdf.js';
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, onSnapshot, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { calculateCreditScore, getCreditStatusColor } from "../../lib/credit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ export default function ClientProfile() {
   const navigate = useNavigate();
   const [client, setClient] = React.useState<any>(null);
   const [history, setHistory] = React.useState<any[]>([]);
+  const [installments, setInstallments] = React.useState<any[]>([]);
   const [dynamicBalance, setDynamicBalance] = React.useState<number>(0);
   const [loading, setLoading] = React.useState(true);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -106,11 +108,13 @@ export default function ClientProfile() {
         records.sort((a: any, b: any) => parseDate(b.date) - parseDate(a.date));
         setHistory(records);
 
-        // Fetch installments for dynamic balance
+        // Fetch installments for dynamic balance and credit score
         const qInst = query(collection(db, "installments"), where("clientId", "==", id));
         const instSnapshot = await getDocs(qInst);
-        const unpaidInst = instSnapshot.docs.map(d => d.data()).filter(i => i.status !== 'Pago');
-        const balance = unpaidInst.reduce((acc, curr) => acc + (curr.value || 0), 0);
+        const allInst = instSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        setInstallments(allInst);
+        const unpaidInst = allInst.filter((i: any) => i.status !== 'Pago');
+        const balance = unpaidInst.reduce((acc: number, curr: any) => acc + (curr.value || 0), 0);
         setDynamicBalance(balance);
       } catch (error) {
         console.error("Erro ao buscar histórico", error);
@@ -389,15 +393,14 @@ export default function ClientProfile() {
           <CardContent className="p-6 space-y-6">
             <div>
               <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Status de Crédito</p>
-              <Badge className={`rounded ${
-                client.creditStatus === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
-                client.creditStatus === 'Bom' ? 'bg-blue-100 text-blue-700' :
-                client.creditStatus === 'Atenção' ? 'bg-amber-100 text-amber-700' :
-                (client.creditStatus === 'Em Análise' || !client.creditStatus) ? 'bg-purple-100 text-purple-700' :
-                'bg-red-100 text-red-700'
-              } text-xs font-bold uppercase tracking-wider border-none px-3 py-1 shadow-none`}>
-                {client.creditStatus || "Em Análise"}
-              </Badge>
+              {(() => {
+                const score = calculateCreditScore(client, installments);
+                return (
+                  <Badge className={`rounded ${getCreditStatusColor(score.status)} text-xs font-bold uppercase tracking-wider border-none px-3 py-1 shadow-none`}>
+                    {score.status}
+                  </Badge>
+                );
+              })()}
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -551,9 +554,18 @@ export default function ClientProfile() {
             })()}</p></div>
             <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Telefone</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{client.phone || "—"}</p></div>
             <div><p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Email</p><p style={{fontSize: '9.5pt', fontWeight: '700', color: '#000000', margin: 0}}>{client.email || "—"}</p></div>
-            <div>
+             <div>
               <p style={{fontSize: '6.5pt', color: '#334155', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 0.5mm'}}>Status de Crédito</p>
-              <p style={{fontSize: '9.5pt', fontWeight: '900', color: client.creditStatus === 'Bom' ? '#1d4ed8' : client.creditStatus === 'Excelente' ? '#065f46' : '#6d28d9', margin: 0}}>{client.creditStatus || "Em Análise"}</p>
+              {(() => {
+                const score = calculateCreditScore(client, installments);
+                const color = score.status === 'Excelente' ? '#065f46' : 
+                              score.status === 'Bom' ? '#1d4ed8' : 
+                              score.status === 'Atenção' ? '#b45309' : 
+                              score.status === 'Inadimplente' ? '#991b1b' : '#334155';
+                return (
+                  <p style={{fontSize: '9.5pt', fontWeight: '900', color: color, margin: 0}}>{score.status}</p>
+                );
+              })()}
             </div>
           </div>
         </div>

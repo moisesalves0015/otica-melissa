@@ -22,6 +22,8 @@ import {
   ChevronLeft,
   Glasses,
   Zap,
+  Clock,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,44 +77,12 @@ const BENEFITS = [
   { icon: Percent, title: "5% OFF no PIX", description: "Economize em cada compra" },
   { icon: ShoppingBag, title: "Até 70% OFF", description: "Produtos selecionados" },
   { icon: CreditCard, title: "12x sem juros", description: "No cartão de crédito" },
-  { icon: MapPin, title: "Localizador de Lojas", description: "Encontre a Gassi perto de você" },
+  { icon: MapPin, title: "Consultoria Grátis", description: "Especialistas em visagismo" },
 ];
 
 // Products will be fetched from Firestore
 
-const CATEGORIES = [
-  {
-    title: "Vogue - Atitude e Elegância",
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600",
-    size: "large",
-  },
-  {
-    title: "Coleção Premium",
-    image: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=600",
-    size: "small",
-  },
-  {
-    title: "Esportivos",
-    image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?q=80&w=600",
-    size: "small",
-  },
-  {
-    title: "Vintage",
-    image: "https://images.unsplash.com/photo-1481016570479-9eab6349fde7?q=80&w=600",
-    size: "small",
-  },
-  {
-    title: "Lentes de Contato",
-    image: "https://images.unsplash.com/photo-1628144501476-8f192aa07612?q=80&w=600",
-    size: "small",
-  },
-];
-
-const STORES = [
-  { city: "São Paulo", neighborhood: "Flagship Jardins", address: "Rua Oscar Freire, 850" },
-  { city: "Rio de Janeiro", neighborhood: "Boutique Ipanema", address: "Rua Garcia d'Ávila, 120" },
-  { city: "Belo Horizonte", neighborhood: "Concept Lourdes", address: "Rua Rio de Janeiro, 2100" },
-];
+// CATEGORIES and STORES removed to simplify the landing page as requested
 
 function AnnouncementBar() {
   const [index, setIndex] = React.useState(0);
@@ -125,7 +95,7 @@ function AnnouncementBar() {
   }, []);
 
   return (
-    <div className="bg-primary text-primary-foreground py-1.5 text-center text-[10px] font-bold overflow-hidden relative h-7">
+    <div className="bg-primary text-primary-foreground py-1.5 text-center text-[10px] font-bold overflow-hidden relative h-7 rounded-none">
       <AnimatePresence mode="wait">
         <motion.p
           key={index}
@@ -160,12 +130,12 @@ function Header() {
         {/* Logo */}
         <div className="flex items-center gap-4 shrink-0">
           <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
-                <Menu className="h-5 w-5" />
+            <SheetTrigger render={
+              <Button variant="ghost" size="icon" className="lg:hidden hover:bg-primary/5 rounded-none">
+                <Menu className="h-5 w-5 text-slate-700" />
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] p-0 border-r-0">
+            } />
+            <SheetContent side="left" className="w-[300px] p-0 border-r-0 rounded-none">
               <div className="p-6 border-b border-border/50">
                 <img src="/logo.png" alt="Ótica Melissa" className="h-10 w-auto object-contain" />
               </div>
@@ -199,10 +169,10 @@ function Header() {
               <NavigationMenuItem key={item.name}>
                 {item.categories ? (
                   <>
-                    <NavigationMenuTrigger className="px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 data-[state=open]:bg-muted/50 text-foreground/70">
+                    <NavigationMenuTrigger className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-none hover:bg-slate-100 data-[state=open]:bg-slate-100 text-slate-600">
                       {item.name}
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent className="p-0 md:w-[700px] lg:w-[900px] glass-dark text-white rounded-[2rem] border-none overflow-hidden shadow-2xl">
+                    <NavigationMenuContent className="p-0 md:w-[700px] lg:w-[900px] bg-slate-900 text-white rounded-none border-none overflow-hidden shadow-2xl">
                       <div className="grid grid-cols-12">
                          <div className="col-span-8 p-10 grid grid-cols-3 gap-8">
                           {item.categories.map((cat) => (
@@ -245,11 +215,11 @@ function Header() {
                 ) : (
                   <NavigationMenuLink
                     href={item.href}
-                    className="px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-full hover:bg-muted/50 flex items-center gap-2 text-foreground/70 hover:text-foreground"
+                    className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-none hover:bg-slate-100 flex items-center gap-2 text-slate-600 hover:text-slate-900"
                   >
                     {item.name}
                     {item.badge && (
-                      <Badge className="bg-primary text-white text-[8px] px-1.5 h-4 flex items-center justify-center font-black animate-bounce rounded-full border-none">
+                      <Badge className="bg-primary text-white text-[9px] px-2 h-4 flex items-center justify-center font-bold rounded-none border-none shadow-sm">
                         {item.badge}
                       </Badge>
                     )}
@@ -266,9 +236,9 @@ function Header() {
             <Input
               type="search"
               placeholder="Encontre sua armação..."
-              className="pl-10 w-[200px] focus:w-[280px] h-10 bg-muted/30 border-none rounded-full transition-all text-sm focus:ring-1 focus:ring-primary/20"
+              className="pl-10 w-[200px] focus:w-[280px] h-11 bg-slate-100 border-none rounded-none transition-all text-sm focus:ring-0 focus:border-primary"
             />
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           </div>
           <ClientLoginModal />
         </div>
@@ -300,14 +270,15 @@ function Hero() {
                 <p className="text-[14px] md:text-lg text-slate-500 mb-4 md:mb-6 max-w-md leading-relaxed font-medium">
                 As melhores armações com lentes de alta tecnologia.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                <Button size="lg" className="rounded-full h-10 px-8 text-[10px] md:text-[11px] font-black bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-200 uppercase tracking-widest group">
+                <div className="flex flex-col sm:flex-row gap-5 items-center">
+                <Button size="lg" className="rounded-none h-12 px-10 text-[11px] font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 uppercase tracking-[0.15em] group">
                     Conhecer Coleção 
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <div className="flex items-center">
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                    12x Sem Juros No Cartão
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-[1px] bg-slate-200 hidden sm:block" />
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+                    12x Sem Juros
                     </span>
                 </div>
                 </div>
@@ -384,9 +355,9 @@ function Benefits() {
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="flex items-center gap-2 p-3 h-full rounded-xl bg-white shadow-xl shadow-red-900/20 border border-white/10 hover:border-white transition-all cursor-pointer group"
+              className="flex items-center gap-2 p-3 h-full rounded-none bg-white shadow-xl shadow-red-900/10 border border-white/5 transition-all cursor-pointer group"
             >
-              <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
+              <div className="h-8 w-8 rounded-none bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
                 <benefit.icon className="h-4 w-4" />
               </div>
               <div>
@@ -403,38 +374,38 @@ function Benefits() {
 
 function ProductCard({ product }: { product: any }) {
   return (
-    <Card className="group relative overflow-hidden border-none shadow-sm rounded-lg bg-white">
-      <CardContent className="p-3">
-        <div className="relative aspect-[16/10] overflow-hidden rounded bg-background mb-3 flex items-center justify-center text-3xl">
+    <Card className="group relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-none bg-white hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500">
+      <CardContent className="p-4">
+        <div className="relative aspect-[16/11] overflow-hidden rounded-none bg-slate-50 mb-4 flex items-center justify-center">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute top-2 left-2">
-            {product.badge && <Badge className="bg-primary text-[9px] font-bold p-1 rounded-sm scale-90 origin-left">{product.badge}</Badge>}
+          <div className="absolute top-3 left-3">
+            {product.badge && <Badge className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-none shadow-lg">{product.badge}</Badge>}
           </div>
         </div>
-        <div className="space-y-1">
-          <h3 className="font-bold text-xs truncate text-foreground">{product.name}</h3>
-          <div className="flex flex-col">
+        <div className="space-y-2">
+          <h3 className="font-bold text-sm text-slate-800 group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-black text-slate-900">
+              R$ {product.price.toFixed(2)}
+            </span>
             {product.originalPrice > 0 && (
-              <span className="text-muted-foreground text-[10px] line-through">
+              <span className="text-slate-400 text-xs line-through">
                 R$ {product.originalPrice.toFixed(2)}
               </span>
             )}
-            <span className="text-sm font-black text-primary">
-              R$ {product.price.toFixed(2)}
-            </span>
-            <span className="text-[10px] text-muted-foreground italic">
-              10x de R$ {(product.price / 10).toFixed(2)}
-            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+             <CreditCard className="h-3 w-3" /> 10x de R$ {(product.price / 10).toFixed(2)} sem juros
           </div>
           <Button
-            variant="outline"
-            className="w-full mt-2 h-8 rounded-sm border-primary text-primary hover:bg-primary/5 text-[10px] font-bold uppercase"
+            variant="ghost"
+            className="w-full mt-3 h-10 rounded-none bg-slate-50 text-slate-600 hover:bg-primary hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
           >
-            EXPERIMENTE
+            VER DETALHES
           </Button>
         </div>
       </CardContent>
@@ -445,105 +416,128 @@ function ProductCard({ product }: { product: any }) {
 
 
 function CategoryBanners() {
-  return (
-    <section className="py-20 bg-muted/30">
-      <div className="max-w-[1440px] mx-auto px-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
-          {CATEGORIES.map((cat, i) => (
-            <motion.div
-              key={cat.title}
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-              className={`relative overflow-hidden group rounded-3xl ${
-                cat.size === "large" ? "md:col-span-8 md:row-span-2" : "md:col-span-4"
-              }`}
-            >
-              <img
-                src={cat.image}
-                alt={cat.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
-                <h3 className={`text-white font-black tracking-tight ${cat.size === 'large' ? 'text-4xl' : 'text-2xl'}`}>
-                  {cat.title}
-                </h3>
-                <Button
-                  variant="link"
-                  className="text-white p-0 h-auto font-bold mt-2 self-start group/btn"
+  return null; // Section removed as requested
+}
+
+function QualitySection() {
+    return (
+        <section className="py-24 px-6 bg-slate-900 text-white overflow-hidden">
+            <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <motion.div 
+                    initial={{ x: -20, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    viewport={{ once: true }}
+                    className="relative"
                 >
-                  Conheça agora <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+                    <div className="aspect-[4/5] rounded-none overflow-hidden shadow-2xl border border-white/5">
+                        <img src="/hero_trio_distracted_white.png" alt="Qualidade Ótica Melissa" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute -z-10 -bottom-6 -right-6 w-full h-full border-2 border-primary/20" />
+                </motion.div>
+                <motion.div 
+                    initial={{ x: 20, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    viewport={{ once: true }}
+                    className="space-y-8"
+                >
+                    <div className="space-y-6">
+                        <Badge className="bg-primary text-white border-none rounded-none px-4 py-1 font-bold text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20">Qualidade e Precisão</Badge>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none">Excelência em Cada Detalhe</h2>
+                        <p className="text-slate-400 text-lg leading-relaxed font-medium max-w-xl">
+                            Na Ótica Melissa, unimos a tradição do atendimento personalizado com a mais alta tecnologia em lentes e armações. Trabalhamos com as melhores marcas do mercado para garantir não apenas estilo, mas a saúde total da sua visão.
+                        </p>
+                    </div>
+                    <Button className="rounded-none bg-primary text-white hover:bg-primary/90 h-14 px-12 font-bold group uppercase tracking-widest text-xs transition-all border-none">
+                        Ver Coleção Completa <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                </motion.div>
+            </div>
+        </section>
+    );
 }
 
 function StoreSection() {
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-[1440px] mx-auto px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 uppercase text-slate-900 leading-[1.1]">A Maestria Melissa</h2>
-            <p className="text-slate-500 text-lg mb-8 leading-relaxed font-medium">
-              Descubra o auge da sofisticação e da precisão óptica. Trazemos até você arquitetura de luxo, laboratório digital próprio de última geração e consultores formados em visagismo para garantir que sua próxima armação seja uma verdadeira obra de arte que valoriza seus traços.
-            </p>
-            <div className="space-y-6 mb-8">
-              {STORES.map((store) => (
-                <div key={store.neighborhood} className="flex gap-4 p-4 rounded-2xl border hover:border-primary transition-colors group cursor-pointer">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <MapPin className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg">{store.neighborhood} - {store.city}</h4>
-                    <p className="text-muted-foreground">{store.address}</p>
-                  </div>
-                </div>
-              ))}
+    return (
+        <section className="py-24 px-6 bg-white overflow-hidden">
+            <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <motion.div 
+                    initial={{ x: -20, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    viewport={{ once: true }}
+                    className="space-y-10 order-2 lg:order-1"
+                >
+                    <div className="space-y-6">
+                        <Badge className="bg-primary/10 text-primary border-none rounded-none px-4 py-1 font-bold text-[10px] tracking-widest uppercase">Nossa Unidade</Badge>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none text-slate-900">Maestria Melissa</h2>
+                        <p className="text-slate-500 text-lg leading-relaxed max-w-xl font-medium">
+                            Nossa unidade em Salvador foi projetada para oferecer uma experiência única. Ambiente climatizado, showroom moderno e equipamentos de última geração para sua avaliação visual.
+                        </p>
+                    </div>
+                    
+                    <div className="space-y-8">
+                        <div className="flex gap-6 items-start group">
+                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-none group-hover:bg-primary transition-colors">
+                                <MapPin className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-xl uppercase tracking-tighter text-slate-900">Onde Estamos</h4>
+                                <p className="text-slate-500 font-medium">Av. Manoel Dias da Silva, 1234 - Pituba, Salvador - BA</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-6 items-start group">
+                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-none group-hover:bg-primary transition-colors">
+                                <Clock className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-xl uppercase tracking-tighter text-slate-900">Funcionamento</h4>
+                                <p className="text-slate-500 font-medium">Segunda a Sexta: 08:30h às 18:30h | Sábados: 09h às 13h</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button size="lg" className="rounded-none px-12 h-14 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-200 group uppercase tracking-widest text-xs transition-all">
+                        Agendar Visita <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                </motion.div>
+
+                <motion.div 
+                    initial={{ x: 20, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    viewport={{ once: true }}
+                    className="order-1 lg:order-2"
+                >
+                    <div className="aspect-[4/3] overflow-hidden rounded-none shadow-2xl border border-slate-100">
+                        <img src="/three_people_glasses.png" alt="Showroom Ótica Melissa" className="w-full h-full object-cover" />
+                    </div>
+                </motion.div>
             </div>
-            <Button size="lg" className="rounded-full px-10 font-bold group">
-              Ver Mais Lojas <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-          <div className="relative aspect-square overflow-hidden rounded-3xl shadow-2xl bg-white">
-            <img
-              src="/three_people_glasses.png"
-              alt="Ótica Melissa Loja e Consultores"
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+        </section>
+    );
 }
 
 function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-400 py-16 md:py-20 border-t border-slate-900 mt-auto">
-      <div className="max-w-[1440px] mx-auto px-6 md:px-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 mb-16">
-          {/* Brand Column */}
-          <div className="md:col-span-5 flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="flex items-center gap-2 mb-6">
-                <div className="bg-white p-1.5 rounded-lg">
+    <footer className="bg-slate-900 text-slate-400 py-16 md:py-24 border-t border-slate-800 mt-auto">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 mb-16">
+          <div className="md:col-span-5 space-y-8">
+            <div className="flex items-center gap-3">
+                <div className="bg-white p-1.5 rounded-none">
                     <img src="/logo.png" alt="Ótica Melissa" className="h-6 w-auto" />
                 </div>
                 <span className="text-xl font-black text-white uppercase tracking-tighter">Ótica Melissa</span>
             </div>
-            <p className="text-[13px] leading-relaxed mb-8 max-w-sm">
+            <p className="text-[14px] leading-relaxed max-w-sm">
                 Comprometidos em oferecer não apenas óculos, mas uma nova visão de mundo. 
-                Excelência técnica, design moderno e atendimento personalizado para a sua visão.
+                Excelência técnica, design moderno e atendimento personalizado para sua identidade.
             </p>
             <div className="flex gap-4">
                 {['Instagram', 'Facebook', 'WhatsApp'].map((social) => (
-                    <a key={social} href="#" className="w-10 h-10 rounded-full border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">
+                    <a key={social} href="#" className="w-10 h-10 rounded-none border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">
                         <span className="sr-only">{social}</span>
                         {social === 'Instagram' && <Instagram className="h-4 w-4" />}
                         {social === 'Facebook' && <Facebook className="h-4 w-4" />}
@@ -553,9 +547,8 @@ function Footer() {
             </div>
           </div>
 
-          {/* Links Column - Category */}
-          <div className="md:col-span-3 flex flex-col items-center md:items-start text-center md:text-left">
-            <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Compre Por</h6>
+          <div className="md:col-span-3 space-y-6">
+            <h6 className="text-white font-bold text-sm uppercase tracking-widest">Compre Por</h6>
             <ul className="space-y-4 text-[13px]">
               {["Óculos de Grau", "Óculos de Sol", "Lentes de Contato", "Acessórios", "Lançamentos"].map(link => (
                 <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
@@ -563,83 +556,42 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Links Column - Support */}
-          <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left">
-            <h6 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Atendimento</h6>
+          <div className="md:col-span-4 space-y-6">
+            <h6 className="text-white font-bold text-sm uppercase tracking-widest">Atendimento</h6>
             <ul className="space-y-4 text-[13px]">
               {["Trocas e Devoluções", "Dúvidas Frequentes", "Política de Entrega", "Cuidados com os Óculos", "Fale Conosco"].map(link => (
                 <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
               ))}
               <li className="pt-2">
-                <a href="#" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all justify-center md:justify-start">
+                <a href="#" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all">
                     <MessageSquare size={16} />
-                    WhatsApp: (11) 9999-9999
+                    WhatsApp: (71) 99999-9999
                 </a>
               </li>
             </ul>
           </div>
-
-          {/* Newsletter Column removida conforme solicitação */}
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex flex-col items-center md:items-start gap-1">
+        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col gap-1">
                 <p className="text-[11px]">© 2024 Ótica Melissa. Todos os direitos reservados.</p>
                 <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
                     <span>CNPJ: 00.000.000/0001-00</span>
                     <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
                         <Lock size={10} />
-                        Área Administrativa
+                        Painel Admin
                     </a>
                 </div>
             </div>
             
-            <div className="flex gap-3 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+            <div className="flex gap-4 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                 <CreditCard className="h-6 w-6" />
                 <Truck className="h-6 w-6" />
-                {/* Additional payment icons would go here */}
+                <Package className="h-6 w-6" />
             </div>
         </div>
       </div>
     </footer>
-  );
-}
-
-function LifestyleSection() {
-  return (
-    <section className="py-20 bg-slate-50 border-t border-slate-100">
-      <div className="max-w-[1440px] mx-auto px-10">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
-          <div className="flex-1 order-2 lg:order-1 w-full relative">
-             <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-white p-2">
-                 <img 
-                    src="/hero_trio_distracted_white.png" 
-                    alt="Estilo Ótica Melissa" 
-                    className="w-full h-auto object-contain rounded-2xl"
-                 />
-             </div>
-             {/* Decorative element */}
-             <div className="absolute -z-10 bg-primary/10 w-full h-full rounded-3xl top-6 -left-6" />
-          </div>
-          <div className="flex-1 order-1 lg:order-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary mb-6">
-                <Zap className="h-4 w-4" />
-                <span className="text-[10px] uppercase font-black tracking-widest">Consultoria de Imagem</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 uppercase text-slate-900 leading-[1.1]">
-              Traduza sua essência
-            </h2>
-            <p className="text-slate-500 text-lg mb-8 leading-relaxed font-medium">
-              Acreditamos que usar óculos é a moldura do seu rosto. Nossos especialistas em visagismo estão aqui para ajudar você a encontrar a armação ideal que combina não apenas com os seus traços, mas principalmente com a sua identidade e estilo de vida.
-            </p>
-            <Button size="lg" className="rounded-full px-10 h-12 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xl group">
-              Agende uma Consultoria Gratuita <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -650,9 +602,10 @@ export default function LandingPage() {
   const [appointmentData, setAppointmentData] = React.useState({
     name: "",
     whatsapp: "",
-    preferredDate: ""
+    preferredDate: "",
+    period: ""
   });
-  const [availableDates, setAvailableDates] = React.useState<string[]>([]);
+  const [availableDates, setAvailableDates] = React.useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
@@ -664,7 +617,16 @@ export default function LandingPage() {
 
     const unsubExams = onSnapshot(doc(db, "settings", "exams"), (doc) => {
         if (doc.exists()) {
-            setAvailableDates(doc.data().availableDates || []);
+            const dates = doc.data().availableDates || [];
+            const today = new Date().toISOString().split('T')[0];
+            const activeDates = dates.filter((d: any) => {
+                const dateStr = typeof d === 'string' ? d : d.date;
+                return dateStr >= today;
+            }).map((d: any) => {
+                if (typeof d === 'string') return { date: d, period: "Ambos" };
+                return d;
+            });
+            setAvailableDates(activeDates);
         }
     });
 
@@ -686,8 +648,8 @@ export default function LandingPage() {
             source: "Landing Page",
             createdAt: serverTimestamp()
         });
-        toast.success(`Agendamento solicitado para ${appointmentData.preferredDate.split("-").reverse().join("/")}! Aguarde nossa confirmação via WhatsApp.`);
-        setAppointmentData({ name: "", whatsapp: "", preferredDate: "" });
+        toast.success(`Agendamento solicitado para ${appointmentData.preferredDate?.includes("-") ? appointmentData.preferredDate.split("-").reverse().join("/") : appointmentData.preferredDate} (${appointmentData.period})! Aguarde nossa confirmação via WhatsApp.`);
+        setAppointmentData({ name: "", whatsapp: "", preferredDate: "", period: "" });
     } catch (error: any) {
         toast.error("Erro ao solicitar agendamento: " + error.message);
     } finally {
@@ -730,78 +692,114 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <CategoryBanners />
+        <QualitySection />
+        <StoreSection />
 
         {/* FREE EXAM SECTION WITH FORM LOGIC */}
-        <section className="py-24 px-6 bg-[#FAFAFB]">
+        <section className="py-24 px-6 bg-slate-50">
           <div className="max-w-[1200px] mx-auto">
-            <div className="bg-white rounded-[24px] border border-[#ECECEC] shadow-[0_8px_30px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
-              <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-[#1C1C1C] text-white">
-                <Badge className="w-fit mb-8 bg-emerald-500 text-white border-none rounded-full px-5 py-1 font-bold text-[11px] tracking-widest">GRÁTIS TODOS OS SÁBADOS</Badge>
-                <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight">Sua saúde visual é nossa prioridade absoluta.</h2>
-                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame médico computadorizado sem custos adicionais. Tecnologia de ponta para sua melhor visão.</p>
+            <div className="bg-white rounded-none border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
+              <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-slate-900 text-white">
+                <Badge className="w-fit mb-8 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-none px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">GRÁTIS TODOS OS SÁBADOS</Badge>
+                <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight tracking-tight">Sua saúde visual é nossa prioridade.</h2>
+                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame computadorizado sem custos. Tecnologia de ponta para sua melhor visão.</p>
                 <div className="flex items-center gap-4 text-sm font-bold">
                   <div className="flex -space-x-3">
-                    {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-full border-4 border-[#1C1C1C] bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
+                    {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-none border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
                   </div>
-                  <span className="text-slate-300">+ de 500 agendamentos este mês</span>
+                  <span className="text-slate-300 text-xs tracking-wide uppercase">+ de 500 agendamentos</span>
                 </div>
               </div>
               <div className="md:w-1/2 p-12 md:p-20 bg-white">
-                <h3 className="text-2xl font-bold text-[#1C1C1C] mb-10">Solicitar Agendamento</h3>
+                <h3 className="text-2xl font-bold text-slate-900 mb-10 tracking-tight">Solicitar Agendamento</h3>
                 <form className="space-y-6" onSubmit={handleAppointmentSubmit}>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
-                      <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Nome</label>
+                      <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Nome</label>
                       <Input 
                         placeholder="Nome completo" 
-                        className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
+                        className="h-12 rounded-none border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
                         value={appointmentData.name}
                         onChange={e => setAppointmentData({...appointmentData, name: e.target.value})}
                         required 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">WhatsApp</label>
+                      <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">WhatsApp</label>
                       <Input 
                         placeholder="(00) 00000-0000" 
-                        className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
+                        className="h-12 rounded-none border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
                         value={appointmentData.whatsapp}
                         onChange={e => setAppointmentData({...appointmentData, whatsapp: e.target.value})}
                         required 
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-bold uppercase tracking-wider text-[#9A9A9A]">Data Preferencial</label>
-                    {availableDates.length > 0 ? (
-                        <select 
-                            className="w-full h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB] px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                            value={appointmentData.preferredDate}
-                            onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
-                            required
-                        >
-                            <option value="">Selecione uma data disponível</option>
-                            {availableDates.map(date => (
-                                <option key={date} value={date}>{date.split("-").reverse().join("/")}</option>
-                            ))}
-                        </select>
-                    ) : (
-                        <Input 
-                            type="date" 
-                            className="h-14 rounded-[14px] border-[#ECECEC] bg-[#FAFAFB]" 
-                            value={appointmentData.preferredDate}
-                            onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
-                            required 
-                        />
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Data Preferencial</label>
+                        {availableDates.length > 0 ? (
+                            <select 
+                                className="w-full h-12 rounded-none border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
+                                value={appointmentData.preferredDate}
+                                onChange={e => {
+                                    const dateObj = availableDates.find(d => d.date === e.target.value);
+                                    setAppointmentData({
+                                        ...appointmentData, 
+                                        preferredDate: e.target.value,
+                                        period: dateObj?.period !== "Ambos" ? dateObj?.period || "" : ""
+                                    });
+                                }}
+                                required
+                            >
+                                <option value="" disabled>Selecione uma data</option>
+                                {availableDates.map((d: any) => (
+                                    <option key={d.date} value={d.date}>
+                                        {d.date.split("-").reverse().join("/")}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <Input 
+                                type="date" 
+                                className="h-12 rounded-none border-slate-200 bg-slate-50"
+                                value={appointmentData.preferredDate}
+                                onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
+                                required
+                            />
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Período</label>
+                      <select 
+                        className="w-full h-12 rounded-none border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
+                        value={appointmentData.period}
+                        onChange={e => setAppointmentData({...appointmentData, period: e.target.value})}
+                        required
+                        disabled={!appointmentData.preferredDate}
+                      >
+                        <option value="" disabled>Qualquer período</option>
+                        {(() => {
+                            const selected = availableDates.find(d => d.date === appointmentData.preferredDate);
+                            if (!selected || selected.period === "Ambos") {
+                                return (
+                                    <>
+                                        <option value="Manhã">Manhã</option>
+                                        <option value="Tarde">Tarde</option>
+                                    </>
+                                );
+                            }
+                            return <option value={selected.period}>{selected.period}</option>;
+                        })()}
+                      </select>
+                    </div>
                   </div>
                   <Button 
-                    type="submit"
+                    type="submit" 
                     disabled={isSubmitting}
-                    className="w-full h-16 rounded-[14px] bg-[#1C1C1C] hover:bg-slate-800 text-white font-bold shadow-xl transition-all hover:-translate-y-1 mt-4 disabled:opacity-50 disabled:translate-y-0"
+                    className="w-full h-14 rounded-none bg-primary text-white font-bold text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4"
                   >
-                    {isSubmitting ? "SOLICITANDO..." : "AGENDAR AGORA"}
+                    {isSubmitting ? "SOLICITANDO..." : "CONFIRMAR SOLICITAÇÃO"}
                   </Button>
                 </form>
               </div>
@@ -809,8 +807,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <StoreSection />
-        <LifestyleSection />
       </main>
       <Footer />
     </div>

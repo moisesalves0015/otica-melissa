@@ -1,5 +1,5 @@
 import * as React from "react";
-import { collection, onSnapshot, query, doc, updateDoc, deleteDoc, serverTimestamp, orderBy, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc, deleteDoc, serverTimestamp, orderBy, setDoc, addDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { toast } from "sonner";
 import { 
@@ -18,6 +18,9 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Appointment {
     id: string;
@@ -30,18 +33,31 @@ interface Appointment {
     createdAt: any;
 }
 
+interface AvailableDate {
+    date: string;
+    period: "Manhã" | "Tarde" | "Ambos";
+}
+
 export default function Appointments() {
     const [appointments, setAppointments] = React.useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [searchTerm, setSearchTerm] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("todos");
     const [timeFilter, setTimeFilter] = React.useState("todos");
-    const [availableDates, setAvailableDates] = React.useState<string[]>([]);
+    const [availableDates, setAvailableDates] = React.useState<AvailableDate[]>([]);
     const [newAvailableDate, setNewAvailableDate] = React.useState("");
+    const [newAvailablePeriod, setNewAvailablePeriod] = React.useState<"Manhã" | "Tarde" | "Ambos">("Ambos");
+    const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+    const [clients, setClients] = React.useState<any[]>([]);
+    const [selectedClient, setSelectedClient] = React.useState<string>("");
+    const [manualAppt, setManualAppt] = React.useState({
+        date: "",
+        period: "Manhã"
+    });
 
     React.useEffect(() => {
         const q = query(collection(db, "appointments"), orderBy("createdAt", "desc"));
-        const unsub = onSnapshot(q, (snapshot) => {
+        const unsubAppts = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ 
                 id: doc.id, 
                 ...doc.data() 
@@ -49,7 +65,31 @@ export default function Appointments() {
             setAppointments(data);
             setIsLoading(false);
         });
-        return () => unsub();
+
+        const unsubSettings = onSnapshot(doc(db, "settings", "exams"), (doc) => {
+            if (doc.exists()) {
+                const dates = doc.data().availableDates || [];
+                const today = new Date().toISOString().split('T')[0];
+                const activeDates = dates.filter((d: any) => {
+                    const dateStr = typeof d === 'string' ? d : d.date;
+                    return dateStr >= today;
+                }).map((d: any) => {
+                    if (typeof d === 'string') return { date: d, period: "Ambos" };
+                    return d;
+                });
+                setAvailableDates(activeDates);
+            }
+        });
+
+        const unsubClients = onSnapshot(collection(db, "clients"), (snap) => {
+            setClients(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        return () => {
+            unsubAppts();
+            unsubSettings();
+            unsubClients();
+        };
     }, []);
 
     const updateStatus = async (id: string, newStatus: Appointment["status"]) => {
@@ -106,11 +146,12 @@ export default function Appointments() {
 
     const handleAddAvailableDate = async () => {
         if (!newAvailableDate) return;
-        if (availableDates.includes(newAvailableDate)) {
+        if (availableDates.some(d => d.date === newAvailableDate)) {
             toast.error("Esta data já está disponível.");
             return;
         }
-        const updated = [...availableDates, newAvailableDate].sort();
+        const updated = [...availableDates, { date: newAvailableDate, period: newAvailablePeriod }]
+            .sort((a, b) => a.date.localeCompare(b.date));
         try {
             await setDoc(doc(db, "settings", "exams"), { availableDates: updated }, { merge: true });
             toast.success("Data adicionada!");
@@ -121,12 +162,39 @@ export default function Appointments() {
     };
 
     const handleRemoveAvailableDate = async (date: string) => {
-        const updated = availableDates.filter(d => d !== date);
+        const updated = availableDates.filter(d => d.date !== date);
         try {
             await setDoc(doc(db, "settings", "exams"), { availableDates: updated }, { merge: true });
             toast.success("Data removida!");
         } catch (error: any) {
             toast.error("Erro ao remover: " + error.message);
+        }
+    };
+
+    const handleManualAppt = async () => {
+        if (!selectedClient || !manualAppt.date) {
+            toast.error("Selecione o cliente e a data.");
+            return;
+        }
+        const client = clients.find(c => c.id === selectedClient);
+        try {
+            await addDoc(collection(db, "appointments"), {
+                clientId: client.id,
+                clientName: client.name,
+                name: client.name,
+                whatsapp: client.phone || client.whatsapp || "",
+                preferredDate: manualAppt.date,
+                period: manualAppt.period,
+                status: "Pendente",
+                source: "CRM (Manual)",
+                createdAt: serverTimestamp()
+            });
+            toast.success("Agendamento criado com sucesso!");
+            setIsAddModalOpen(false);
+            setSelectedClient("");
+            setManualAppt({ date: "", period: "Manhã" });
+        } catch (error: any) {
+            toast.error("Erro ao agendar: " + error.message);
         }
     };
 
@@ -143,9 +211,56 @@ export default function Appointments() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-xl font-semibold text-slate-900">Agendamentos de Exames</h1>
-                <p className="text-xs text-slate-500">Gerencie as solicitações de exames gratuitos vindas do site e portal.</p>
+            <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-xl font-semibold text-slate-900">Agendamentos de Exames</h1>
+                    <p className="text-xs text-slate-500">Gerencie as solicitações de exames gratuitos vindas do site e portal.</p>
+                </div>
+                <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                    <DialogTrigger render={
+                        <Button className="!rounded-none bg-slate-900 text-white">
+                            <Plus className="mr-2 h-4 w-4" /> Novo Agendamento
+                        </Button>
+                    } />
+                    <DialogContent className="!rounded-none">
+                        <DialogHeader>
+                            <DialogTitle>Novo Agendamento</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                            <div className="space-y-2">
+                                <Label>Cliente</Label>
+                                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                                    <SelectTrigger className="!rounded-none">
+                                        <SelectValue placeholder="Selecione um cliente" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Data</Label>
+                                    <Input type="date" value={manualAppt.date} onChange={e => setManualAppt({...manualAppt, date: e.target.value})} className="!rounded-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Período</Label>
+                                    <Select value={manualAppt.period} onValueChange={(v: any) => setManualAppt({...manualAppt, period: v})}>
+                                        <SelectTrigger className="!rounded-none">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Manhã">Manhã</SelectItem>
+                                            <SelectItem value="Tarde">Tarde</SelectItem>
+                                            <SelectItem value="Ambos">Ambos</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <Button onClick={handleManualAppt} className="w-full !rounded-none">Salvar Agendamento</Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -256,7 +371,10 @@ export default function Appointments() {
                                             <TableCell className="px-6">
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-sm text-slate-900">{a.name}</span>
-                                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Solicitado em {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleDateString('pt-BR') : 'Recentemente'}</span>
+                                                    <span className="text-[10px] text-slate-400 uppercase font-medium">
+                                                        Solicitado em {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleDateString('pt-BR') : 
+                                                                      (typeof a.createdAt === 'string' ? new Date(a.createdAt).toLocaleDateString('pt-BR') : 'Recentemente')}
+                                                    </span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -342,21 +460,36 @@ export default function Appointments() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Habilitar Nova Data</Label>
-                            <div className="flex gap-2">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase text-slate-500">Habilitar Nova Data</Label>
                                 <Input 
                                     type="date"
                                     value={newAvailableDate}
                                     onChange={e => setNewAvailableDate(e.target.value)}
-                                    className="!rounded-none border-slate-200 h-10 flex-1"
+                                    className="!rounded-none border-slate-200 h-10 w-full"
                                 />
-                                <Button 
-                                    onClick={handleAddAvailableDate}
-                                    className="!rounded-none bg-slate-900 text-white h-10 px-4"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase text-slate-500">Período Disponível</Label>
+                                <div className="flex gap-2">
+                                    <Select value={newAvailablePeriod} onValueChange={(v: any) => setNewAvailablePeriod(v)}>
+                                        <SelectTrigger className="!rounded-none border-slate-200 h-10 flex-1">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="!rounded-none">
+                                            <SelectItem value="Manhã">Manhã</SelectItem>
+                                            <SelectItem value="Tarde">Tarde</SelectItem>
+                                            <SelectItem value="Ambos">Ambos (Manhã e Tarde)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button 
+                                        onClick={handleAddAvailableDate}
+                                        className="!rounded-none bg-slate-900 text-white h-10 px-4"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
@@ -368,16 +501,19 @@ export default function Appointments() {
                                 <p className="text-xs text-slate-400 italic">Nenhuma data específica habilitada. O formulário usará o seletor padrão.</p>
                             ) : (
                                 <div className="grid grid-cols-1 gap-2">
-                                    {availableDates.map(date => (
-                                        <div key={date} className="flex items-center justify-between p-3 border border-slate-100 bg-slate-50/50 group">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                                <span className="text-sm font-medium">{date.split("-").reverse().join("/")}</span>
+                                    {availableDates.map(d => (
+                                        <div key={d.date} className="flex items-center justify-between p-3 border border-slate-100 bg-slate-50/50 group">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                    <span className="text-sm font-bold text-slate-700">{d.date?.includes("-") ? d.date.split("-").reverse().join("/") : d.date}</span>
+                                                </div>
+                                                <span className="text-[10px] font-bold uppercase text-slate-400 ml-4">{d.period}</span>
                                             </div>
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
-                                                onClick={() => handleRemoveAvailableDate(date)}
+                                                onClick={() => handleRemoveAvailableDate(d.date)}
                                                 className="h-7 w-7 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
                                                 <XCircle className="h-3.5 w-3.5" />

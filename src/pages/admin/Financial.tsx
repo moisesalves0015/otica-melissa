@@ -62,6 +62,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { calculateCreditScore, getCreditStatusColor } from "../../lib/credit";
 import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -271,62 +272,7 @@ export default function Financial() {
     }
   };
 
-  const calculateCreditScore = (client: any) => {
-      if (client.manualCreditStatus) {
-          return {
-              status: client.manualCreditStatus,
-              isManual: true,
-              reason: client.creditStatusReason || "Alterado manualmente pelo administrador."
-          };
-      }
 
-      const clientInsts = rawInstallments.filter(i => i.clientId === client.id && !i.isDownPayment);
-      
-      if (!clientInsts || clientInsts.length === 0) {
-          return { status: "Em Análise", isManual: false, reason: "Cliente sem histórico de parcelas ou compras no crediário." };
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      let hasOverdue30 = false;
-      let hasOverdue = false;
-      let hasPaid = false;
-      
-      clientInsts.forEach(inst => {
-          if (inst.status === "Pago" || inst.status === "Paga") {
-              hasPaid = true;
-          } else if (inst.status === "Pendente") {
-              if (inst.dueDate) {
-                  const [d, m, y] = inst.dueDate.split("/");
-                  if (d && m && y) {
-                      const due = new Date(Number(y), Number(m) - 1, Number(d));
-                      const diffTime = today.getTime() - due.getTime();
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      
-                      if (diffDays > 0) {
-                          hasOverdue = true;
-                          if (diffDays > 30) {
-                              hasOverdue30 = true;
-                          }
-                      }
-                  }
-              }
-          }
-      });
-
-      if (hasOverdue30) {
-          return { status: "Inadimplente", isManual: false, reason: "Possui parcelas atrasadas há mais de 30 dias." };
-      }
-      if (hasOverdue) {
-          return { status: "Atenção", isManual: false, reason: "Possui parcelas com atraso recente." };
-      }
-      if (hasPaid) {
-          return { status: "Excelente", isManual: false, reason: "Possui histórico de pagamentos sem atrasos pendentes." };
-      }
-      
-      return { status: "Bom", isManual: false, reason: "Possui compras no crediário sem atrasos pendentes." };
-  };
 
   const handleSaveCreditOverride = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1054,7 +1000,7 @@ export default function Financial() {
                                 {clients
                                     .filter(c => !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf?.includes(searchTerm))
                                     .map((client) => {
-                                        const score = calculateCreditScore(client);
+                                        const score = calculateCreditScore(client, rawInstallments);
                                         return (
                                             <TableRow key={client.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors text-[13px]">
                                                 <TableCell className="px-6 py-3">
@@ -1066,11 +1012,7 @@ export default function Financial() {
                                                 <TableCell className="px-6 py-3 text-center">
                                                     <div className="flex flex-col items-center gap-1">
                                                         <Badge className={`
-                                                            ${score.status === 'Excelente' ? 'bg-emerald-100 text-emerald-700' : ''}
-                                                            ${score.status === 'Bom' ? 'bg-blue-100 text-blue-700' : ''}
-                                                            ${score.status === 'Em Análise' ? 'bg-slate-100 text-slate-700' : ''}
-                                                            ${score.status === 'Atenção' ? 'bg-amber-100 text-amber-700' : ''}
-                                                            ${score.status === 'Inadimplente' ? 'bg-red-100 text-red-700' : ''}
+                                                            ${getCreditStatusColor(score.status)}
                                                             border-none shadow-none font-bold uppercase tracking-wider text-[9px] px-2 py-0.5
                                                         `}>
                                                             {score.status}
@@ -1131,8 +1073,8 @@ export default function Financial() {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Status pelo Algoritmo</p>
-                                        <Badge className="bg-slate-100 text-slate-700 border-none shadow-none text-xs px-3 py-1 uppercase tracking-widest">
-                                            {editingCreditClient && !editingCreditClient.manualCreditStatus ? calculateCreditScore(editingCreditClient).status : calculateCreditScore({...editingCreditClient, manualCreditStatus: null}).status}
+                                        <Badge className={`${getCreditStatusColor(editingCreditClient && !editingCreditClient.manualCreditStatus ? calculateCreditScore(editingCreditClient, rawInstallments).status : calculateCreditScore({...editingCreditClient, manualCreditStatus: null}, rawInstallments).status)} border-none shadow-none text-xs px-3 py-1 uppercase tracking-widest`}>
+                                            {editingCreditClient && !editingCreditClient.manualCreditStatus ? calculateCreditScore(editingCreditClient, rawInstallments).status : calculateCreditScore({...editingCreditClient, manualCreditStatus: null}, rawInstallments).status}
                                         </Badge>
                                     </div>
 
