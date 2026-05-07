@@ -654,6 +654,17 @@ export default function LandingPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 
+  const formatWhatsApp = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/^(\d{2})(\d)/g, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2")
+        .substring(0, 15);
+    }
+    return value.substring(0, 15);
+  };
+
   React.useEffect(() => {
     const q = query(collection(db, "landing_products"), orderBy("order", "asc"));
     const unsubProducts = onSnapshot(q, (snapshot) => {
@@ -712,20 +723,20 @@ export default function LandingPage() {
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="max-w-md !rounded-[30px] p-10 border-none shadow-2xl">
           <div className="flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-green-50 rounded-[25px] flex items-center justify-center mb-6">
-                <CheckCircle2 className="w-10 h-10 text-green-500" />
+            <div className="w-24 h-24 bg-primary rounded-[30px] flex items-center justify-center mb-8 shadow-xl shadow-primary/20">
+                <img src="/logo.png" alt="Ótica Melissa" className="w-14 h-auto brightness-0 invert" />
             </div>
             <DialogHeader>
-              <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2">Solicitação Enviada!</DialogTitle>
+              <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2">Quase Tudo Pronto!</DialogTitle>
               <DialogDescription className="text-slate-500 font-medium text-lg leading-relaxed">
-                Recebemos seu pedido de agendamento. Nossa equipe entrará em contato via **WhatsApp** em breve para confirmar o horário.
+                Recebemos sua solicitação de agendamento. Nossa equipe entrará em contato via WhatsApp em breve para confirmar o melhor horário para você.
               </DialogDescription>
             </DialogHeader>
             <Button 
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full h-14 mt-10 rounded-[20px] bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-xs"
+                className="w-full h-14 mt-10 rounded-[20px] bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-xs shadow-xl shadow-slate-200 transition-all active:scale-95"
             >
-                VOLTAR PARA O SITE
+                ENTENDIDO, ATÉ LOGO!
             </Button>
           </div>
         </DialogContent>
@@ -843,7 +854,7 @@ export default function LandingPage() {
                         placeholder="(00) 00000-0000" 
                         className="h-12 rounded-[20px] border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
                         value={appointmentData.whatsapp}
-                        onChange={e => setAppointmentData({...appointmentData, whatsapp: e.target.value})}
+                        onChange={e => setAppointmentData({...appointmentData, whatsapp: formatWhatsApp(e.target.value)})}
                         required 
                       />
                     </div>
