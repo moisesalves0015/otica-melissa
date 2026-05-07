@@ -46,6 +46,14 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { CheckCircle2 } from "lucide-react";
 
 // --- Mock Data ---
 
@@ -77,7 +85,7 @@ const NAV_MENU_DATA: NavMenuItem[] = [
 ];
 
 const CATEGORIES_DATA = [
-  { name: "Óculos de Grau", href: "/categoria/oculos-de-grau", image: "/cat_grau_cut.jpg", imgClass: "w-full max-w-[280px]" },
+  { name: "Óculos de Grau", href: "/categoria/oculos-de-grau", image: "/cat_grau_cut.jpg", imgClass: "w-[85%] max-w-[240px]" },
   { name: "Óculos de Sol", href: "/categoria/oculos-de-sol", image: "/cat_sol_cut.jpg", imgClass: "w-full max-w-[280px]" },
   { name: "Lentes de Contato", href: "/categoria/lentes-de-contato", image: "/cat_lentes_cut.jpg", imgClass: "w-[85%] max-w-[240px]" },
   { name: "Lançamentos", href: "/categoria/lancamentos", image: "/cat_lancamentos_cut.jpg", imgClass: "w-full max-w-[280px]" },
@@ -283,7 +291,11 @@ function Hero() {
                 As melhores armações com lentes de alta tecnologia.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-5 items-center">
-                <Button size="lg" className="rounded-[20px] h-12 px-10 text-[11px] font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 uppercase tracking-[0.15em] group">
+                <Button 
+                    size="lg" 
+                    className="rounded-[20px] h-12 px-10 text-[11px] font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 uppercase tracking-[0.15em] group"
+                    onClick={() => window.location.href = "/marketplace"}
+                >
                     Conhecer Coleção 
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -320,7 +332,7 @@ function Hero() {
 
 function Benefits() {
   return (
-    <section className="py-3 md:py-5 bg-red-600">
+    <section className="py-4 md:py-6 bg-red-600">
       <div className="w-full mx-auto px-0 lg:max-w-[1440px] lg:px-6">
         <ResponsiveSlider autoplay={true} autoplayInterval={3500} dotClassName="bg-white/30">
           {BENEFITS.map((benefit, i) => (
@@ -330,14 +342,12 @@ function Benefits() {
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="flex items-center gap-2 p-3 h-full rounded-[20px] bg-white shadow-xl shadow-red-900/10 border border-white/5 transition-all cursor-pointer group"
+              className="flex items-center justify-center gap-4 p-2 h-full transition-all cursor-pointer group"
             >
-              <div className="h-8 w-8 rounded-[10px] bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
-                <benefit.icon className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-[10px] md:text-xs uppercase tracking-tight text-slate-900">{benefit.title}</h3>
-                <p className="text-slate-500 text-[9px] leading-tight mt-0.5">{benefit.description}</p>
+              <benefit.icon className="h-7 w-7 md:h-9 md:w-9 text-white shrink-0 transition-transform group-hover:scale-110" />
+              <div className="flex flex-col">
+                <h3 className="font-black text-[12px] md:text-[14px] uppercase tracking-wider text-white leading-none">{benefit.title}</h3>
+                <p className="text-white/80 text-[10px] md:text-[11px] leading-tight mt-1 font-medium">{benefit.description}</p>
               </div>
             </motion.div>
           ))}
@@ -424,7 +434,10 @@ function QualitySection() {
                             Na Ótica Melissa, unimos a tradição do atendimento personalizado com a mais alta tecnologia em lentes e armações. Trabalhamos com as melhores marcas do mercado para garantir não apenas estilo, mas a saúde total da sua visão.
                         </p>
                     </div>
-                    <Button className="rounded-[20px] bg-primary text-white hover:bg-primary/90 h-14 px-12 font-bold group uppercase tracking-widest text-xs transition-all border-none">
+                    <Button 
+                        className="rounded-[20px] bg-primary text-white hover:bg-primary/90 h-14 px-12 font-bold group uppercase tracking-widest text-xs transition-all border-none"
+                        onClick={() => window.location.href = "/marketplace"}
+                    >
                         Ver Coleção Completa <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </motion.div>
@@ -459,7 +472,14 @@ function StoreSection() {
                             </div>
                             <div>
                                 <h4 className="font-bold text-xl uppercase tracking-tighter text-slate-900">Onde Estamos</h4>
-                                <p className="text-slate-500 font-medium">R. Severino da Silva, 40 - Campo Grande, Rio de Janeiro - RJ, 23075-520</p>
+                                <a 
+                                    href="https://www.google.com/maps/dir/?api=1&destination=R.+Severino+da+Silva,+40+-+Campo+Grande,+Rio+de+Janeiro+-+RJ,+23075-520" 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="text-slate-500 font-medium hover:text-primary transition-colors"
+                                >
+                                    R. Severino da Silva, 40 - Campo Grande, Rio de Janeiro - RJ, 23075-520
+                                </a>
                             </div>
                         </div>
                         <div className="flex gap-6 items-start group">
@@ -473,8 +493,12 @@ function StoreSection() {
                         </div>
                     </div>
 
-                    <Button size="lg" className="rounded-[20px] px-12 h-14 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-200 group uppercase tracking-widest text-xs transition-all">
-                        Agendar Visita <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <Button 
+                        size="lg" 
+                        className="rounded-[20px] px-12 h-14 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-200 group uppercase tracking-widest text-xs transition-all"
+                        onClick={() => window.open("https://www.google.com/maps/dir/?api=1&destination=R.+Severino+da+Silva,+40+-+Campo+Grande,+Rio+de+Janeiro+-+RJ,+23075-520", "_blank")}
+                    >
+                        COMO CHEGAR <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </motion.div>
 
@@ -501,8 +525,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 mb-16">
           <div className="md:col-span-5 space-y-8">
             <div className="flex items-center gap-3">
-                <div className="bg-white p-1.5 rounded-none">
-                    <img src="/logo.png" alt="Ótica Melissa" className="h-6 w-auto" />
+                <div className="rounded-none">
+                    <img src="/logo.png" alt="Ótica Melissa" className="h-10 w-auto brightness-0 invert" />
                 </div>
                 <span className="text-xl font-black text-white uppercase tracking-tighter">Ótica Melissa</span>
             </div>
@@ -571,21 +595,43 @@ export function Footer() {
 }
 
 const TESTIMONIALS = [
-  { name: "Ana Souza", text: "Atendimento impecável! Encontrei a armação perfeita e as lentes ficaram ótimas. Super recomendo." },
-  { name: "Carlos Ferreira", text: "A melhor ótica da cidade. Profissionais qualificados e um ambiente super agradável." },
-  { name: "Mariana Luz", text: "Preços justos e qualidade excepcional. O agendamento online facilitou muito a minha vida." }
+  { 
+    name: "Ana Beatriz", 
+    image: "/testimonial_1_1778168858266.png",
+    text: "Fiquei impressionada com o visagismo! Encontrei óculos que realmente combinam com meu rosto e o atendimento foi super acolhedor." 
+  },
+  { 
+    name: "Ricardo Oliveira", 
+    image: "/testimonial_2_1778168883053.png",
+    text: "Melhor ótica da região, sem dúvidas. As lentes multifocais ficaram perfeitas e o preço foi muito justo pelo nível da tecnologia." 
+  },
+  { 
+    name: "Juliana Mendes", 
+    image: "/testimonial_3_1778168908314.png",
+    text: "O agendamento pelo site é muito prático. Fiz o exame gratuito no sábado e já saí com minha armação nova escolhida. Nota 10!" 
+  }
 ];
 
 function TestimonialSection() {
   return (
-    <section className="py-16 px-6 bg-white">
-      <div className="bg-slate-900 border-t-4 border-primary mx-auto py-16 px-10 rounded-[20px] max-w-[1000px] text-center text-white shadow-[0px_4px_20px_rgba(0,0,0,0.1)]">
-        <h2 className="text-3xl md:text-[2.5rem] font-[700] mb-10 text-white">O que dizem nossos clientes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <section className="py-24 px-6 bg-white">
+      <div className="bg-slate-900 border-t-4 border-primary mx-auto py-20 px-6 md:px-16 rounded-[20px] max-w-[1200px] text-center text-white shadow-[0px_30px_60px_rgba(0,0,0,0.2)]">
+        <h2 className="text-3xl md:text-[3rem] font-black mb-16 text-white uppercase tracking-tighter">O que dizem nossos clientes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="bg-white/5 border border-white/10 p-6 rounded-[10px] shadow-[0px_2px_10px_rgba(0,0,0,0.05)] text-left flex flex-col justify-between hover:bg-white/10 transition-all cursor-pointer">
-              <p className="text-[1.1rem] leading-relaxed text-white mb-6 italic">"{t.text}"</p>
-              <span className="text-[1rem] text-slate-400 font-medium block mt-auto">- {t.name}</span>
+            <div key={i} className="bg-white/5 border border-white/10 p-8 rounded-[20px] shadow-[0px_10px_30px_rgba(0,0,0,0.1)] text-left flex flex-col items-start hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-[15px] overflow-hidden border-2 border-primary/30 group-hover:border-primary transition-colors">
+                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                    <span className="text-[1.1rem] text-white font-bold block">{t.name}</span>
+                    <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(s => <span key={s} className="text-primary text-[10px]">★</span>)}
+                    </div>
+                </div>
+              </div>
+              <p className="text-[1rem] leading-relaxed text-slate-300 mb-2 italic">"{t.text}"</p>
             </div>
           ))}
         </div>
@@ -606,6 +652,7 @@ export default function LandingPage() {
   });
   const [availableDates, setAvailableDates] = React.useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 
   React.useEffect(() => {
     const q = query(collection(db, "landing_products"), orderBy("order", "asc"));
@@ -647,7 +694,7 @@ export default function LandingPage() {
             source: "Landing Page",
             createdAt: serverTimestamp()
         });
-        toast.success(`Agendamento solicitado para ${appointmentData.preferredDate?.includes("-") ? appointmentData.preferredDate.split("-").reverse().join("/") : appointmentData.preferredDate} (${appointmentData.period})! Aguarde nossa confirmação via WhatsApp.`);
+        setShowSuccessModal(true);
         setAppointmentData({ name: "", whatsapp: "", preferredDate: "", period: "" });
     } catch (error: any) {
         toast.error("Erro ao solicitar agendamento: " + error.message);
@@ -661,6 +708,28 @@ export default function LandingPage() {
       <Toaster position="top-center" />
       <AnnouncementBar />
       <Header />
+
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="max-w-md !rounded-[30px] p-10 border-none shadow-2xl">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 bg-green-50 rounded-[25px] flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2">Solicitação Enviada!</DialogTitle>
+              <DialogDescription className="text-slate-500 font-medium text-lg leading-relaxed">
+                Recebemos seu pedido de agendamento. Nossa equipe entrará em contato via **WhatsApp** em breve para confirmar o horário.
+              </DialogDescription>
+            </DialogHeader>
+            <Button 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full h-14 mt-10 rounded-[20px] bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-xs"
+            >
+                VOLTAR PARA O SITE
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <main className="flex-1 overflow-x-hidden max-w-[1440px] mx-auto w-full">
         <Hero />
         <Benefits />
