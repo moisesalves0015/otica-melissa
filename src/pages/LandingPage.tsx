@@ -668,6 +668,9 @@ export default function LandingPage() {
         {/* CATEGORY ICONS SECTION */}
         <section className="py-12 bg-white">
           <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Categorias</h2>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
               {CATEGORIES_DATA.map((cat, i) => {
                 return (
