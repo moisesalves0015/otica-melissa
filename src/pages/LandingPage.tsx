@@ -149,11 +149,11 @@ export function Header() {
         <div className="flex items-center gap-4 shrink-0">
           <Sheet>
             <SheetTrigger render={
-              <Button variant="ghost" size="icon" className="lg:hidden hover:bg-primary/5 rounded-none">
+              <Button variant="ghost" size="icon" className="lg:hidden hover:bg-primary/5 rounded-[20px]">
                 <Menu className="h-5 w-5 text-slate-700" />
               </Button>
             } />
-            <SheetContent side="left" className="w-[300px] p-0 border-r-0 rounded-none">
+            <SheetContent side="left" className="w-[300px] p-0 border-r-0 rounded-r-[20px]">
               <div className="p-6 border-b border-border/50">
                 <img src="/logo.png" alt="Ótica Melissa" className="h-10 w-auto object-contain" />
               </div>
@@ -162,7 +162,7 @@ export function Header() {
                   <a
                     key={item.name}
                     href={item.href}
-                    className="flex items-center justify-between p-3 text-sm font-bold hover:bg-muted rounded-lg transition-colors"
+                    className="flex items-center justify-between p-3 text-sm font-bold hover:bg-muted rounded-[20px] transition-colors"
                   >
                     {item.name}
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -187,10 +187,10 @@ export function Header() {
               <NavigationMenuItem key={item.name}>
                 {item.categories ? (
                   <>
-                    <NavigationMenuTrigger className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-none hover:bg-slate-100 data-[state=open]:bg-slate-100 text-slate-600">
+                    <NavigationMenuTrigger className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-[20px] hover:bg-slate-100 data-[state=open]:bg-slate-100 text-slate-600">
                       {item.name}
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent className="p-0 md:w-[700px] lg:w-[900px] bg-slate-900 text-white rounded-none border-none overflow-hidden shadow-2xl">
+                    <NavigationMenuContent className="p-0 md:w-[700px] lg:w-[900px] bg-slate-900 text-white rounded-[20px] border-none overflow-hidden shadow-2xl">
                       <div className="grid grid-cols-12">
                          <div className="col-span-8 p-10 grid grid-cols-3 gap-8">
                           {item.categories.map((cat) => (
@@ -233,11 +233,11 @@ export function Header() {
                 ) : (
                   <NavigationMenuLink
                     href={item.href}
-                    className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-none hover:bg-slate-100 flex items-center gap-2 text-slate-600 hover:text-slate-900"
+                    className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-[20px] hover:bg-slate-100 flex items-center gap-2 text-slate-600 hover:text-slate-900"
                   >
                     {item.name}
                     {item.badge && (
-                      <Badge className="bg-primary text-white text-[9px] px-2 h-4 flex items-center justify-center font-bold rounded-none border-none shadow-sm">
+                      <Badge className="bg-primary text-white text-[9px] px-2 h-4 flex items-center justify-center font-bold rounded-[20px] border-none shadow-sm">
                         {item.badge}
                       </Badge>
                     )}
@@ -254,7 +254,7 @@ export function Header() {
             <Input
               type="search"
               placeholder="Encontre sua armação..."
-              className="pl-10 w-[200px] focus:w-[280px] h-11 bg-slate-100 border-none rounded-none transition-all text-sm focus:ring-0 focus:border-primary"
+              className="pl-10 w-[200px] focus:w-[280px] h-11 bg-slate-100 border-none rounded-[20px] transition-all text-sm focus:ring-0 focus:border-primary"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           </div>
@@ -368,7 +368,7 @@ export function ProductCard({ product }: { product: any; key?: React.Key }) {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           <div className="absolute top-3 left-3">
-            {product.badge && <Badge className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-none shadow-lg">{product.badge}</Badge>}
+            {product.badge && <Badge className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-[10px] shadow-lg">{product.badge}</Badge>}
           </div>
         </div>
         <div className="space-y-2">
@@ -525,7 +525,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 mb-16">
           <div className="md:col-span-5 space-y-8">
             <div className="flex items-center gap-3">
-                <div className="rounded-none">
+                <div className="rounded-[10px] overflow-hidden">
                     <img src="/logo.png" alt="Ótica Melissa" className="h-10 w-auto brightness-0 invert" />
                 </div>
                 <span className="text-xl font-black text-white uppercase tracking-tighter">Ótica Melissa</span>
@@ -536,7 +536,7 @@ export function Footer() {
             </p>
             <div className="flex gap-4">
                 {['Instagram', 'Facebook', 'WhatsApp'].map((social) => (
-                    <a key={social} href="#" className="w-10 h-10 rounded-none border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">
+                    <a key={social} href="#" className="w-10 h-10 rounded-[15px] border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">
                         <span className="sr-only">{social}</span>
                         {social === 'Instagram' && <Instagram className="h-4 w-4" />}
                         {social === 'Facebook' && <Facebook className="h-4 w-4" />}
@@ -795,7 +795,7 @@ export default function LandingPage() {
         </section>
 
         {/* Marquee Desconto Banner */}
-        <div className="w-full bg-white border-y border-slate-100 py-8 overflow-hidden flex items-center relative z-20">
+        <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] bg-white border-y border-slate-100 py-8 overflow-hidden flex items-center z-20">
           <motion.div 
             className="flex w-max"
             animate={{ x: ["0%", "-50%"] }}
@@ -934,7 +934,7 @@ export default function LandingPage() {
         <TestimonialSection />
 
         {/* Marquee Preços Banner */}
-        <div className="w-full bg-white border-t border-slate-100 py-8 overflow-hidden flex items-center relative z-20">
+        <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] bg-white border-t border-slate-100 py-8 overflow-hidden flex items-center z-20">
           <motion.div 
             className="flex w-max"
             animate={{ x: ["0%", "-50%"] }}
