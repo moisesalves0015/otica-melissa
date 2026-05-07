@@ -24,6 +24,9 @@ import {
   Zap,
   Clock,
   Package,
+  Sun,
+  Disc,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,8 +72,15 @@ type NavMenuItem = {
 const NAV_MENU_DATA: NavMenuItem[] = [
   { name: "Óculos de Grau", href: "#" },
   { name: "Óculos de Sol", href: "#" },
-  { name: "Lentes", href: "#" },
+  { name: "Lentes de Contato", href: "#" },
   { name: "Lançamentos", href: "#", badge: "Novo" },
+];
+
+const CATEGORIES_DATA = [
+  { name: "Óculos de Grau", icon: Glasses, color: "from-blue-100 to-blue-50 text-blue-600 border-blue-200" },
+  { name: "Óculos de Sol", icon: Sun, color: "from-orange-100 to-orange-50 text-orange-600 border-orange-200" },
+  { name: "Lentes de Contato", icon: Disc, color: "from-teal-100 to-teal-50 text-teal-600 border-teal-200" },
+  { name: "Lançamentos", icon: Sparkles, color: "from-purple-100 to-purple-50 text-purple-600 border-purple-200" },
 ];
 
 const BENEFITS = [
@@ -247,9 +257,12 @@ function Header() {
   );
 }
 
+const MARQUEE_DESCONTO = Array(8).fill("/selo_desc_exclu.png");
+const MARQUEE_PRECOS = Array(8).fill("/selo_melhores_precos.png");
+
 function Hero() {
   return (
-    <section className="relative w-full pt-6 md:pt-16 pb-0 overflow-hidden bg-white">
+    <section className="relative w-full pt-6 md:pt-16 pb-0 overflow-hidden bg-white flex flex-col">
       <div className="w-full relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-0">
           <motion.div
@@ -292,38 +305,6 @@ function Hero() {
             className="flex justify-center relative py-0"
           >
             <div className="relative w-full max-w-[280px] md:max-w-xs lg:max-w-sm z-10 mx-auto md:mx-0">
-              <motion.img
-                src="/selo_desc_exclu.png"
-                alt="Desconto Exclusivo"
-                className="absolute top-[10%] -left-20 md:-left-36 w-32 md:w-44 opacity-100 pointer-events-none z-30 drop-shadow-2xl"
-                animate={{ y: [0, -15, 0], rotate: [-2, 2, -2] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              />
-
-              <motion.img
-                src="/selo_melhores_precos.png"
-                alt="Melhores Preços"
-                className="absolute bottom-[5%] -right-24 md:-right-52 w-36 md:w-52 opacity-100 pointer-events-none z-30 drop-shadow-2xl"
-                animate={{ y: [0, 15, 0], rotate: [2, -2, 2] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              />
-
-              <motion.img
-                src="/logo.png"
-                alt="Logo"
-                className="absolute top-[2%] -right-12 md:-right-24 w-20 md:w-28 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-                animate={{ y: [0, 10, 0], rotate: [-5, 5, -5] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              />
-
-              <motion.img
-                src="/logo.png"
-                alt="Logo"
-                className="absolute bottom-[15%] -left-12 md:-left-28 w-20 md:w-28 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-                animate={{ y: [0, -10, 0], rotate: [5, -5, 5] }}
-                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-              />
-
               <img 
                   src="/hero_woman_no_bg.png" 
                   alt="Ótica Melissa Collection" 
@@ -478,7 +459,7 @@ function StoreSection() {
                             </div>
                             <div>
                                 <h4 className="font-bold text-xl uppercase tracking-tighter text-slate-900">Onde Estamos</h4>
-                                <p className="text-slate-500 font-medium">Av. Manoel Dias da Silva, 1234 - Pituba, Salvador - BA</p>
+                                <p className="text-slate-500 font-medium">R. Severino da Silva, 40 - Campo Grande, Rio de Janeiro - RJ, 23075-520</p>
                             </div>
                         </div>
                         <div className="flex gap-6 items-start group">
@@ -487,7 +468,7 @@ function StoreSection() {
                             </div>
                             <div>
                                 <h4 className="font-bold text-xl uppercase tracking-tighter text-slate-900">Funcionamento</h4>
-                                <p className="text-slate-500 font-medium">Segunda a Sexta: 08:30h às 18:30h | Sábados: 09h às 13h</p>
+                                <p className="text-slate-500 font-medium">Segunda a Sexta: 09h às 18h | Sábados: 09h às 14h</p>
                             </div>
                         </div>
                     </div>
@@ -557,9 +538,9 @@ function Footer() {
                 <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
               ))}
               <li className="pt-2">
-                <a href="#" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all">
+                <a href="https://wa.me/5521966123495" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all">
                     <MessageSquare size={16} />
-                    WhatsApp: (71) 99999-9999
+                    WhatsApp: (21) 96612-3495
                 </a>
               </li>
             </ul>
@@ -684,6 +665,25 @@ export default function LandingPage() {
         <Hero />
         <Benefits />
         
+        {/* CATEGORY ICONS SECTION */}
+        <section className="py-12 bg-white">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+              {CATEGORIES_DATA.map((cat, i) => {
+                const Icon = cat.icon;
+                return (
+                  <a key={i} href="#" className="flex flex-col items-center gap-4 group">
+                    <div className={`w-24 h-24 md:w-36 md:h-36 rounded-[30px] border shadow-sm bg-gradient-to-br ${cat.color} flex items-center justify-center transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl`}>
+                      <Icon className="w-10 h-10 md:w-16 md:h-16 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm" strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[10px] md:text-sm font-bold text-slate-700 uppercase tracking-widest text-center">{cat.name}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* NEW ARRIVALS WITH DYNAMIC DATA */}
         <section className="py-16 bg-slate-50">
           <div className="max-w-[1440px] mx-auto px-0 lg:px-10">
@@ -709,6 +709,28 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Marquee Desconto Banner */}
+        <div className="w-full bg-white border-y border-slate-100 py-8 overflow-hidden flex items-center relative z-20">
+          <motion.div 
+            className="flex w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 25, ease: "linear", repeat: Infinity }}
+          >
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-12 md:gap-16 items-center pr-12 md:pr-16 shrink-0">
+                {MARQUEE_DESCONTO.map((src, j) => (
+                  <img 
+                    key={j} 
+                    src={src} 
+                    alt="Desconto Exclusivo" 
+                    className="h-12 md:h-20 w-auto object-contain drop-shadow-md shrink-0" 
+                  />
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        </div>
 
         <QualitySection />
         <StoreSection />
@@ -826,8 +848,43 @@ export default function LandingPage() {
         </section>
 
         <TestimonialSection />
+
+        {/* Marquee Preços Banner */}
+        <div className="w-full bg-white border-t border-slate-100 py-8 overflow-hidden flex items-center relative z-20">
+          <motion.div 
+            className="flex w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 25, ease: "linear", repeat: Infinity }}
+          >
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-12 md:gap-16 items-center pr-12 md:pr-16 shrink-0">
+                {MARQUEE_PRECOS.map((src, j) => (
+                  <img 
+                    key={j} 
+                    src={src} 
+                    alt="Melhores Preços" 
+                    className="h-12 md:h-20 w-auto object-contain drop-shadow-md shrink-0" 
+                  />
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        </div>
       </main>
       <Footer />
+
+      {/* Floating WhatsApp Button */}
+      <a 
+        href="https://wa.me/5521966123495" 
+        target="_blank" 
+        rel="noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-[20px] shadow-[0_8px_30px_rgba(37,211,102,0.4)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
+        aria-label="Falar no WhatsApp"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+        </svg>
+      </a>
     </div>
   );
 }
