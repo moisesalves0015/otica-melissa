@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
+import CategoryPage from "./pages/CategoryPage";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Clients from "./pages/admin/Clients";
@@ -30,6 +31,7 @@ export default function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/categoria/:categoryId" element={<CategoryPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/cliente/login" element={<ClientLogin />} />
           <Route element={<ClientProtectedRoute />}>

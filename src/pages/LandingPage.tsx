@@ -70,17 +70,17 @@ type NavMenuItem = {
 };
 
 const NAV_MENU_DATA: NavMenuItem[] = [
-  { name: "Óculos de Grau", href: "#" },
-  { name: "Óculos de Sol", href: "#" },
-  { name: "Lentes de Contato", href: "#" },
-  { name: "Lançamentos", href: "#", badge: "Novo" },
+  { name: "Óculos de Grau", href: "/categoria/oculos-de-grau" },
+  { name: "Óculos de Sol", href: "/categoria/oculos-de-sol" },
+  { name: "Lentes de Contato", href: "/categoria/lentes-de-contato" },
+  { name: "Lançamentos", href: "/categoria/lancamentos", badge: "Novo" },
 ];
 
 const CATEGORIES_DATA = [
-  { name: "Óculos de Grau", icon: Glasses, color: "from-blue-100 to-blue-50 text-blue-600 border-blue-200" },
-  { name: "Óculos de Sol", icon: Sun, color: "from-orange-100 to-orange-50 text-orange-600 border-orange-200" },
-  { name: "Lentes de Contato", icon: Disc, color: "from-teal-100 to-teal-50 text-teal-600 border-teal-200" },
-  { name: "Lançamentos", icon: Sparkles, color: "from-purple-100 to-purple-50 text-purple-600 border-purple-200" },
+  { name: "Óculos de Grau", href: "/categoria/oculos-de-grau", image: "/cat_grau_cut.jpg", imgClass: "w-full max-w-[280px]" },
+  { name: "Óculos de Sol", href: "/categoria/oculos-de-sol", image: "/cat_sol_cut.jpg", imgClass: "w-full max-w-[280px]" },
+  { name: "Lentes de Contato", href: "/categoria/lentes-de-contato", image: "/cat_lentes_cut.jpg", imgClass: "w-[85%] max-w-[240px]" },
+  { name: "Lançamentos", href: "/categoria/lancamentos", image: "/cat_lancamentos_cut.jpg", imgClass: "w-full max-w-[280px]" },
 ];
 
 const BENEFITS = [
@@ -94,7 +94,7 @@ const BENEFITS = [
 
 // CATEGORIES and STORES removed to simplify the landing page as requested
 
-function AnnouncementBar() {
+export function AnnouncementBar() {
   const [index, setIndex] = React.useState(0);
 
   React.useEffect(() => {
@@ -121,7 +121,7 @@ function AnnouncementBar() {
   );
 }
 
-function Header() {
+export function Header() {
   const [isScrolled, setIsScrolled] = React.useState(false);
 
   React.useEffect(() => {
@@ -347,7 +347,7 @@ function Benefits() {
   );
 }
 
-function ProductCard({ product }: { product: any }) {
+export function ProductCard({ product }: { product: any; key?: React.Key }) {
   return (
     <Card className="group relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-[20px] bg-white hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500">
       <CardContent className="p-4">
@@ -494,7 +494,7 @@ function StoreSection() {
     );
 }
 
-function Footer() {
+export function Footer() {
   return (
     <footer className="bg-slate-900 text-slate-400 py-16 md:py-24 border-t border-slate-800 mt-auto">
       <div className="max-w-[1200px] mx-auto px-6">
@@ -670,13 +670,14 @@ export default function LandingPage() {
           <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
               {CATEGORIES_DATA.map((cat, i) => {
-                const Icon = cat.icon;
                 return (
-                  <a key={i} href="#" className="flex flex-col items-center gap-4 group">
-                    <div className={`w-24 h-24 md:w-36 md:h-36 rounded-[30px] border shadow-sm bg-gradient-to-br ${cat.color} flex items-center justify-center transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl`}>
-                      <Icon className="w-10 h-10 md:w-16 md:h-16 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-sm" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-[10px] md:text-sm font-bold text-slate-700 uppercase tracking-widest text-center">{cat.name}</span>
+                  <a key={i} href={cat.href} className="flex flex-col items-center justify-end group gap-1">
+                    <img 
+                      src={cat.image} 
+                      alt={cat.name} 
+                      className={`${cat.imgClass} h-auto object-contain mix-blend-multiply transition-all duration-500 group-hover:-translate-y-3 group-hover:scale-105`} 
+                    />
+                    <span className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-800 uppercase tracking-widest group-hover:text-primary transition-colors text-center">{cat.name}</span>
                   </a>
                 );
               })}

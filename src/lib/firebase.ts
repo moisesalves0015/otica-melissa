@@ -18,6 +18,7 @@ const app = initializeApp(firebaseConfig);
 
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Opcional: só iniciar o Analytics se estiver no navegador
 let analytics = null;
@@ -27,6 +28,7 @@ if (typeof window !== "undefined" && import.meta.env.VITE_FIREBASE_MEASUREMENT_I
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export { app, analytics };
 export default app;
