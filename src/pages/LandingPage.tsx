@@ -252,7 +252,6 @@ function Hero() {
     <section className="relative w-full pt-6 md:pt-16 pb-0 overflow-hidden bg-white">
       <div className="w-full relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-0">
-          {/* Text Content - Centered in its 50% half */}
           <motion.div
             initial={{ x: -20, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
@@ -271,7 +270,7 @@ function Hero() {
                 As melhores armações com lentes de alta tecnologia.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-5 items-center">
-                <Button size="lg" className="rounded-none h-12 px-10 text-[11px] font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 uppercase tracking-[0.15em] group">
+                <Button size="lg" className="rounded-[20px] h-12 px-10 text-[11px] font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 uppercase tracking-[0.15em] group">
                     Conhecer Coleção 
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -285,7 +284,6 @@ function Hero() {
             </div>
           </motion.div>
 
-          {/* Image - Centered in its 50% half */}
           <motion.div 
             initial={{ x: 20, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
@@ -294,40 +292,36 @@ function Hero() {
             className="flex justify-center relative py-0"
           >
             <div className="relative w-full max-w-[280px] md:max-w-xs lg:max-w-sm z-10 mx-auto md:mx-0">
-              {/* Floating Badge 1 - Top Left */}
               <motion.img
                 src="/selo_desc_exclu.png"
                 alt="Desconto Exclusivo"
-                className="absolute top-12 -left-8 md:-left-20 -translate-y-1/2 w-28 md:w-40 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[10%] -left-20 md:-left-36 w-32 md:w-44 opacity-100 pointer-events-none z-30 drop-shadow-2xl"
+                animate={{ y: [0, -15, 0], rotate: [-2, 2, -2] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               />
 
-              {/* Floating Badge 2 - Bottom Right */}
               <motion.img
                 src="/selo_melhores_precos.png"
                 alt="Melhores Preços"
-                className="absolute bottom-2 md:bottom-4 -right-16 md:-right-32 w-32 md:w-48 opacity-100 pointer-events-none z-30 drop-shadow-xl"
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                className="absolute bottom-[5%] -right-24 md:-right-52 w-36 md:w-52 opacity-100 pointer-events-none z-30 drop-shadow-2xl"
+                animate={{ y: [0, 15, 0], rotate: [2, -2, 2] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
               />
 
-              {/* Floating Logo 1 - Top Right */}
               <motion.img
                 src="/logo.png"
                 alt="Logo"
-                className="absolute top-8 -right-8 md:-right-16 w-24 md:w-32 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-                animate={{ y: [0, 8, 0], rotate: [-2, 2, -2] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute top-[2%] -right-12 md:-right-24 w-20 md:w-28 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+                animate={{ y: [0, 10, 0], rotate: [-5, 5, -5] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
               />
 
-              {/* Floating Logo 2 - Bottom Left */}
               <motion.img
                 src="/logo.png"
                 alt="Logo"
-                className="absolute bottom-16 -left-8 md:-left-16 w-24 md:w-32 opacity-100 pointer-events-none z-20 drop-shadow-xl"
-                animate={{ y: [0, -8, 0], rotate: [2, -2, 2] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                className="absolute bottom-[15%] -left-12 md:-left-28 w-20 md:w-28 opacity-100 pointer-events-none z-20 drop-shadow-xl"
+                animate={{ y: [0, -10, 0], rotate: [5, -5, 5] }}
+                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
               />
 
               <img 
@@ -355,9 +349,9 @@ function Benefits() {
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="flex items-center gap-2 p-3 h-full rounded-none bg-white shadow-xl shadow-red-900/10 border border-white/5 transition-all cursor-pointer group"
+              className="flex items-center gap-2 p-3 h-full rounded-[20px] bg-white shadow-xl shadow-red-900/10 border border-white/5 transition-all cursor-pointer group"
             >
-              <div className="h-8 w-8 rounded-none bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
+              <div className="h-8 w-8 rounded-[10px] bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">
                 <benefit.icon className="h-4 w-4" />
               </div>
               <div>
@@ -374,9 +368,9 @@ function Benefits() {
 
 function ProductCard({ product }: { product: any }) {
   return (
-    <Card className="group relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-none bg-white hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500">
+    <Card className="group relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-[20px] bg-white hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500">
       <CardContent className="p-4">
-        <div className="relative aspect-[16/11] overflow-hidden rounded-none bg-slate-50 mb-4 flex items-center justify-center">
+        <div className="relative aspect-[16/11] overflow-hidden rounded-[16px] bg-slate-50 mb-4 flex items-center justify-center">
           <img
             src={product.image}
             alt={product.name}
@@ -403,7 +397,7 @@ function ProductCard({ product }: { product: any }) {
           </div>
           <Button
             variant="ghost"
-            className="w-full mt-3 h-10 rounded-none bg-slate-50 text-slate-600 hover:bg-primary hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
+            className="w-full mt-3 h-10 rounded-[20px] bg-primary text-white hover:bg-primary/90 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
           >
             VER DETALHES
           </Button>
@@ -430,10 +424,10 @@ function QualitySection() {
                     viewport={{ once: true }}
                     className="relative"
                 >
-                    <div className="aspect-[4/5] rounded-none overflow-hidden shadow-2xl border border-white/5">
+                    <div className="aspect-[4/5] rounded-[20px] overflow-hidden shadow-2xl border border-white/5">
                         <img src="/hero_trio_distracted_white.png" alt="Qualidade Ótica Melissa" className="w-full h-full object-cover" />
                     </div>
-                    <div className="absolute -z-10 -bottom-6 -right-6 w-full h-full border-2 border-primary/20" />
+                    <div className="absolute -z-10 -bottom-6 -right-6 w-full h-full border-2 border-primary/20 rounded-[20px]" />
                 </motion.div>
                 <motion.div 
                     initial={{ x: 20, opacity: 0 }}
@@ -442,14 +436,14 @@ function QualitySection() {
                     viewport={{ once: true }}
                     className="space-y-8"
                 >
-                    <div className="space-y-6">
-                        <Badge className="bg-primary text-white border-none rounded-none px-4 py-1 font-bold text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20">Qualidade e Precisão</Badge>
+                    <div className="space-y-6 flex flex-col items-start">
+                        <Badge className="w-fit bg-primary/10 text-primary border border-primary/20 rounded-[20px] px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">Qualidade e Precisão</Badge>
                         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none">Excelência em Cada Detalhe</h2>
                         <p className="text-slate-400 text-lg leading-relaxed font-medium max-w-xl">
                             Na Ótica Melissa, unimos a tradição do atendimento personalizado com a mais alta tecnologia em lentes e armações. Trabalhamos com as melhores marcas do mercado para garantir não apenas estilo, mas a saúde total da sua visão.
                         </p>
                     </div>
-                    <Button className="rounded-none bg-primary text-white hover:bg-primary/90 h-14 px-12 font-bold group uppercase tracking-widest text-xs transition-all border-none">
+                    <Button className="rounded-[20px] bg-primary text-white hover:bg-primary/90 h-14 px-12 font-bold group uppercase tracking-widest text-xs transition-all border-none">
                         Ver Coleção Completa <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </motion.div>
@@ -469,8 +463,8 @@ function StoreSection() {
                     viewport={{ once: true }}
                     className="space-y-10 order-2 lg:order-1"
                 >
-                    <div className="space-y-6">
-                        <Badge className="bg-primary/10 text-primary border-none rounded-none px-4 py-1 font-bold text-[10px] tracking-widest uppercase">Nossa Unidade</Badge>
+                    <div className="space-y-6 flex flex-col items-start">
+                        <Badge className="w-fit bg-primary/10 text-primary border border-primary/20 rounded-[20px] px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">Nossa Unidade</Badge>
                         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none text-slate-900">Maestria Melissa</h2>
                         <p className="text-slate-500 text-lg leading-relaxed max-w-xl font-medium">
                             Nossa unidade em Salvador foi projetada para oferecer uma experiência única. Ambiente climatizado, showroom moderno e equipamentos de última geração para sua avaliação visual.
@@ -479,7 +473,7 @@ function StoreSection() {
                     
                     <div className="space-y-8">
                         <div className="flex gap-6 items-start group">
-                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-none group-hover:bg-primary transition-colors">
+                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-[15px] group-hover:bg-primary transition-colors">
                                 <MapPin className="h-6 w-6" />
                             </div>
                             <div>
@@ -488,7 +482,7 @@ function StoreSection() {
                             </div>
                         </div>
                         <div className="flex gap-6 items-start group">
-                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-none group-hover:bg-primary transition-colors">
+                            <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center shrink-0 rounded-[15px] group-hover:bg-primary transition-colors">
                                 <Clock className="h-6 w-6" />
                             </div>
                             <div>
@@ -498,7 +492,7 @@ function StoreSection() {
                         </div>
                     </div>
 
-                    <Button size="lg" className="rounded-none px-12 h-14 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-200 group uppercase tracking-widest text-xs transition-all">
+                    <Button size="lg" className="rounded-[20px] px-12 h-14 font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-2xl shadow-slate-200 group uppercase tracking-widest text-xs transition-all">
                         Agendar Visita <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </motion.div>
@@ -510,8 +504,8 @@ function StoreSection() {
                     viewport={{ once: true }}
                     className="order-1 lg:order-2"
                 >
-                    <div className="aspect-[4/3] overflow-hidden rounded-none shadow-2xl border border-slate-100">
-                        <img src="/three_people_glasses.png" alt="Showroom Ótica Melissa" className="w-full h-full object-cover" />
+                    <div className="aspect-[4/3] overflow-hidden rounded-[20px] shadow-2xl border border-slate-100">
+                        <img src="/three_people_glasses.png" alt="Showroom Ótica Melissa" className="w-full h-full object-cover object-top" />
                     </div>
                 </motion.div>
             </div>
@@ -592,6 +586,30 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+const TESTIMONIALS = [
+  { name: "Ana Souza", text: "Atendimento impecável! Encontrei a armação perfeita e as lentes ficaram ótimas. Super recomendo." },
+  { name: "Carlos Ferreira", text: "A melhor ótica da cidade. Profissionais qualificados e um ambiente super agradável." },
+  { name: "Mariana Luz", text: "Preços justos e qualidade excepcional. O agendamento online facilitou muito a minha vida." }
+];
+
+function TestimonialSection() {
+  return (
+    <section className="py-16 px-6 bg-white">
+      <div className="bg-slate-900 border-t-4 border-primary mx-auto py-16 px-10 rounded-[20px] max-w-[1000px] text-center text-white shadow-[0px_4px_20px_rgba(0,0,0,0.1)]">
+        <h2 className="text-3xl md:text-[2.5rem] font-[700] mb-10 text-white">O que dizem nossos clientes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {TESTIMONIALS.map((t, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 p-6 rounded-[10px] shadow-[0px_2px_10px_rgba(0,0,0,0.05)] text-left flex flex-col justify-between hover:bg-white/10 transition-all cursor-pointer">
+              <p className="text-[1.1rem] leading-relaxed text-white mb-6 italic">"{t.text}"</p>
+              <span className="text-[1rem] text-slate-400 font-medium block mt-auto">- {t.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -698,14 +716,14 @@ export default function LandingPage() {
         {/* FREE EXAM SECTION WITH FORM LOGIC */}
         <section className="py-24 px-6 bg-slate-50">
           <div className="max-w-[1200px] mx-auto">
-            <div className="bg-white rounded-none border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
+            <div className="bg-white rounded-[20px] border border-slate-200 border-t-4 border-t-primary shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-slate-900 text-white">
-                <Badge className="w-fit mb-8 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-none px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">GRÁTIS TODOS OS SÁBADOS</Badge>
+                <Badge className="w-fit mb-8 bg-primary/10 text-primary border border-primary/20 rounded-[20px] px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">GRÁTIS TODOS OS SÁBADOS</Badge>
                 <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight tracking-tight">Sua saúde visual é nossa prioridade.</h2>
                 <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame computadorizado sem custos. Tecnologia de ponta para sua melhor visão.</p>
                 <div className="flex items-center gap-4 text-sm font-bold">
                   <div className="flex -space-x-3">
-                    {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-none border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
+                    {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-[20px] border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
                   </div>
                   <span className="text-slate-300 text-xs tracking-wide uppercase">+ de 500 agendamentos</span>
                 </div>
@@ -718,7 +736,7 @@ export default function LandingPage() {
                       <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Nome</label>
                       <Input 
                         placeholder="Nome completo" 
-                        className="h-12 rounded-none border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
+                        className="h-12 rounded-[20px] border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
                         value={appointmentData.name}
                         onChange={e => setAppointmentData({...appointmentData, name: e.target.value})}
                         required 
@@ -728,7 +746,7 @@ export default function LandingPage() {
                       <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">WhatsApp</label>
                       <Input 
                         placeholder="(00) 00000-0000" 
-                        className="h-12 rounded-none border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
+                        className="h-12 rounded-[20px] border-slate-200 bg-slate-50 focus:bg-white focus:ring-0 focus:border-primary transition-all" 
                         value={appointmentData.whatsapp}
                         onChange={e => setAppointmentData({...appointmentData, whatsapp: e.target.value})}
                         required 
@@ -740,7 +758,7 @@ export default function LandingPage() {
                         <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Data Preferencial</label>
                         {availableDates.length > 0 ? (
                             <select 
-                                className="w-full h-12 rounded-none border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
+                                className="w-full h-12 rounded-[20px] border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
                                 value={appointmentData.preferredDate}
                                 onChange={e => {
                                     const dateObj = availableDates.find(d => d.date === e.target.value);
@@ -762,7 +780,7 @@ export default function LandingPage() {
                         ) : (
                             <Input 
                                 type="date" 
-                                className="h-12 rounded-none border-slate-200 bg-slate-50"
+                                className="h-12 rounded-[20px] border-slate-200 bg-slate-50"
                                 value={appointmentData.preferredDate}
                                 onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
                                 required
@@ -772,7 +790,7 @@ export default function LandingPage() {
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Período</label>
                       <select 
-                        className="w-full h-12 rounded-none border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
+                        className="w-full h-12 rounded-[20px] border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
                         value={appointmentData.period}
                         onChange={e => setAppointmentData({...appointmentData, period: e.target.value})}
                         required
@@ -797,7 +815,7 @@ export default function LandingPage() {
                   <Button 
                     type="submit" 
                     disabled={isSubmitting}
-                    className="w-full h-14 rounded-none bg-primary text-white font-bold text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4"
+                    className="w-full h-14 rounded-[20px] bg-primary text-white font-bold text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4"
                   >
                     {isSubmitting ? "SOLICITANDO..." : "CONFIRMAR SOLICITAÇÃO"}
                   </Button>
@@ -807,6 +825,7 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <TestimonialSection />
       </main>
       <Footer />
     </div>
