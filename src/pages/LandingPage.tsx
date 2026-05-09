@@ -575,7 +575,7 @@ export function Footer() {
             <div className="flex flex-col gap-1">
                 <p className="text-[11px]">© 2024 Ótica Melissa. Todos os direitos reservados.</p>
                 <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
-                    <span>CNPJ: 00.000.000/0001-00</span>
+                    <span>CNPJ: 52.173.061/0001-54</span>
                     <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
                         <Lock size={10} />
                         Painel Admin
