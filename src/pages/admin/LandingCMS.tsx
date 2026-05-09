@@ -81,13 +81,26 @@ export default function LandingCMS() {
         
         setUploadingImage(true);
         try {
-            const fileRef = ref(storage, `landing_products/${Date.now()}_${file.name}`);
-            await uploadBytes(fileRef, file);
+            // Sanitize filename: remove spaces and special characters
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+            const fileRef = ref(storage, `landing_products/${Date.now()}_${sanitizedName}`);
+            
+            // Adicionando metadados básicos
+            const metadata = {
+                contentType: file.type,
+            };
+            
+            await uploadBytes(fileRef, file, metadata);
             const url = await getDownloadURL(fileRef);
             setFormData(prev => ({ ...prev, image: url }));
             toast.success("Imagem carregada com sucesso!");
         } catch (error: any) {
-            toast.error("Erro ao fazer upload da imagem: " + error.message);
+            console.error("Upload error details:", error);
+            if (error.code === 'storage/unauthorized') {
+                toast.error("Erro de Permissão (403): Verifique se as 'Rules' do Storage no Firebase Console estão como 'allow read, write: if true;' e se você clicou em 'Publish'.");
+            } else {
+                toast.error("Erro ao fazer upload: " + error.message);
+            }
         } finally {
             setUploadingImage(false);
         }
@@ -95,8 +108,20 @@ export default function LandingCMS() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.price || !formData.image || !formData.category) {
-            toast.error("Preencha os campos obrigatórios (Nome, Categoria, Preço e Imagem)");
+        if (!formData.name) {
+            toast.error("O campo 'Nome' é obrigatório.");
+            return;
+        }
+        if (!formData.category) {
+            toast.error("O campo 'Categoria' é obrigatório.");
+            return;
+        }
+        if (!formData.price || Number(formData.price) <= 0) {
+            toast.error("O campo 'Preço' é obrigatório e deve ser maior que zero.");
+            return;
+        }
+        if (!formData.image) {
+            toast.error("A 'Imagem' do produto é obrigatória. Aguarde o upload ser concluído.");
             return;
         }
 

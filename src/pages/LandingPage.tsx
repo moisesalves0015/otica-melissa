@@ -271,7 +271,7 @@ const MARQUEE_PRECOS = Array(8).fill("/selo_melhores_precos.png");
 function Hero() {
   return (
     <section className="relative w-full pt-6 md:pt-16 pb-0 overflow-hidden bg-white flex flex-col">
-      <div className="w-full relative z-10">
+      <div className="max-w-[1440px] mx-auto w-full relative z-10 px-6 lg:px-10">
         <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-0">
           <motion.div
             initial={{ x: -20, opacity: 0 }}
@@ -332,8 +332,8 @@ function Hero() {
 
 function Benefits() {
   return (
-    <section className="py-4 md:py-6 bg-red-600">
-      <div className="w-full mx-auto px-0 lg:max-w-[1440px] lg:px-6">
+    <section className="py-4 md:py-6 bg-red-600 w-full overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
         <ResponsiveSlider autoplay={true} autoplayInterval={3500} dotClassName="bg-white/30">
           {BENEFITS.map((benefit, i) => (
             <motion.div
@@ -609,31 +609,56 @@ const TESTIMONIALS = [
     name: "Juliana Mendes", 
     image: "/testimonial_3_1778168908314.png",
     text: "O agendamento pelo site é muito prático. Fiz o exame gratuito no sábado e já saí com minha armação nova escolhida. Nota 10!" 
+  },
+  { 
+    name: "Fernanda Rocha", 
+    image: "/testimonial_real_1.png",
+    text: "Atendimento humano de verdade! Levei minha mãe para fazer o exame gratuito no sábado e fomos super bem recebidas. Qualidade excelente." 
+  },
+  { 
+    name: "Marcos Vinicius", 
+    image: "/testimonial_real_2.png",
+    text: "Sempre tive dificuldade em encontrar óculos que não ficassem pesados no rosto. Na Melissa, a consultoria foi nota mil e o exame computadorizado foi muito rápido." 
+  },
+  { 
+    name: "Beatriz Silva", 
+    image: "/testimonial_real_3.png",
+    text: "Preço imbatível e entrega antes do prazo. Recomendo muito a Ótica Melissa para quem busca estilo e confiança." 
   }
 ];
 
 function TestimonialSection() {
   return (
-    <section className="py-24 px-6 bg-white">
-      <div className="bg-slate-900 border-t-4 border-primary mx-auto py-20 px-6 md:px-16 rounded-[20px] max-w-[1200px] text-center text-white shadow-[0px_30px_60px_rgba(0,0,0,0.2)]">
-        <h2 className="text-3xl md:text-[3rem] font-black mb-16 text-white uppercase tracking-tighter">O que dizem nossos clientes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="bg-white/5 border border-white/10 p-8 rounded-[20px] shadow-[0px_10px_30px_rgba(0,0,0,0.1)] text-left flex flex-col items-start hover:bg-white/10 transition-all group">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-[15px] overflow-hidden border-2 border-primary/30 group-hover:border-primary transition-colors">
-                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
-                </div>
-                <div>
-                    <span className="text-[1.1rem] text-white font-bold block">{t.name}</span>
-                    <div className="flex gap-0.5">
-                        {[1,2,3,4,5].map(s => <span key={s} className="text-primary text-[10px]">★</span>)}
+    <section className="py-24 px-6 bg-white overflow-hidden">
+      <div className="bg-slate-900 border-t-4 border-primary mx-auto py-20 rounded-[20px] max-w-[1200px] text-center text-white shadow-[0px_30px_60px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col items-center">
+        <h2 className="text-2xl md:text-[3rem] font-black mb-16 text-white uppercase tracking-tighter px-6">O que dizem nossos clientes</h2>
+        <div className="w-full">
+          <div className="flex overflow-hidden">
+            <motion.div 
+              className="flex gap-6 py-4"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ duration: 40, ease: "linear", repeat: Infinity }}
+            >
+              {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
+                <div key={i} className="w-[300px] md:w-[400px] shrink-0">
+                  <div className="bg-white/5 border border-white/10 p-8 rounded-[20px] shadow-[0px_10px_30px_rgba(0,0,0,0.1)] text-left flex flex-col items-start hover:bg-white/10 transition-all group h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-[15px] overflow-hidden border-2 border-primary/30 group-hover:border-primary transition-colors shrink-0">
+                          <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                          <span className="text-[1.1rem] text-white font-bold block">{t.name}</span>
+                          <div className="flex gap-1 mt-1">
+                              {[1,2,3,4,5].map(s => <span key={s} className="text-primary text-[16px]">★</span>)}
+                          </div>
+                      </div>
                     </div>
+                    <p className="text-[0.9rem] md:text-[1rem] leading-relaxed text-slate-300 mb-2 italic">"{t.text}"</p>
+                  </div>
                 </div>
-              </div>
-              <p className="text-[1rem] leading-relaxed text-slate-300 mb-2 italic">"{t.text}"</p>
-            </div>
-          ))}
+              ))}
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>
@@ -723,8 +748,8 @@ export default function LandingPage() {
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="max-w-md !rounded-[30px] p-10 border-none shadow-2xl">
           <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 bg-primary rounded-[30px] flex items-center justify-center mb-8 shadow-xl shadow-primary/20">
-                <img src="/logo.png" alt="Ótica Melissa" className="w-14 h-auto brightness-0 invert" />
+            <div className="mb-8">
+                <img src="/logo.png" alt="Ótica Melissa" className="h-16 w-auto object-contain" />
             </div>
             <DialogHeader>
               <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2">Quase Tudo Pronto!</DialogTitle>
@@ -741,17 +766,17 @@ export default function LandingPage() {
           </div>
         </DialogContent>
       </Dialog>
-      <main className="flex-1 overflow-x-hidden max-w-[1440px] mx-auto w-full">
+      <main className="flex-1 overflow-x-hidden w-full">
         <Hero />
         <Benefits />
         
         {/* CATEGORY ICONS SECTION */}
-        <section className="py-12 bg-white">
+        <section className="py-12 bg-white w-full">
           <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Categorias</h2>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tighter uppercase text-slate-900 whitespace-nowrap">Categorias</h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+            <div className="grid grid-cols-4 gap-2 md:gap-8">
               {CATEGORIES_DATA.map((cat, i) => {
                 return (
                   <a key={i} href={cat.href} className="flex flex-col items-center justify-end group gap-1">
@@ -760,7 +785,7 @@ export default function LandingPage() {
                       alt={cat.name} 
                       className={`${cat.imgClass} h-auto object-contain mix-blend-multiply transition-all duration-500 group-hover:-translate-y-3 group-hover:scale-105`} 
                     />
-                    <span className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-800 uppercase tracking-widest group-hover:text-primary transition-colors text-center">{cat.name}</span>
+                    <span className="text-[8px] sm:text-xs md:text-sm font-bold text-slate-800 uppercase tracking-tighter sm:tracking-widest group-hover:text-primary transition-colors text-center">{cat.name}</span>
                   </a>
                 );
               })}
@@ -769,10 +794,10 @@ export default function LandingPage() {
         </section>
 
         {/* NEW ARRIVALS WITH DYNAMIC DATA */}
-        <section className="py-16 bg-slate-50">
-          <div className="max-w-[1440px] mx-auto px-0 lg:px-10">
-            <div className="flex items-center justify-between mb-8 px-6 lg:px-0">
-              <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">Mais Procurados</h2>
+        <section className="py-16 bg-slate-50 w-full">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
+            <div className="flex items-center justify-between mb-8 px-0 lg:px-0">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tighter uppercase text-slate-900 whitespace-nowrap">Mais Procurados</h2>
               <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
                 Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -795,7 +820,7 @@ export default function LandingPage() {
         </section>
 
         {/* Marquee Desconto Banner */}
-        <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] bg-white border-y border-slate-100 py-8 overflow-hidden flex items-center z-20">
+        <div className="w-full bg-white border-y border-slate-100 py-8 overflow-hidden flex items-center z-20">
           <motion.div 
             className="flex w-max"
             animate={{ x: ["0%", "-50%"] }}
@@ -824,9 +849,9 @@ export default function LandingPage() {
           <div className="max-w-[1200px] mx-auto">
             <div className="bg-white rounded-[20px] border border-slate-200 border-t-4 border-t-primary shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col md:flex-row">
               <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-slate-900 text-white">
-                <Badge className="w-fit mb-8 bg-primary/10 text-primary border border-primary/20 rounded-[20px] px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">GRÁTIS TODOS OS SÁBADOS</Badge>
-                <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight tracking-tight">Sua saúde visual é nossa prioridade.</h2>
-                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Agende seu exame computadorizado sem custos. Tecnologia de ponta para sua melhor visão.</p>
+                <Badge className="w-fit mb-8 bg-primary/10 text-primary border border-primary/20 rounded-[20px] px-5 py-1.5 font-bold text-[11px] tracking-widest shadow-none uppercase">VAGAS LIMITADAS — 100% GRATUITO</Badge>
+                <h2 className="text-4xl md:text-5xl font-bold mb-8 leading-tight tracking-tight">Sua visão merece o melhor cuidado, sem custo nenhum.</h2>
+                <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Não perca a chance de realizar seu exame computadorizado com tecnologia de ponta. Agende hoje e garanta sua saúde visual gratuitamente.</p>
                 <div className="flex items-center gap-4 text-sm font-bold">
                   <div className="flex -space-x-3">
                     {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-[20px] border-4 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] text-white/50">{i}</div>)}
@@ -918,13 +943,18 @@ export default function LandingPage() {
                       </select>
                     </div>
                   </div>
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="w-full h-14 rounded-[20px] bg-primary text-white font-bold text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4"
+                  <motion.div
+                    animate={{ scale: [1, 1.03, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    {isSubmitting ? "SOLICITANDO..." : "CONFIRMAR SOLICITAÇÃO"}
-                  </Button>
+                    <Button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="w-full h-14 md:h-16 rounded-[20px] bg-primary text-white font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4 px-2"
+                    >
+                        {isSubmitting ? "SOLICITANDO..." : "GARANTIR MEU EXAME GRÁTIS"}
+                    </Button>
+                  </motion.div>
                 </form>
               </div>
             </div>
@@ -934,7 +964,7 @@ export default function LandingPage() {
         <TestimonialSection />
 
         {/* Marquee Preços Banner */}
-        <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] bg-white border-t border-slate-100 py-8 overflow-hidden flex items-center z-20">
+        <div className="w-full bg-white border-t border-slate-100 py-8 overflow-hidden flex items-center z-20">
           <motion.div 
             className="flex w-max"
             animate={{ x: ["0%", "-50%"] }}
