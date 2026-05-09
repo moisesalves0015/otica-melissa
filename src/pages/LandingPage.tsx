@@ -358,40 +358,63 @@ function Benefits() {
 }
 
 export function ProductCard({ product }: { product: any; key?: React.Key }) {
+  const whatsappNumber = "5521966123495";
+  const message = encodeURIComponent(`Olá! Tenho interesse no produto: ${product.name}`);
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+
   return (
-    <Card className="group relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-[20px] bg-white hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500">
-      <CardContent className="p-4">
-        <div className="relative aspect-[16/11] overflow-hidden rounded-[16px] bg-slate-50 mb-4 flex items-center justify-center">
+    <Card 
+      className="group relative overflow-hidden border border-slate-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] rounded-[20px] bg-white hover:shadow-[0_15px_30px_rgba(0,0,0,0.06)] transition-all duration-500 cursor-pointer h-full"
+      onClick={() => window.open(whatsappUrl, '_blank')}
+    >
+      <CardContent className="p-0 flex flex-col h-full">
+        {/* Image Container */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 flex items-center justify-center">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          
+          {/* Badge Overlay */}
           <div className="absolute top-3 left-3">
-            {product.badge && <Badge className="bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-[10px] shadow-lg">{product.badge}</Badge>}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-bold text-sm text-slate-800 group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-black text-slate-900">
-              R$ {product.price.toFixed(2)}
-            </span>
-            {product.originalPrice > 0 && (
-              <span className="text-slate-400 text-xs line-through">
-                R$ {product.originalPrice.toFixed(2)}
-              </span>
+            {product.badge && (
+              <Badge className="bg-primary/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg border-none">
+                {product.badge}
+              </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-             <CreditCard className="h-3 w-3" /> 10x de R$ {(product.price / 10).toFixed(2)} sem juros
+        </div>
+
+        {/* Content Section */}
+        <div className="p-4 flex flex-col flex-1 gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Ótica Melissa</span>
+            <h3 className="font-bold text-sm text-slate-900 group-hover:text-primary transition-colors line-clamp-1 leading-tight">{product.name}</h3>
           </div>
-          <Button
-            variant="ghost"
-            className="w-full mt-3 h-10 rounded-[20px] bg-primary text-white hover:bg-primary/90 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
-          >
-            VER DETALHES
-          </Button>
+
+          <div className="mt-auto space-y-2">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0 leading-none">
+              <span className="text-lg font-black text-slate-900">
+                R$ {product.price.toFixed(2)}
+              </span>
+              {product.originalPrice > 0 && (
+                <span className="text-slate-400 text-[10px] line-through font-medium">
+                  R$ {product.originalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1.5 text-[9px] text-primary font-bold uppercase tracking-wider">
+               <CreditCard className="h-3 w-3" /> 10x de R$ {(product.price / 10).toFixed(2)} sem juros
+            </div>
+
+            <Button
+                className="w-full h-10 rounded-full bg-slate-900 text-white hover:bg-primary transition-all duration-300 text-[9px] font-black uppercase tracking-[0.1em] group/btn mt-2"
+            >
+                COMPRAR AGORA
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
