@@ -1,5 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot, query, addDoc, serverTimestamp, orderBy, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import {
@@ -171,13 +172,13 @@ export function Header() {
               </nav>
             </SheetContent>
           </Sheet>
-          <div className="flex flex-col items-start select-none cursor-pointer group">
+          <Link to="/" className="flex flex-col items-start select-none cursor-pointer group">
             <img 
               src="/logo.png" 
               alt="Ótica Melissa" 
               className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
-          </div>
+          </Link>
         </div>
 
         {/* Desktop Nav */}
@@ -363,61 +364,57 @@ export function ProductCard({ product }: { product: any; key?: React.Key }) {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
 
   return (
-    <Card 
-      className="group relative overflow-hidden border border-slate-100 shadow-[0_2px_15px_rgba(0,0,0,0.02)] rounded-[20px] bg-white hover:shadow-[0_15px_30px_rgba(0,0,0,0.06)] transition-all duration-500 cursor-pointer h-full"
+    <div 
+      className="group relative overflow-hidden border border-slate-100 rounded-[12px] bg-white hover:shadow-[0_15px_30px_rgba(0,0,0,0.06)] transition-all duration-500 cursor-pointer flex flex-col p-0 m-0 w-full"
       onClick={() => window.open(whatsappUrl, '_blank')}
     >
-      <CardContent className="p-0 flex flex-col h-full">
-        {/* Image Container */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 flex items-center justify-center">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          
-          {/* Badge Overlay */}
-          <div className="absolute top-3 left-3">
-            {product.badge && (
-              <Badge className="bg-primary/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg border-none">
-                {product.badge}
-              </Badge>
+      {/* Image - Colada no topo */}
+      <div className="relative w-full aspect-square overflow-hidden bg-white p-0 m-0">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 p-0 m-0 block"
+        />
+        
+        {/* Badge Overlay */}
+        <div className="absolute top-2 left-2">
+          {product.badge && (
+            <Badge className="bg-primary text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border-none">
+              {product.badge}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="px-3 pt-3 pb-0 flex flex-col gap-1.5 flex-grow">
+        <h3 className="font-bold text-[13px] md:text-[15px] text-slate-900 group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
+
+        <div className="flex flex-col gap-1 mb-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg md:text-xl font-black text-slate-950">
+              R$ {product.price.toFixed(2)}
+            </span>
+            {product.originalPrice > 0 && (
+              <span className="text-slate-400 text-[11px] md:text-[12px] line-through font-medium">
+                R$ {product.originalPrice.toFixed(2)}
+              </span>
             )}
           </div>
-        </div>
-
-        {/* Content Section */}
-        <div className="p-4 flex flex-col flex-1 gap-2">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Ótica Melissa</span>
-            <h3 className="font-bold text-sm text-slate-900 group-hover:text-primary transition-colors line-clamp-1 leading-tight">{product.name}</h3>
-          </div>
-
-          <div className="mt-auto space-y-2">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0 leading-none">
-              <span className="text-lg font-black text-slate-900">
-                R$ {product.price.toFixed(2)}
-              </span>
-              {product.originalPrice > 0 && (
-                <span className="text-slate-400 text-[10px] line-through font-medium">
-                  R$ {product.originalPrice.toFixed(2)}
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-[9px] text-primary font-bold uppercase tracking-wider">
-               <CreditCard className="h-3 w-3" /> 10x de R$ {(product.price / 10).toFixed(2)} sem juros
-            </div>
-
-            <Button
-                className="w-full h-10 rounded-full bg-slate-900 text-white hover:bg-primary transition-all duration-300 text-[9px] font-black uppercase tracking-[0.1em] group/btn mt-2"
-            >
-                COMPRAR AGORA
-            </Button>
+          
+          <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] text-primary font-bold uppercase tracking-tight">
+             <CreditCard className="h-3 w-3 md:h-3.5 md:w-3.5" /> 10x de R$ {(product.price / 10).toFixed(2)}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Button - Colado no fundo */}
+      <Button
+          className="w-full h-11 md:h-12 rounded-none bg-slate-950 text-white hover:bg-primary transition-all duration-300 text-[10px] md:text-[11px] font-black uppercase tracking-widest border-none mt-auto p-0"
+      >
+          COMPRAR AGORA
+      </Button>
+    </div>
   );
 }
 
@@ -542,16 +539,27 @@ function StoreSection() {
 }
 
 export function Footer() {
+  const institutionalLinks = [
+    { name: "Trocas e Devoluções", href: "/trocas-e-devolucoes" },
+    { name: "Dúvidas Frequentes", href: "/faq" },
+    { name: "Política de Entrega", href: "/politica-de-entrega" },
+    { name: "Cuidados com os Óculos", href: "/cuidados" },
+    { name: "Fale Conosco", href: "/contato" }
+  ];
+
   return (
     <footer className="bg-slate-900 text-slate-400 py-16 md:py-24 border-t border-slate-800 mt-auto">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 mb-16">
           <div className="md:col-span-5 space-y-8">
-            <div className="flex items-center gap-3">
-                <div className="rounded-[10px] overflow-hidden">
-                    <img src="/logo.png" alt="Ótica Melissa" className="h-10 w-auto brightness-0 invert" />
-                </div>
-                <span className="text-xl font-black text-white uppercase tracking-tighter">Ótica Melissa</span>
+            <div className="flex items-center gap-4 mb-8">
+                <Link to="/">
+                    <img 
+                        src="/logo.png" 
+                        alt="Ótica Melissa" 
+                        className="h-10 w-auto brightness-0 invert" 
+                    />
+                </Link>
             </div>
             <p className="text-[14px] leading-relaxed max-w-sm">
                 Comprometidos em oferecer não apenas óculos, mas uma nova visão de mundo. 
@@ -573,7 +581,7 @@ export function Footer() {
             <h6 className="text-white font-bold text-sm uppercase tracking-widest">Compre Por</h6>
             <ul className="space-y-4 text-[13px]">
               {["Óculos de Grau", "Óculos de Sol", "Lentes de Contato", "Acessórios", "Lançamentos"].map(link => (
-                <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
+                <li key={link}><Link to="#" className="hover:text-white transition-colors">{link}</Link></li>
               ))}
             </ul>
           </div>
@@ -581,8 +589,12 @@ export function Footer() {
           <div className="md:col-span-4 space-y-6">
             <h6 className="text-white font-bold text-sm uppercase tracking-widest">Atendimento</h6>
             <ul className="space-y-4 text-[13px]">
-              {["Trocas e Devoluções", "Dúvidas Frequentes", "Política de Entrega", "Cuidados com os Óculos", "Fale Conosco"].map(link => (
-                <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
+              {institutionalLinks.map(link => (
+                <li key={link.name}>
+                  <Link to={link.href} className="hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
               ))}
               <li className="pt-2">
                 <a href="https://wa.me/5521966123495" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary font-bold hover:brightness-110 transition-all">
@@ -599,10 +611,12 @@ export function Footer() {
                 <p className="text-[11px]">© 2024 Ótica Melissa. Todos os direitos reservados.</p>
                 <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
                     <span>CNPJ: 52.173.061/0001-54</span>
-                    <a href="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
+                    <Link to="/privacidade" className="hover:text-primary transition-colors text-[10px] uppercase font-medium">Privacidade</Link>
+                    <Link to="/termos" className="hover:text-primary transition-colors text-[10px] uppercase font-medium">Termos</Link>
+                    <Link to="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
                         <Lock size={10} />
                         Painel Admin
-                    </a>
+                    </Link>
                 </div>
             </div>
             
@@ -700,6 +714,8 @@ export default function LandingPage() {
   });
   const [availableDates, setAvailableDates] = React.useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [privacyOpen, setPrivacyOpen] = React.useState(false);
+  const [termsOpen, setTermsOpen] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 
   const formatWhatsApp = (value: string) => {
@@ -821,9 +837,11 @@ export default function LandingPage() {
           <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
             <div className="flex items-center justify-between mb-8 px-0 lg:px-0">
               <h2 className="text-xl sm:text-2xl font-black tracking-tighter uppercase text-slate-900 whitespace-nowrap">Mais Procurados</h2>
-              <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
-                Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <Link to="/marketplace">
+                <Button variant="link" className="text-primary font-bold text-xs group p-0 h-auto">
+                    Ver Todos <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             </div>
 
             <div className="pb-6 w-full max-w-full overflow-hidden">
@@ -909,7 +927,7 @@ export default function LandingPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Data Preferencial</label>
+                        <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 ml-1">Data Disponível</label>
                         {availableDates.length > 0 ? (
                             <select 
                                 className="w-full h-12 rounded-[20px] border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none focus:bg-white focus:border-primary transition-all appearance-none cursor-pointer"
@@ -932,13 +950,9 @@ export default function LandingPage() {
                                 ))}
                             </select>
                         ) : (
-                            <Input 
-                                type="date" 
-                                className="h-12 rounded-[20px] border-slate-200 bg-slate-50"
-                                value={appointmentData.preferredDate}
-                                onChange={e => setAppointmentData({...appointmentData, preferredDate: e.target.value})}
-                                required
-                            />
+                            <div className="h-12 rounded-[20px] border border-dashed border-slate-200 bg-slate-50 flex items-center px-4 text-slate-400 text-sm font-medium italic">
+                                Não há datas disponíveis no momento.
+                            </div>
                         )}
                     </div>
                     <div className="space-y-2">
@@ -972,10 +986,10 @@ export default function LandingPage() {
                   >
                     <Button 
                         type="submit" 
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || availableDates.length === 0}
                         className="w-full h-14 md:h-16 rounded-[20px] bg-primary text-white font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all mt-4 px-2"
                     >
-                        {isSubmitting ? "SOLICITANDO..." : "GARANTIR MEU EXAME GRÁTIS"}
+                        {isSubmitting ? "SOLICITANDO..." : availableDates.length === 0 ? "SEM DATAS DISPONÍVEIS" : "GARANTIR MEU EXAME GRÁTIS"}
                     </Button>
                   </motion.div>
                 </form>
@@ -1009,6 +1023,46 @@ export default function LandingPage() {
         </div>
       </main>
       <Footer />
+
+      {/* Privacy Policy Modal */}
+      {privacyOpen && (
+        <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
+          <DialogContent className="max-w-2xl bg-white rounded-[24px] p-8 overflow-y-auto max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-slate-900 mb-4">Política de Privacidade</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-slate-600 text-sm leading-relaxed">
+              <p>Na Ótica Melissa, a sua privacidade é nossa prioridade. Coletamos apenas as informações necessárias para prestar nossos serviços, como nome, CPF e dados de contato para agendamentos e pedidos.</p>
+              <h4 className="font-bold text-slate-900">1. Coleta de Dados</h4>
+              <p>Seus dados são coletados quando você solicita um exame gratuito ou realiza um pedido em nossa loja. Utilizamos esses dados exclusivamente para processar suas solicitações e manter seu histórico de saúde visual.</p>
+              <h4 className="font-bold text-slate-900">2. Segurança</h4>
+              <p>Implementamos medidas de segurança técnicas e administrativas para proteger seus dados contra acessos não autorizados e garantir a conformidade com a LGPD (Lei Geral de Proteção de Dados).</p>
+              <h4 className="font-bold text-slate-900">3. Seus Direitos</h4>
+              <p>Você tem o direito de solicitar a correção, exclusão ou acesso aos seus dados a qualquer momento através do nosso WhatsApp de suporte.</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Terms of Use Modal */}
+      {termsOpen && (
+        <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+          <DialogContent className="max-w-2xl bg-white rounded-[24px] p-8 overflow-y-auto max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-slate-900 mb-4">Termos de Uso</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-slate-600 text-sm leading-relaxed">
+              <p>Ao utilizar nosso portal, você concorda com nossos termos de prestação de serviço óptico.</p>
+              <h4 className="font-bold text-slate-900">1. Agendamentos</h4>
+              <p>Os exames gratuitos estão sujeitos a disponibilidade e devem ser confirmados via WhatsApp.</p>
+              <h4 className="font-bold text-slate-900">2. Pedidos e Rastreio</h4>
+              <p>As informações de rastreio são atualizadas periodicamente conforme o status de produção em nosso laboratório parceiro.</p>
+              <h4 className="font-bold text-slate-900">3. Pagamentos</h4>
+              <p>As parcelas e carnês financeiros são de responsabilidade do cliente, e o atraso pode acarretar em restrições conforme o contrato assinado em loja.</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Floating WhatsApp Button */}
       <a 

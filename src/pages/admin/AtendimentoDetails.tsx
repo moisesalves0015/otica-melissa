@@ -468,7 +468,7 @@ export default function AtendimentoDetails() {
         toast.success("Download concluído!");
     }).catch((err: any) => {
         element.style.display = originalStyle;
-        console.error("Erro no PDF:", err);
+        /* SILENT ERROR */
         toast.error("Erro ao gerar PDF.");
     });
   };

@@ -3,22 +3,35 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { toast } from "sonner";
-import { User, Calendar, ArrowRight, ShieldCheck, ChevronLeft } from "lucide-react";
+import { User, Calendar, ArrowRight, ShieldCheck, ChevronLeft, Lock } from "lucide-react";
 
 const SESSION_DURATION_HOURS = 8;
 
 const MOBILE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin { to { transform: rotate(360deg); } }
-* { box-sizing: border-box; }
-input::placeholder { color: #C7C7C7 !important; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+input::placeholder { color: #94A3B8 !important; }
 @media (max-width: 480px) {
-  .login-card { padding: 24px 20px !important; }
-  .login-title { font-size: 20px !important; }
-  .login-subtitle { font-size: 13px !important; }
+  .login-card { padding: 32px 24px !important; }
+  .login-title { font-size: 24px !important; }
+  .login-subtitle { font-size: 14px !important; }
   .login-wrap { padding: 16px !important; }
 }
 `;
+
+const S = {
+  bg: "#FDFDFD",
+  white: "#FFFFFF",
+  border: "#F1F5F9",
+  surface: "#F8FAFC",
+  primary: "#c4121a",
+  primaryHover: "#9F1239",
+  text: "#0F172A",
+  textSec: "#475569",
+  textMuted: "#94A3B8",
+  success: "#10B981",
+};
 
 export default function ClientLogin() {
   const navigate = useNavigate();
@@ -75,22 +88,17 @@ export default function ClientLogin() {
 
       let foundClient: any = null;
 
-      // Busca com CPF formatado (123.456.789-00)
       const snap1 = await getDocs(query(collection(db, "clients"), where("cpf", "==", fmtCpf), limit(1)));
       if (!snap1.empty) {
         foundClient = { id: snap1.docs[0].id, ...snap1.docs[0].data() };
       }
 
-      // Busca com CPF sem máscara (12345678900)
       if (!foundClient) {
         const snap2 = await getDocs(query(collection(db, "clients"), where("cpf", "==", cleanCpf), limit(1)));
         if (!snap2.empty) {
           foundClient = { id: snap2.docs[0].id, ...snap2.docs[0].data() };
         }
       }
-
-      // Fallback removido por segurança (o sistema não deve baixar todos os clientes).
-      // Se o CPF não for encontrado com a máscara correta ou limpo, o login falha de forma segura.
 
       if (!foundClient) {
         toast.error("Cliente não encontrado. Verifique o CPF informado.");
@@ -118,56 +126,54 @@ export default function ClientLogin() {
     }
   };
 
-  // ── Estilos inline (design system) ────────────────────────────────────────
   const inputStyle = (focused: boolean): React.CSSProperties => ({
     width: "100%",
-    height: "44px",
-    borderRadius: "12px",
-    border: `1.5px solid ${focused ? "#c4121a" : "#ECECEC"}`,
-    background: "#FAFAFB",
-    paddingLeft: "40px",
+    height: "56px",
+    borderRadius: "16px",
+    border: `2px solid ${focused ? S.primary : S.surface}`,
+    background: S.surface,
+    paddingLeft: "48px",
     paddingRight: "16px",
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#1C1C1C",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: S.text,
     outline: "none",
-    boxShadow: focused ? "0 0 0 3px rgba(196,18,26,0.1)" : "none",
-    transition: "border-color 0.15s, box-shadow 0.15s",
+    boxShadow: focused ? `0 0 0 4px ${S.primary}10` : "none",
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
     fontFamily: "inherit",
     boxSizing: "border-box",
   });
 
   return (
-    <div style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif", background: "#F7F7F8", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: S.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <style>{MOBILE_CSS}</style>
-
 
       <div style={{ width: "100%", maxWidth: "440px" }}>
 
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <div style={{ display: "inline-flex", cursor: "pointer", marginBottom: "20px" }} onClick={() => navigate("/")}>
-            <img src="/logo.png" alt="Ótica Melissa" style={{ height: "44px", objectFit: "contain" }} />
+        {/* Logo Section */}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-flex", cursor: "pointer", marginBottom: "24px", transition: "transform 0.2s" }} onClick={() => navigate("/")} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+            <img src="/logo.png" alt="Ótica Melissa" style={{ height: "48px", objectFit: "contain" }} />
           </div>
-          <h1 className="login-title" style={{ fontSize: "24px", fontWeight: 700, color: "#1C1C1C", lineHeight: "32px", margin: "0 0 6px" }}>
-            Acesse sua conta
+          <h1 className="login-title" style={{ fontSize: "32px", fontWeight: 800, color: S.text, margin: "0 0 8px", letterSpacing: "-0.025em" }}>
+            Portal do Cliente
           </h1>
-          <p className="login-subtitle" style={{ fontSize: "14px", color: "#6F6F6F", margin: 0 }}>
-            Entre com seu CPF e data de nascimento
+          <p className="login-subtitle" style={{ fontSize: "16px", color: S.textSec, margin: 0, fontWeight: 500 }}>
+            Gerencie seus pedidos e consultas com segurança.
           </p>
         </div>
 
-        {/* Card */}
-        <div className="login-card" style={{ background: "#FFFFFF", borderRadius: "20px", border: "1px solid #ECECEC", boxShadow: "0 4px 20px rgba(0,0,0,0.04)", padding: "32px" }}>
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Login Card */}
+        <div className="login-card" style={{ background: S.white, borderRadius: "28px", border: `1px solid ${S.border}`, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.02), 0 8px 10px -6px rgba(0,0,0,0.02)", padding: "40px" }}>
+          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
-            {/* CPF */}
-            <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#6F6F6F", marginBottom: "8px" }}>
-                CPF cadastrado
+            {/* CPF Field */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                CPF do Cliente
               </label>
               <div style={{ position: "relative" }}>
-                <User style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: cpfFocus ? "#c4121a" : "#BABABA", pointerEvents: "none" }} />
+                <User style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", width: "18px", height: "18px", color: cpfFocus ? S.primary : S.textMuted, pointerEvents: "none", transition: "color 0.2s" }} />
                 <input
                   type="text"
                   placeholder="000.000.000-00"
@@ -182,13 +188,13 @@ export default function ClientLogin() {
               </div>
             </div>
 
-            {/* Data de Nascimento */}
-            <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "#6F6F6F", marginBottom: "8px" }}>
-                Data de nascimento
+            {/* Birth Date Field */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Data de Nascimento
               </label>
               <div style={{ position: "relative" }}>
-                <Calendar style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: dateFocus ? "#c4121a" : "#BABABA", pointerEvents: "none" }} />
+                <Calendar style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", width: "18px", height: "18px", color: dateFocus ? S.primary : S.textMuted, pointerEvents: "none", transition: "color 0.2s" }} />
                 <input
                   type="text"
                   placeholder="DD/MM/AAAA"
@@ -203,52 +209,60 @@ export default function ClientLogin() {
               </div>
             </div>
 
-            {/* Botão */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
               style={{
                 width: "100%",
-                height: "44px",
-                marginTop: "4px",
-                borderRadius: "12px",
-                background: isLoading ? "#9899f2" : "#c4121a",
+                height: "56px",
+                marginTop: "8px",
+                borderRadius: "16px",
+                background: isLoading ? S.primary + "80" : S.primary,
                 color: "#fff",
-                fontSize: "14px",
-                fontWeight: 600,
+                fontSize: "16px",
+                fontWeight: 800,
                 border: "none",
                 cursor: isLoading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "8px",
-                fontFamily: "inherit",
-                transition: "background 0.15s",
+                gap: "10px",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
+              onMouseEnter={e => { if(!isLoading) { e.currentTarget.style.background = S.primaryHover; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+              onMouseLeave={e => { if(!isLoading) { e.currentTarget.style.background = S.primary; e.currentTarget.style.transform = "none"; } }}
             >
               {isLoading ? (
                 <>
-                  <span style={{ width: "15px", height: "15px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />
+                  <div style={{ width: "20px", height: "20px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                   Verificando...
                 </>
               ) : (
-                <>Entrar <ArrowRight style={{ width: "16px", height: "16px" }} /></>
+                <>Acessar Painel <ArrowRight style={{ width: "20px", height: "20px" }} /></>
               )}
             </button>
           </form>
 
-          {/* Rodapé do card */}
-          <div style={{ height: "1px", background: "#ECECEC", margin: "24px 0" }} />
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
-            <ShieldCheck style={{ width: "14px", height: "14px", color: "#22C55E" }} />
-            <span style={{ fontSize: "12px", color: "#9A9A9A", fontWeight: 500 }}>Conexão segura · Sessão expira em 8h</span>
+          {/* Footer Info */}
+          <div style={{ height: "1px", background: S.border, margin: "32px 0" }} />
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", color: S.textMuted }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <ShieldCheck style={{ width: "16px", height: "16px", color: S.success }} />
+                <span style={{ fontSize: "13px", fontWeight: 600 }}>Ambiente Seguro</span>
+            </div>
+            <span style={{ fontSize: "12px" }}>•</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <Lock style={{ width: "14px", height: "14px" }} />
+                <span style={{ fontSize: "13px", fontWeight: 600 }}>Ótica Melissa</span>
+            </div>
           </div>
         </div>
 
-        {/* Voltar */}
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#9A9A9A", fontFamily: "inherit", fontWeight: 500 }}>
-            <ChevronLeft style={{ width: "14px", height: "14px" }} />
+        {/* Back to Home */}
+        <div style={{ textAlign: "center", marginTop: "32px" }}>
+          <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "14px", color: S.textSec, fontWeight: 600, transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = S.text} onMouseLeave={e => e.currentTarget.style.color = S.textSec}>
+            <ChevronLeft style={{ width: "18px", height: "18px" }} />
             Voltar ao início
           </button>
         </div>

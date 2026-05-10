@@ -3,35 +3,60 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { toast } from "sonner";
-import { Clock, Package, CheckCircle2, Eye, Truck, Wrench, ShieldCheck, MapPin, Calendar, ShoppingBag, CreditCard, FileText, X, ChevronLeft, MessageCircle } from "lucide-react";
+import { Clock, Package, CheckCircle2, Eye, Truck, Wrench, ShieldCheck, Calendar, CreditCard, FileText, X, ChevronLeft, MessageCircle, ShoppingBag, ArrowRight } from "lucide-react";
 import { getClientSession } from "../components/ClientProtectedRoute";
 
 const MOBILE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin { to { transform: rotate(360deg); } }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 @media (max-width: 640px) {
-  .r-main { padding: 20px 16px !important; }
+  .r-main { padding: 24px 16px !important; }
   .r-header { padding: 0 16px !important; }
-  .r-title { font-size: 22px !important; line-height: 30px !important; }
-  .r-step-label { font-size: 9px !important; max-width: 48px !important; }
-  .r-step-icon { width: 32px !important; height: 32px !important; }
+  .r-title { font-size: 26px !important; line-height: 1.2 !important; }
+  .r-step-label { font-size: 9px !important; max-width: 50px !important; }
+  .r-step-icon { width: 34px !important; height: 34px !important; }
   .r-details-grid { grid-template-columns: 1fr !important; }
   .r-bottom-grid { grid-template-columns: 1fr !important; }
-  .r-actions { flex-wrap: wrap; }
-  .r-banner { flex-direction: column !important; align-items: flex-start !important; }
+  .r-actions { flex-direction: column !important; }
+  .r-actions button { width: 100% !important; }
+  .r-banner { flex-direction: column !important; align-items: flex-start !important; gap: 20px !important; }
 }
 `;
 
-const S = { bg:"#F7F7F8",white:"#FFFFFF",border:"#ECECEC",surface:"#FAFAFB",primary:"#c4121a",primaryLight:"#FEE2E2",text:"#1C1C1C",textSec:"#6F6F6F",textMuted:"#9A9A9A",success:"#22C55E",successBg:"#ECFDF3",warning:"#F59E0B",danger:"#EF4444" };
-const card: React.CSSProperties = { background:S.white, borderRadius:"20px", border:`1px solid ${S.border}`, boxShadow:"0 4px 20px rgba(0,0,0,0.03)", padding:"24px" };
+const S = {
+  bg: "#FDFDFD",
+  white: "#FFFFFF",
+  border: "#F1F5F9",
+  surface: "#F8FAFC",
+  primary: "#c4121a",
+  primaryLight: "#FFF1F2",
+  primaryHover: "#9F1239",
+  text: "#0F172A",
+  textSec: "#475569",
+  textMuted: "#94A3B8",
+  success: "#10B981",
+  successBg: "#F0FDF4",
+  warning: "#F59E0B",
+  danger: "#E11D48",
+  dangerBg: "#FFF1F2",
+};
+
+const card: React.CSSProperties = {
+  background: S.white, 
+  borderRadius: "24px", 
+  border: `1px solid ${S.border}`,
+  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0,0,0,0.01)", 
+  padding: "24px",
+};
 
 const STEPS = [
-  { status:"Pendente", label:"Recebido", icon:Clock },
-  { status:"Em Produção", label:"Laboratório", icon:Wrench },
-  { status:"Qualidade", label:"Qualidade", icon:Eye },
-  { status:"Pronto para Entrega", label:"Pronto", icon:ShoppingBag },
-  { status:"Entregue", label:"Entregue", icon:Truck },
+  { status: "Pendente", label: "Recebido", icon: Clock },
+  { status: "Em Produção", label: "Laboratório", icon: Wrench },
+  { status: "Qualidade", label: "Qualidade", icon: Eye },
+  { status: "Pronto para Entrega", label: "Pronto", icon: ShoppingBag },
+  { status: "Entregue", label: "Entregue", icon: Truck },
 ];
 
 function toDisplay(s: string) {
@@ -61,7 +86,7 @@ export default function Rastreio() {
     setClientId(session.id); setClientName(session.name);
     if (orderId) load(session.id);
     else setLoading(false);
-  }, []);
+  }, [orderId]);
 
   const load = async (cId: string) => {
     try {
@@ -81,7 +106,7 @@ export default function Rastreio() {
       const al = aSnap.docs.map(d=>({id:d.id,...d.data()}));
       al.sort((a:any,b:any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       setAtendimentos(al);
-    } catch(e){ console.error(e); }
+    } catch(e){ /* Error logged silently */ }
     finally { setLoading(false); }
   };
 
@@ -93,16 +118,16 @@ export default function Rastreio() {
     const date = toDisplay(fd.get("date") as string);
     const period = fd.get("period") as string;
     try {
-      await addDoc(collection(db,"appointments"), { clientId, clientName, date, period, status:"Pendente", createdAt: new Date().toISOString() });
+      await addDoc(collection(db,"appointments"), { clientId, clientName, date, period, status:"Pendente", createdAt: new Date().toISOString(), source: "Rastreio" });
       toast.success("Agendamento solicitado!"); setApptOpen(false);
     } catch { toast.error("Erro ao agendar."); }
   };
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:S.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',system-ui,sans-serif",padding:"24px"}}>
+    <div style={{minHeight:"100vh",background:S.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"16px"}}>
         <div style={{width:"40px",height:"40px",border:`3px solid ${S.border}`,borderTopColor:S.primary,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>
-        <p style={{fontSize:"13px",color:S.textMuted,fontWeight:500}}>Buscando pedido...</p>
+        <p style={{fontSize:"13px",color:S.textMuted,fontWeight:500}}>Buscando detalhes...</p>
       </div>
       <style>{MOBILE_CSS}</style>
     </div>
@@ -111,14 +136,14 @@ export default function Rastreio() {
   if (!orderId) return (
     <div style={{minHeight:"100vh",background:S.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',system-ui,sans-serif",padding:"24px"}}>
       <div style={{...card,textAlign:"center",maxWidth:"400px",width:"100%",padding:"48px 32px"}}>
-        <img src="/logo.png" alt="Ótica Melissa" style={{height:"40px",objectFit:"contain",margin:"0 auto 24px"}}/>
-        <h1 style={{fontSize:"20px",fontWeight:700,color:S.text,margin:"0 0 8px"}}>Acesse via QR Code</h1>
-        <p style={{fontSize:"14px",color:S.textSec,margin:"0 0 24px"}}>Use o QR Code do canhoto para rastrear seu pedido.</p>
-        <button onClick={()=>navigate("/cliente/dashboard")} style={{height:"44px",borderRadius:"12px",background:S.primary,color:"#fff",fontSize:"14px",fontWeight:600,border:"none",cursor:"pointer",width:"100%",fontFamily:"inherit"}}>
-          Ir para Meus Pedidos
+        <img src="/logo.png" alt="Ótica Melissa" style={{height:"42px",objectFit:"contain",margin:"0 auto 24px"}}/>
+        <h1 style={{fontSize:"22px",fontWeight:800,color:S.text,margin:"0 0 12px",letterSpacing:"-0.01em"}}>Link Inválido</h1>
+        <p style={{fontSize:"15px",color:S.textSec,margin:"0 0 32px",lineHeight:1.6}}>Utilize o QR Code do seu canhoto ou acesse pelo painel do cliente.</p>
+        <button onClick={()=>navigate("/cliente/dashboard")} style={{height:"52px",borderRadius:"16px",background:S.primary,color:"#fff",fontSize:"15px",fontWeight:700,border:"none",cursor:"pointer",width:"100%",transition:"all 0.2s"}}>
+          Ver Meus Pedidos
         </button>
       </div>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');`}</style>
+      <style>{MOBILE_CSS}</style>
     </div>
   );
 
@@ -126,173 +151,195 @@ export default function Rastreio() {
   const pendingInst = installments.filter(i => i.status !== "Pago");
 
   return (
-    <div style={{fontFamily:"'Inter','Plus Jakarta Sans',system-ui,sans-serif",background:S.bg,minHeight:"100vh",paddingBottom:"48px"}}>
+    <div style={{fontFamily:"'Inter', system-ui, sans-serif",background:S.bg,minHeight:"100vh",paddingBottom:"80px"}}>
       <style>{MOBILE_CSS}</style>
 
       {/* Header */}
-      <header className="r-header" style={{background:S.white,borderBottom:`1px solid ${S.border}`,padding:"0 40px",height:"64px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
-        <img src="/logo.png" alt="Ótica Melissa" style={{height:"36px",objectFit:"contain",cursor:"pointer"}} onClick={()=>navigate("/")}/>
-        <button onClick={()=>navigate("/cliente/dashboard")} style={{height:"36px",padding:"0 16px",borderRadius:"10px",border:`1px solid ${S.border}`,background:S.white,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontWeight:600,color:S.textSec,fontFamily:"inherit"}}>
-          <ChevronLeft style={{width:"14px",height:"14px"}}/> Meus Pedidos
+      <header className="r-header" style={{background:"rgba(255,255,255,0.8)",backdropFilter:"blur(20px)",borderBottom:`1px solid ${S.border}`,padding:"0 40px",height:"80px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50}}>
+        <img src="/logo.png" alt="Ótica Melissa" style={{height:"42px",objectFit:"contain",cursor:"pointer"}} onClick={()=>navigate("/")}/>
+        <button onClick={()=>navigate("/cliente/dashboard")} style={{height:"44px",padding:"0 20px",borderRadius:"14px",border:`1px solid ${S.border}`,background:S.white,cursor:"pointer",display:"flex",alignItems:"center",gap:"8px",fontSize:"14px",fontWeight:700,color:S.text,transition:"all 0.2s"}}>
+          <ChevronLeft style={{width:"18px",height:"18px"}}/> <span className="r-btn-text">Painel</span>
         </button>
       </header>
 
-      <main className="r-main" style={{maxWidth:"860px",margin:"0 auto",padding:"40px 24px",display:"flex",flexDirection:"column",gap:"24px"}}>
+      <main className="r-main" style={{maxWidth:"860px",margin:"0 auto",padding:"48px 24px",display:"flex",flexDirection:"column",gap:"24px"}}>
 
         {/* Title */}
-        <div>
-          <h1 className="r-title" style={{fontSize:"32px",fontWeight:700,color:S.text,margin:"0 0 4px",lineHeight:"40px"}}>Rastreio do Pedido</h1>
-          <p style={{fontSize:"14px",color:S.textSec,margin:0}}>Olá, <strong style={{color:S.text}}>{clientName}</strong>. Acompanhe o status abaixo.</p>
+        <div style={{ marginBottom: "8px" }}>
+          <h1 className="r-title" style={{fontSize:"36px",fontWeight:800,color:S.text,margin:"0 0 8px",letterSpacing:"-0.02em"}}>Rastreio do Pedido</h1>
+          <p style={{fontSize:"15px",color:S.textSec,margin:0,fontWeight:500}}>Pedido atualizado em tempo real para sua segurança.</p>
         </div>
 
         {!order ? (
-          <div style={{...card,textAlign:"center",padding:"64px"}}>
-            <Package style={{width:"40px",height:"40px",color:S.border,margin:"0 auto 16px"}}/>
-            <p style={{fontSize:"14px",color:S.textMuted,fontWeight:500}}>Pedido não encontrado.</p>
+          <div style={{...card,textAlign:"center",padding:"80px 24px"}}>
+            <Package style={{width:"48px",height:"48px",color:S.border,margin:"0 auto 24px"}}/>
+            <p style={{fontSize:"15px",color:S.textMuted,fontWeight:500}}>Pedido não encontrado ou removido.</p>
           </div>
         ) : (
           <>
-            {/* Order card */}
+            {/* Status Card */}
             <div style={{...card,padding:0,overflow:"hidden"}}>
-              {/* Card header */}
-              <div style={{background:S.text,padding:"24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{background:S.text,padding:"32px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
-                  <p style={{fontSize:"11px",fontWeight:500,color:"rgba(255,255,255,0.5)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.1em"}}>Pedido</p>
-                  <p style={{fontSize:"20px",fontWeight:700,color:"#fff",margin:0}}>#{order.orderCode || order.tso || order.id.slice(0,8).toUpperCase()}</p>
+                  <p style={{fontSize:"11px",fontWeight:700,color:"rgba(255,255,255,0.5)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Protocolo</p>
+                  <p style={{fontSize:"22px",fontWeight:800,color:"#fff",margin:0}}>#{order.orderCode || order.tso || order.id.slice(0,8).toUpperCase()}</p>
                 </div>
-                <span style={{fontSize:"12px",fontWeight:600,borderRadius:"999px",padding:"5px 14px",
-                  background: order.status==="Entregue"?"#ECFDF3": order.status==="Pronto para Entrega"?"#D1FAE5": order.status==="Qualidade"?"#EDE9FE": order.status==="Em Produção"?"#DBEAFE": order.status==="Cancelado"?"#FEE2E2":"#FEF3C7",
-                  color:    order.status==="Entregue"||order.status==="Pronto para Entrega"?"#15803D": order.status==="Qualidade"?"#6D28D9": order.status==="Em Produção"?"#1D4ED8": order.status==="Cancelado"?"#B91C1C":"#92400E"}}>
-                  {order.status}
-                </span>
+                <div style={{ textAlign: "right" }}>
+                    <p style={{fontSize:"11px",fontWeight:700,color:"rgba(255,255,255,0.5)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Status Atual</p>
+                    <span style={{fontSize:"12px",fontWeight:800,borderRadius:"10px",padding:"6px 16px",
+                    background: order.status==="Entregue"?S.successBg: order.status==="Pronto para Entrega"?"#D1FAE5": order.status==="Qualidade"?"#EDE9FE": order.status==="Em Produção"?"#DBEAFE":"#FEF3C7",
+                    color:    order.status==="Entregue"||order.status==="Pronto para Entrega"?S.success: order.status==="Qualidade"?"#6D28D9": order.status==="Em Produção"?"#1D4ED8":"#92400E",
+                    textTransform: "uppercase" }}>
+                    {order.status}
+                    </span>
+                </div>
               </div>
 
-              {/* Progress */}
-              <div style={{padding:"32px 24px"}}>
-                <div style={{position:"relative",marginBottom:"32px"}}>
-                  <div style={{position:"absolute",top:"20px",left:0,right:0,height:"2px",background:S.border}}/>
-                  <div style={{position:"absolute",top:"20px",left:0,height:"2px",background:S.success,width:`${Math.max(0,(stepIdx/(STEPS.length-1))*100)}%`,transition:"width 1s ease"}}/>
+              <div style={{padding:"40px 32px"}}>
+                {/* Progress Visual */}
+                <div style={{position:"relative",marginBottom:"48px",padding:"0 20px"}}>
+                  <div style={{position:"absolute",top:"20px",left:"40px",right:"40px",height:"4px",background:S.surface,borderRadius:"2px"}}/>
+                  <div style={{position:"absolute",top:"20px",left:"40px",height:"4px",background:S.success,width: `calc(${(stepIdx/(STEPS.length-1))*100}% - ${stepIdx === 0 ? '0px' : '40px'})`, transition:"width 1s cubic-bezier(0.4, 0, 0.2, 1)",borderRadius:"2px"}}/>
+                  
                   <div style={{display:"flex",justifyContent:"space-between",position:"relative"}}>
                     {STEPS.map((step,i)=>{
                       const Icon=step.icon;
                       const done=i<=stepIdx;
                       const active=i===stepIdx;
                       return(
-                        <div key={step.status} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"10px"}}>
-                          <div className="r-step-icon" style={{width:"40px",height:"40px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",background:done?S.success:S.white,border:`2px solid ${done?S.success:S.border}`,boxShadow:active?`0 0 0 4px ${S.successBg}`:"",transition:"all 0.4s",zIndex:1}}>
-                            <Icon style={{width:"16px",height:"16px",color:done?"#fff":S.textMuted}}/>
+                        <div key={step.status} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"12px"}}>
+                          <div className="r-step-icon" style={{width:"44px",height:"44px",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",background:done?S.success:S.white,border:`2px solid ${done?S.success:S.border}`,boxShadow:active?`0 0 0 6px ${S.success}20`:"",transition:"all 0.5s",zIndex:1}}>
+                            <Icon style={{width:"18px",height:"18px",color:done?"#fff":S.textMuted}}/>
                           </div>
-                          <span className="r-step-label" style={{fontSize:"10px",fontWeight:600,color:done?S.text:S.textMuted,textAlign:"center",maxWidth:"64px",lineHeight:"14px"}}>{step.label}</span>
+                          <span className="r-step-label" style={{fontSize:"11px",fontWeight:700,color:done?S.text:S.textMuted,textAlign:"center",maxWidth:"64px",lineHeight:1.3}}>{step.label}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Order details */}
-                <div className="r-details-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginTop:"8px"}}>
-                  <div style={{background:S.surface,borderRadius:"14px",border:`1px solid ${S.border}`,padding:"16px",display:"flex",gap:"12px",alignItems:"flex-start"}}>
-                    <div style={{width:"36px",height:"36px",borderRadius:"10px",border:`1px solid ${S.primaryLight}`,background:S.primaryLight,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <Package style={{width:"16px",height:"16px",color:S.primary}}/>
+                {/* Details Grid */}
+                <div className="r-details-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px"}}>
+                  <div style={{background:S.surface,borderRadius:"18px",padding:"20px",display:"flex",gap:"16px",alignItems:"center"}}>
+                    <div style={{width:"44px",height:"44px",borderRadius:"12px",background:S.white,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1px solid ${S.border}`}}>
+                      <Package style={{width:"20px",height:"20px",color:S.primary}}/>
                     </div>
                     <div>
-                      <p style={{fontSize:"11px",fontWeight:500,color:S.textMuted,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.08em"}}>Serviço</p>
-                      <p style={{fontSize:"14px",fontWeight:600,color:S.text,margin:0}}>{order.serviceType||order.items||"Serviço Óptico"}</p>
+                      <p style={{fontSize:"11px",fontWeight:700,color:S.textMuted,margin:"0 0 2px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Produto/Serviço</p>
+                      <p style={{fontSize:"15px",fontWeight:700,color:S.text,margin:0}}>{order.serviceType||order.items||"Serviço Óptico"}</p>
                     </div>
                   </div>
-                  <div style={{background:S.surface,borderRadius:"14px",border:`1px solid ${S.border}`,padding:"16px",display:"flex",gap:"12px",alignItems:"flex-start"}}>
-                    <div style={{width:"36px",height:"36px",borderRadius:"10px",border:`1px solid ${S.border}`,background:S.white,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <Calendar style={{width:"16px",height:"16px",color:S.primary}}/>
+                  <div style={{background:S.surface,borderRadius:"18px",padding:"20px",display:"flex",gap:"16px",alignItems:"center"}}>
+                    <div style={{width:"44px",height:"44px",borderRadius:"12px",background:S.white,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,border:`1px solid ${S.border}`}}>
+                      <Calendar style={{width:"20px",height:"20px",color:S.primary}}/>
                     </div>
                     <div>
-                      <p style={{fontSize:"11px",fontWeight:500,color:S.textMuted,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.08em"}}>Previsão</p>
-                      <p style={{fontSize:"14px",fontWeight:600,color:S.success,margin:0}}>{toDisplay(order.dueDate)||"A confirmar"}</p>
+                      <p style={{fontSize:"11px",fontWeight:700,color:S.textMuted,margin:"0 0 2px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Data de Entrega</p>
+                      <p style={{fontSize:"15px",fontWeight:700,color:S.text,margin:0}}>{toDisplay(order.dueDate)||"A definir"}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Guarantee note */}
-                <div style={{display:"flex",alignItems:"flex-start",gap:"10px",background:S.successBg,borderRadius:"12px",padding:"14px 16px",marginTop:"16px"}}>
-                  <ShieldCheck style={{width:"16px",height:"16px",color:S.success,flexShrink:0,marginTop:"1px"}}/>
-                  <p style={{fontSize:"13px",color:"#15803D",margin:0,lineHeight:"20px"}}>Seu pedido está sendo processado com os mais altos padrões de precisão óptica.</p>
+                {/* Info Alert */}
+                <div style={{display:"flex",alignItems:"flex-start",gap:"12px",background:S.successBg,borderRadius:"16px",padding:"20px",marginTop:"24px"}}>
+                  <ShieldCheck style={{width:"20px",height:"20px",color:S.success,flexShrink:0}}/>
+                  <p style={{fontSize:"14px",color:"#15803D",margin:0,lineHeight:1.5,fontWeight:500}}>Seu pedido está em conformidade com as especificações médicas e passando por rigorosos testes de qualidade.</p>
                 </div>
 
                 {/* Actions */}
-                <div className="r-actions" style={{display:"flex",gap:"12px",marginTop:"24px",justifyContent:"flex-end"}}>
-                  <button onClick={()=>window.location.reload()} style={{height:"40px",padding:"0 20px",borderRadius:"12px",border:`1px solid ${S.border}`,background:S.white,color:S.textSec,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                    Atualizar status
+                <div className="r-actions" style={{display:"flex",gap:"12px",marginTop:"32px",justifyContent:"flex-end"}}>
+                  <button onClick={()=>window.location.reload()} style={{height:"48px",padding:"0 24px",borderRadius:"14px",border:`1px solid ${S.border}`,background:S.white,color:S.textSec,fontSize:"14px",fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
+                    Atualizar Rastreio
                   </button>
-                  <button onClick={()=>setApptOpen(true)} style={{height:"40px",padding:"0 20px",borderRadius:"12px",border:"none",background:S.primary,color:"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                    Agendar exame
+                  <button onClick={()=>setApptOpen(true)} style={{height:"48px",padding:"0 24px",borderRadius:"14px",border:"none",background:S.primary,color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
+                    Agendar novo Exame
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Bottom grid: Carnês + Receitas */}
-            <div className="r-bottom-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:"16px"}}>
-              {/* Carnês */}
+            {/* Sub-sections Grid */}
+            <div className="r-bottom-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(360px,1fr))",gap:"24px"}}>
+              {/* Payments */}
               <div style={card}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}}>
-                  <div style={{width:"36px",height:"36px",borderRadius:"10px",border:`1px solid ${S.primaryLight}`,background:S.primaryLight,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <CreditCard style={{width:"16px",height:"16px",color:S.primary}}/>
-                  </div>
-                  <h2 style={{fontSize:"16px",fontWeight:600,color:S.text,margin:0}}>Meus Carnês</h2>
-                </div>
-                {pendingInst.length===0 ? (
-                  <p style={{fontSize:"13px",color:S.textMuted,textAlign:"center",padding:"24px 0"}}>Nenhuma parcela pendente.</p>
-                ) : pendingInst.slice(0,3).map(inst=>(
-                  <div key={inst.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderRadius:"12px",border:`1px solid ${S.border}`,background:S.surface,marginBottom:"8px"}}>
-                    <div>
-                      <p style={{fontSize:"15px",fontWeight:700,color:S.text,margin:"0 0 2px"}}>R$ {Number(inst.value).toFixed(2)}</p>
-                      <p style={{fontSize:"12px",color:S.textMuted,margin:0}}>Parc. {inst.number} · Vence {toDisplay(inst.dueDate)}</p>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"24px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                    <div style={{width:"40px",height:"40px",borderRadius:"12px",background:S.primaryLight,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <CreditCard style={{width:"20px",height:"20px",color:S.primary}}/>
                     </div>
-                    <button onClick={()=>wa(`Olá! Quero pagar a parcela ${inst.number} (R$ ${Number(inst.value).toFixed(2)}).`)} style={{height:"32px",padding:"0 14px",borderRadius:"8px",border:"none",background:S.primaryLight,color:S.primary,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                      Pix
-                    </button>
+                    <h2 style={{fontSize:"18px",fontWeight:800,color:S.text,margin:0}}>Pagamentos</h2>
                   </div>
-                ))}
+                  {pendingInst.length > 0 && <span style={{ fontSize: "11px", fontWeight: 800, color: S.danger, background: S.dangerBg, padding: "4px 10px", borderRadius: "8px" }}>PENDENTES</span>}
+                </div>
+                
+                {pendingInst.length===0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0" }}>
+                    <CheckCircle2 style={{ width: "32px", height: "32px", color: S.success, margin: "0 auto 12px" }} />
+                    <p style={{fontSize:"14px",color:S.textMuted,fontWeight:500}}>Tudo em dia com seus pagamentos.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {pendingInst.slice(0,3).map(inst=>(
+                      <div key={inst.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px",borderRadius:"16px",background:S.surface,border:`1px solid ${S.border}`}}>
+                        <div>
+                          <p style={{fontSize:"17px",fontWeight:800,color:S.text,margin:"0 0 2px"}}>R$ {Number(inst.value).toFixed(2)}</p>
+                          <p style={{fontSize:"12px",color:S.textMuted,margin:0,fontWeight:500}}>{inst.number === 0 ? "Entrada" : `Parc. ${inst.number}`} · Vence {toDisplay(inst.dueDate)}</p>
+                        </div>
+                        <button onClick={()=>wa(`Olá! Quero pagar a ${inst.number === 0 ? "entrada" : `parcela ${inst.number}`} do pedido ${order.orderCode} (R$ ${Number(inst.value).toFixed(2)}).`)} style={{height:"36px",padding:"0 16px",borderRadius:"10px",border:"none",background:S.primary,color:"#fff",fontSize:"13px",fontWeight:700,cursor:"pointer"}}>
+                          Pagar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Receitas */}
+              {/* Prescriptions */}
               <div style={card}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}}>
-                  <div style={{width:"36px",height:"36px",borderRadius:"10px",border:`1px solid ${S.primaryLight}`,background:S.primaryLight,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <FileText style={{width:"16px",height:"16px",color:S.primary}}/>
+                <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
+                  <div style={{width:"40px",height:"40px",borderRadius:"12px",background:S.primaryLight,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <FileText style={{width:"20px",height:"20px",color:S.primary}}/>
                   </div>
-                  <h2 style={{fontSize:"16px",fontWeight:600,color:S.text,margin:0}}>Minhas Receitas</h2>
+                  <h2 style={{fontSize:"18px",fontWeight:800,color:S.text,margin:0}}>Sua Receita</h2>
                 </div>
                 {atendimentos.length===0 ? (
-                  <p style={{fontSize:"13px",color:S.textMuted,textAlign:"center",padding:"24px 0"}}>Nenhum histórico médico.</p>
-                ) : atendimentos.slice(0,3).map(at=>(
-                  <div key={at.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderRadius:"12px",border:`1px solid ${S.border}`,background:S.surface,marginBottom:"8px"}}>
-                    <div>
-                      <p style={{fontSize:"14px",fontWeight:600,color:S.text,margin:"0 0 2px"}}>Consulta {at.date}</p>
-                      <p style={{fontSize:"12px",color:S.textMuted,margin:0,maxWidth:"160px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                        {at.prescription?"Rx: "+at.prescription.slice(0,20)+"...":"Ver detalhes"}
-                      </p>
-                    </div>
-                    <button onClick={()=>setSelectedAtend(at)} style={{height:"32px",padding:"0 14px",borderRadius:"8px",border:"none",background:S.primaryLight,color:S.primary,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                      Ver
-                    </button>
+                  <div style={{ textAlign: "center", padding: "40px 0" }}>
+                    <FileText style={{ width: "32px", height: "32px", color: S.border, margin: "0 auto 12px" }} />
+                    <p style={{fontSize:"14px",color:S.textMuted,fontWeight:500}}>Nenhuma receita vinculada.</p>
                   </div>
-                ))}
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {atendimentos.slice(0,3).map(at=>(
+                      <div key={at.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px",borderRadius:"16px",background:S.surface,border:`1px solid ${S.border}`, cursor: "pointer", transition: "all 0.2s" }} onClick={()=>setSelectedAtend(at)}>
+                        <div>
+                          <p style={{fontSize:"15px",fontWeight:700,color:S.text,margin:"0 0 2px"}}>Exame em {at.date}</p>
+                          <p style={{fontSize:"12px",color:S.textMuted,margin:0,fontWeight:500,maxWidth:"200px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {at.prescription || "Visualizar prescrição"}
+                          </p>
+                        </div>
+                        <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: S.white, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${S.border}` }}>
+                            <ArrowRight style={{width:"16px",height:"16px",color:S.textSec}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Suporte banner */}
-            <div className="r-banner" style={{...card,background:S.primary,border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
-                <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <MessageCircle style={{width:"20px",height:"20px",color:"#fff"}}/>
+            {/* Support Banner */}
+            <div className="r-banner" style={{...card,background:S.text,border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",padding: "32px", borderRadius: "28px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"20px"}}>
+                <div style={{width:"56px",height:"56px",borderRadius:"18px",background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <MessageCircle style={{width:"28px",height:"28px",color:"#fff"}}/>
                 </div>
                 <div>
-                  <p style={{fontSize:"16px",fontWeight:600,color:"#fff",margin:"0 0 2px"}}>Precisa de ajuda?</p>
-                  <p style={{fontSize:"13px",color:"rgba(255,255,255,0.7)",margin:0}}>Fale com nossa equipe pelo WhatsApp.</p>
+                  <h3 style={{fontSize:"20px",fontWeight:800,color:"#fff",margin:"0 0 4px"}}>Dúvidas sobre o pedido?</h3>
+                  <p style={{fontSize:"15px",color:"rgba(255,255,255,0.6)",margin:0,fontWeight:500}}>Nossa equipe de suporte técnico está online.</p>
                 </div>
               </div>
-              <button onClick={()=>wa("Olá! Preciso de ajuda com meu pedido.")} style={{height:"40px",padding:"0 20px",borderRadius:"12px",background:"rgba(255,255,255,0.2)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
-                Suporte online
+              <button onClick={()=>wa(`Olá! Tenho uma dúvida sobre meu pedido #${order.orderCode}.`)} style={{height:"52px",padding:"0 32px",borderRadius:"16px",background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>
+                Falar com Especialista
               </button>
             </div>
           </>
@@ -301,24 +348,24 @@ export default function Rastreio() {
 
       {/* Modal: Receita */}
       {selectedAtend && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50,padding:"24px"}}>
-          <div style={{background:S.white,borderRadius:"20px",border:`1px solid ${S.border}`,boxShadow:"0 8px 30px rgba(0,0,0,0.1)",width:"100%",maxWidth:"420px",overflow:"hidden"}}>
-            <div style={{padding:"20px 24px",borderBottom:`1px solid ${S.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.6)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"24px"}}>
+          <div style={{background:S.white,borderRadius:"32px",boxShadow:"0 30px 60px -12px rgba(0,0,0,0.25)",width:"100%",maxWidth:"460px",overflow:"hidden"}}>
+            <div style={{padding:"32px 32px 24px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
               <div>
-                <h2 style={{fontSize:"18px",fontWeight:700,color:S.text,margin:"0 0 2px"}}>Detalhes da Receita</h2>
-                <p style={{fontSize:"13px",color:S.textMuted,margin:0}}>Consulta em {selectedAtend.date}</p>
+                <h2 style={{fontSize:"24px",fontWeight:800,color:S.text,margin:"0 0 8px"}}>Sua Receita</h2>
+                <p style={{fontSize:"14px",color:S.textSec,margin:0,fontWeight:500}}>Data do exame: {selectedAtend.date}</p>
               </div>
-              <button onClick={()=>setSelectedAtend(null)} style={{width:"32px",height:"32px",borderRadius:"8px",border:`1px solid ${S.border}`,background:S.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:S.textMuted}}>
-                <X style={{width:"14px",height:"14px"}}/>
+              <button onClick={()=>setSelectedAtend(null)} style={{width:"40px",height:"40px",borderRadius:"14px",border:"none",background:S.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:S.textSec}}>
+                <X style={{width:"20px",height:"20px"}}/>
               </button>
             </div>
-            <div style={{padding:"24px",display:"flex",flexDirection:"column",gap:"16px"}}>
-              <div style={{background:S.surface,borderRadius:"12px",border:`1px solid ${S.border}`,padding:"16px"}}>
-                <p style={{fontSize:"11px",fontWeight:500,color:S.textMuted,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:"0.08em"}}>Prescrição (Grau)</p>
-                <p style={{fontSize:"14px",fontWeight:500,color:S.text,margin:0,lineHeight:"22px"}}>{selectedAtend.prescription||"Nenhum detalhe de grau registrado."}</p>
+            <div style={{padding:"0 32px 40px",display:"flex",flexDirection:"column",gap:"24px"}}>
+              <div style={{background:S.surface,borderRadius:"18px",padding:"24px",border:`1px solid ${S.border}`}}>
+                <p style={{fontSize:"11px",fontWeight:700,color:S.textMuted,margin:"0 0 12px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Prescrição Médica</p>
+                <p style={{fontSize:"16px",fontWeight:500,color:S.text,margin:0,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{selectedAtend.prescription||"Nenhum detalhe de grau registrado."}</p>
               </div>
-              <button onClick={()=>wa(`Olá! Tenho uma dúvida sobre minha receita do dia ${selectedAtend.date}.`)} style={{height:"44px",borderRadius:"12px",background:S.primary,color:"#fff",fontSize:"14px",fontWeight:600,border:"none",cursor:"pointer",fontFamily:"inherit"}}>
-                Tirar dúvidas no WhatsApp
+              <button onClick={()=>wa(`Olá! Tenho uma dúvida sobre minha receita do dia ${selectedAtend.date}.`)} style={{height:"56px",borderRadius:"16px",background:S.primary,color:"#fff",fontSize:"16px",fontWeight:800,border:"none",cursor:"pointer",transition:"all 0.2s"}}>
+                Consultar via WhatsApp
               </button>
             </div>
           </div>
@@ -327,31 +374,32 @@ export default function Rastreio() {
 
       {/* Modal: Agendamento */}
       {apptOpen && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50,padding:"24px"}}>
-          <div style={{background:S.white,borderRadius:"20px",border:`1px solid ${S.border}`,boxShadow:"0 8px 30px rgba(0,0,0,0.1)",width:"100%",maxWidth:"400px",overflow:"hidden"}}>
-            <div style={{padding:"20px 24px",borderBottom:`1px solid ${S.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.6)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"24px"}}>
+          <div style={{background:S.white,borderRadius:"32px",boxShadow:"0 30px 60px -12px rgba(0,0,0,0.25)",width:"100%",maxWidth:"460px",overflow:"hidden"}}>
+            <div style={{padding:"32px 32px 24px",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
               <div>
-                <h2 style={{fontSize:"18px",fontWeight:700,color:S.text,margin:"0 0 2px"}}>Agendar Exame</h2>
-                <p style={{fontSize:"13px",color:S.textMuted,margin:0}}>Sujeito à confirmação da equipe</p>
+                <h2 style={{fontSize:"24px",fontWeight:800,color:S.text,margin:"0 0 8px"}}>Agendar Exame</h2>
+                <p style={{fontSize:"14px",color:S.textSec,margin:0,fontWeight:500}}>Escolha o melhor dia para você.</p>
               </div>
-              <button onClick={()=>setApptOpen(false)} style={{width:"32px",height:"32px",borderRadius:"8px",border:`1px solid ${S.border}`,background:S.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:S.textMuted}}>
-                <X style={{width:"14px",height:"14px"}}/>
+              <button onClick={() => setApptOpen(false)} style={{ width: "40px", height: "40px", borderRadius: "14px", border: "none", background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textSec }}>
+                <X style={{ width: "20px", height: "20px" }} />
               </button>
             </div>
-            <form onSubmit={handleAppt} style={{padding:"24px",display:"flex",flexDirection:"column",gap:"16px"}}>
-              <div>
-                <label style={{display:"block",fontSize:"12px",fontWeight:500,color:S.textSec,marginBottom:"6px"}}>Data preferencial</label>
-                <input type="date" name="date" required style={{width:"100%",height:"44px",borderRadius:"12px",border:`1px solid ${S.border}`,background:S.surface,padding:"0 14px",fontSize:"14px",color:S.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+            <form onSubmit={handleAppt} style={{ padding: "0 32px 40px", display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Data preferencial</label>
+                <input type="date" name="date" required style={{ height: "52px", borderRadius: "16px", border: `2px solid ${S.surface}`, background: S.surface, padding: "0 16px", fontSize: "15px", fontWeight: 600, color: S.text, outline: "none" }} />
               </div>
-              <div>
-                <label style={{display:"block",fontSize:"12px",fontWeight:500,color:S.textSec,marginBottom:"6px"}}>Período preferido</label>
-                <select name="period" style={{width:"100%",height:"44px",borderRadius:"12px",border:`1px solid ${S.border}`,background:S.surface,padding:"0 14px",fontSize:"14px",color:S.text,outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}>
-                  <option value="Manhã">Manhã (09:00 – 12:00)</option>
-                  <option value="Tarde">Tarde (13:00 – 18:00)</option>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Período preferido</label>
+                <select name="period" required style={{ height: "52px", borderRadius: "16px", border: `2px solid ${S.surface}`, background: S.surface, padding: "0 16px", fontSize: "15px", fontWeight: 600, color: S.text, outline: "none", appearance: "none", cursor: "pointer" }}>
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
                 </select>
               </div>
-              <button type="submit" style={{height:"44px",borderRadius:"12px",background:S.primary,color:"#fff",fontSize:"14px",fontWeight:600,border:"none",cursor:"pointer",fontFamily:"inherit"}}>
-                Confirmar solicitação
+              <button type="submit" style={{ height: "56px", borderRadius: "16px", background: S.primary, border: "none", color: S.white, fontSize: "16px", fontWeight: 800, cursor: "pointer", transition: "all 0.2s", marginTop: "8px" }}>
+                Confirmar Agendamento
               </button>
             </form>
           </div>

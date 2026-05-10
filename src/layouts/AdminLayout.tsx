@@ -17,6 +17,7 @@ import {
   Zap,
   Layout,
   Calendar,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ const sidebarLinks = [
   { name: "Gestão Financeira", icon: DollarSign, path: "/admin/financeiro" },
   { name: "Landing Page", icon: Layout, path: "/admin/landing-cms" },
   { name: "Agendamentos", icon: Calendar, path: "/admin/agendamentos" },
+  { name: "Mensagens", icon: MessageSquare, path: "/admin/mensagens" },
   { name: "Configurações", icon: Settings, path: "/admin/configuracoes" },
 ];
 

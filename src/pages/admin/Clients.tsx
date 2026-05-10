@@ -110,7 +110,7 @@ export default function Clients() {
           setCityValue(`${data.localidade || ""} - ${data.uf || ""}`);
         }
       } catch (err) {
-        console.error("Erro ao buscar CEP", err);
+        // Error handled via UI
       }
     }
   };

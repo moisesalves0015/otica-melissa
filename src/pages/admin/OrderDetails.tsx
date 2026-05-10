@@ -167,7 +167,7 @@ export default function OrderDetails() {
     }).catch((err: any) => {
         element.style.display = originalStyle;
         element.classList.add('hidden');
-        console.error("Erro no PDF:", err);
+        /* Error logged internally */
         toast.error("Erro ao gerar PDF.");
     });
   };

@@ -95,9 +95,9 @@ export default function LandingCMS() {
             setFormData(prev => ({ ...prev, image: url }));
             toast.success("Imagem carregada com sucesso!");
         } catch (error: any) {
-            console.error("Upload error details:", error);
+            /* Error details omitted for security */
             if (error.code === 'storage/unauthorized') {
-                toast.error("Erro de Permissão (403): Verifique se as 'Rules' do Storage no Firebase Console estão como 'allow read, write: if true;' e se você clicou em 'Publish'.");
+                toast.error("Erro de Permissão (403): Acesso restrito a administradores autenticados.");
             } else {
                 toast.error("Erro ao fazer upload: " + error.message);
             }

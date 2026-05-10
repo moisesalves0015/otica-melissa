@@ -44,10 +44,13 @@ export default function Appointments() {
     const [searchTerm, setSearchTerm] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("todos");
     const [timeFilter, setTimeFilter] = React.useState("todos");
+    const [dateFilter, setDateFilter] = React.useState("todos");
     const [availableDates, setAvailableDates] = React.useState<AvailableDate[]>([]);
     const [newAvailableDate, setNewAvailableDate] = React.useState("");
     const [newAvailablePeriod, setNewAvailablePeriod] = React.useState<"Manhã" | "Tarde" | "Ambos">("Ambos");
     const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+    const [isWAModalOpen, setIsWAModalOpen] = React.useState(false);
+    const [selectedAppt, setSelectedAppt] = React.useState<Appointment | null>(null);
     const [clients, setClients] = React.useState<any[]>([]);
     const [selectedClient, setSelectedClient] = React.useState<string>("");
     const [manualAppt, setManualAppt] = React.useState({
@@ -114,10 +117,30 @@ export default function Appointments() {
         }
     };
 
-    const openWhatsApp = (phone: string, name: string) => {
+    const openWhatsApp = (phone: string, name: string, type: 'confirm' | 'reschedule' | 'remind', date?: string, period?: string) => {
         const cleanPhone = phone.replace(/\D/g, "");
-        const message = encodeURIComponent(`Olá ${name}, aqui é da Ótica Melissa. Estamos entrando em contato para confirmar seu agendamento de exame gratuito solicitado pelo site.`);
-        window.open(`https://wa.me/55${cleanPhone}?text=${message}`, "_blank");
+        const formattedDate = date ? (date.includes("-") ? date.split("-").reverse().join("/") : date) : "";
+        
+        let message = "";
+        if (type === 'confirm') {
+            message = `Olá ${name}! Aqui é da Ótica Melissa. Confirmamos seu agendamento de exame para o dia ${formattedDate}${period ? ` no período da ${period.toLowerCase()}` : ""}. Podemos confirmar sua presença?`;
+        } else if (type === 'reschedule') {
+            message = `Olá ${name}! Aqui é da Ótica Melissa. Gostaríamos de reagendar seu exame que estava solicitado para o dia ${formattedDate}. Qual seria o melhor novo dia e horário para você?`;
+        } else {
+            message = `Olá ${name}! Aqui é da Ótica Melissa. Passando para lembrar do seu agendamento de exame ${formattedDate === new Date().toLocaleDateString('pt-BR') ? 'hoje' : `no dia ${formattedDate}`}. Estamos te aguardando!`;
+        }
+
+        window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+        setIsWAModalOpen(false);
+    };
+
+    const isPastDate = (dateStr: string) => {
+        if (!dateStr) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isoDate = dateStr.includes("/") ? dateStr.split("/").reverse().join("-") : dateStr;
+        const apptDate = new Date(isoDate);
+        return apptDate < today;
     };
 
     const filteredAppointments = appointments.filter(a => {
@@ -126,6 +149,7 @@ export default function Appointments() {
         const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              whatsapp.includes(searchTerm);
         const matchesStatus = statusFilter === "todos" || a.status === statusFilter;
+        const matchesDateFilter = dateFilter === "todos" || a.preferredDate === dateFilter;
         
         let matchesTime = true;
         if (timeFilter === "hoje" && a.preferredDate) {
@@ -141,11 +165,12 @@ export default function Appointments() {
             matchesTime = apptDate >= now && apptDate <= weekFromNow;
         }
 
-        return matchesSearch && matchesStatus && matchesTime;
+        return matchesSearch && matchesStatus && matchesTime && matchesDateFilter;
     });
 
     const handleAddAvailableDate = async () => {
         if (!newAvailableDate) return;
+        
         if (availableDates.some(d => d.date === newAvailableDate)) {
             toast.error("Esta data já está disponível.");
             return;
@@ -176,6 +201,7 @@ export default function Appointments() {
             toast.error("Selecione o cliente e a data.");
             return;
         }
+
         const client = clients.find(c => c.id === selectedClient);
         try {
             await addDoc(collection(db, "appointments"), {
@@ -197,6 +223,7 @@ export default function Appointments() {
             toast.error("Erro ao agendar: " + error.message);
         }
     };
+
 
     const getStatusBadge = (status: Appointment["status"]) => {
         switch (status) {
@@ -241,7 +268,12 @@ export default function Appointments() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Data</Label>
-                                    <Input type="date" value={manualAppt.date} onChange={e => setManualAppt({...manualAppt, date: e.target.value})} className="!rounded-none" />
+                                    <Input 
+                                        type="date" 
+                                        value={manualAppt.date} 
+                                        onChange={e => setManualAppt({...manualAppt, date: e.target.value})} 
+                                        className="!rounded-none" 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Período</Label>
@@ -263,7 +295,7 @@ export default function Appointments() {
                 </Dialog>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card className="!rounded-none border-slate-200 shadow-none">
                     <CardContent className="p-4 flex items-center gap-4">
                         <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
@@ -324,6 +356,30 @@ export default function Appointments() {
                     </CardContent>
                 </Card>
 
+                <Card className="!rounded-none border-slate-200 shadow-none">
+                    <CardContent className="p-4 flex items-center gap-4">
+                        <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
+                            <CalendarDays className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Filtrar por Data</Label>
+                            <Select value={dateFilter} onValueChange={setDateFilter}>
+                                <SelectTrigger className="h-8 border-none p-0 focus:ring-0 shadow-none text-sm uppercase font-bold">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="!rounded-none">
+                                    <SelectItem value="todos">Todas</SelectItem>
+                                    {availableDates.map(d => (
+                                        <SelectItem key={d.date} value={d.date}>
+                                            {d.date.split("-").reverse().join("/")}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card className="!rounded-none border-slate-200 shadow-none bg-slate-900 text-white">
                     <CardContent className="p-4 flex items-center gap-4">
                         <div className="h-10 w-10 rounded bg-white/10 flex items-center justify-center">
@@ -339,7 +395,7 @@ export default function Appointments() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <Card className="lg:col-span-8 !rounded-none border-slate-200 shadow-none">
-                    <CardHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
+                    <CardHeader className="p-6 border-b border-slate-100">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <Clock className="h-4 w-4" /> Lista de Agendamentos
                         </CardTitle>
@@ -367,7 +423,7 @@ export default function Appointments() {
                                     </TableRow>
                                 ) : (
                                     filteredAppointments.map((a) => (
-                                        <TableRow key={a.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <TableRow key={a.id} className={`hover:bg-slate-50/50 transition-colors ${isPastDate(a.preferredDate) ? 'opacity-40 grayscale-[0.5]' : ''}`}>
                                             <TableCell className="px-6">
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-sm text-slate-900">{a.name}</span>
@@ -407,7 +463,10 @@ export default function Appointments() {
                                                     <Button 
                                                         variant="outline" 
                                                         size="sm" 
-                                                        onClick={() => openWhatsApp(a.whatsapp, a.name)}
+                                                        onClick={() => {
+                                                            setSelectedAppt(a);
+                                                            setIsWAModalOpen(true);
+                                                        }}
                                                         className="!rounded-none border-emerald-200 text-emerald-600 hover:bg-emerald-50 h-8"
                                                     >
                                                         <MessageCircle className="h-3.5 w-3.5 mr-2" />
@@ -454,7 +513,7 @@ export default function Appointments() {
                 </Card>
 
                 <Card className="lg:col-span-4 !rounded-none border-slate-200 shadow-none">
-                    <CardHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
+                    <CardHeader className="p-6 border-b border-slate-100">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <CalendarDays className="h-4 w-4" /> Disponibilidade de Exames
                         </CardTitle>
@@ -526,6 +585,36 @@ export default function Appointments() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={isWAModalOpen} onOpenChange={setIsWAModalOpen}>
+                <DialogContent className="!rounded-none max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-bold uppercase tracking-tight">Opções de WhatsApp</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 gap-3 pt-4">
+                        <Button 
+                            className="justify-start h-12 !rounded-none bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => selectedAppt && openWhatsApp(selectedAppt.whatsapp, selectedAppt.name, 'confirm', selectedAppt.preferredDate, selectedAppt.period)}
+                        >
+                            <CheckCircle2 className="mr-3 h-5 w-5" /> Confirmar Agendamento
+                        </Button>
+                        <Button 
+                            variant="outline"
+                            className="justify-start h-12 !rounded-none border-slate-200 hover:bg-slate-50 text-slate-700"
+                            onClick={() => selectedAppt && openWhatsApp(selectedAppt.whatsapp, selectedAppt.name, 'reschedule', selectedAppt.preferredDate, selectedAppt.period)}
+                        >
+                            <Calendar className="mr-3 h-5 w-5" /> Solicitar Reagendamento
+                        </Button>
+                        <Button 
+                            variant="outline"
+                            className="justify-start h-12 !rounded-none border-slate-200 hover:bg-slate-50 text-slate-700"
+                            onClick={() => selectedAppt && openWhatsApp(selectedAppt.whatsapp, selectedAppt.name, 'remind', selectedAppt.preferredDate, selectedAppt.period)}
+                        >
+                            <Clock className="mr-3 h-5 w-5" /> Lembrar Agendamento
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

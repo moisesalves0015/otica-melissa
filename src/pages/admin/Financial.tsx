@@ -233,7 +233,7 @@ export default function Financial() {
         toast.success("Download do carnê concluído!");
     }).catch((err: any) => {
         element.style.display = originalStyle;
-        console.error("Erro no PDF do carnê:", err);
+        /* Error logged internally */
         toast.error("Erro ao gerar PDF do carnê.");
     });
   };

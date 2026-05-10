@@ -1,25 +1,29 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, query, where, getDocs, addDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Package, LogOut, Calendar, Clock, ChevronRight, ShoppingBag, CreditCard, CheckCircle2, AlertTriangle, MessageCircle, X } from "lucide-react";
+import { Package, LogOut, Calendar, Clock, ChevronRight, ShoppingBag, CreditCard, CheckCircle2, AlertTriangle, MessageCircle, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { getClientSession } from "../components/ClientProtectedRoute";
 
 const MOBILE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin { to { transform: rotate(360deg); } }
-* { box-sizing: border-box; }
-@media (max-width: 640px) {
-  .dash-main { padding: 20px 16px !important; }
-  .dash-header { padding: 0 16px !important; }
-  .dash-title { font-size: 24px !important; line-height: 32px !important; }
-  .dash-stats { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-  .dash-stat-label { font-size: 10px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .dash-order-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-  .dash-order-right { border-top: 1px solid #ECECEC; padding-top: 12px; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .dash-main { padding: 20px 12px !important; }
+  .dash-header { padding: 0 12px !important; }
+  .dash-title { font-size: 22px !important; line-height: 1.2 !important; }
+  .dash-stats { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+  .dash-stat-card { padding: 12px 8px !important; }
+  .dash-stat-icon { margin-bottom: 8px !important; width: 16px !important; height: 16px !important; }
+  .dash-stat-label { font-size: 9px !important; }
+  .dash-stat-value { font-size: 18px !important; }
+  .dash-order-card { padding: 16px 12px !important; gap: 12px !important; }
+  .dash-order-icon-wrap { width: 40px !important; height: 40px !important; }
+  .dash-order-info { gap: 12px !important; }
+  .dash-order-icon { width: 18px !important; height: 18px !important; }
   .dash-banners { grid-template-columns: 1fr !important; }
-  .dash-inst-grid { grid-template-columns: 1fr !important; }
   .dash-tab-label { display: none; }
   .dash-user-name { display: none; }
 }
@@ -55,26 +59,29 @@ function statusStyle(status: string): React.CSSProperties {
 }
 
 const S = {
-  bg: "#F8FAFC",
+  bg: "#FDFDFD",
   white: "#FFFFFF",
-  border: "#E2E8F0",
+  border: "#F1F5F9",
   surface: "#F8FAFC",
   primary: "#c4121a",
-  primaryLight: "#FEF2F2",
-  primaryHover: "#991B1B",
+  primaryLight: "#FFF1F2",
+  primaryHover: "#9F1239",
   text: "#0F172A",
   textSec: "#475569",
   textMuted: "#94A3B8",
   success: "#10B981",
-  successBg: "#ECFDF5",
+  successBg: "#F0FDF4",
   warning: "#F59E0B",
-  danger: "#EF4444",
-  dangerBg: "#FEF2F2",
+  danger: "#E11D48",
+  dangerBg: "#FFF1F2",
 };
 
 const card: React.CSSProperties = {
-  background: S.white, borderRadius: "0px", border: `1px solid ${S.border}`,
-  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.02), 0 4px 6px -2px rgba(0,0,0,0.01)", padding: "24px",
+  background: S.white, 
+  borderRadius: "24px", 
+  border: `1px solid ${S.border}`,
+  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0,0,0,0.01)", 
+  padding: "24px",
 };
 
 export default function ClientDashboard() {
@@ -90,6 +97,7 @@ export default function ClientDashboard() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState("");
   const [selectedPeriod, setSelectedPeriod] = React.useState("");
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
 
   React.useEffect(() => {
     const session = getClientSession();
@@ -130,6 +138,7 @@ export default function ClientDashboard() {
       const ol = oSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       ol.sort((a: any, b: any) => parseFlexDate(b.createdAt || b.date) - parseFlexDate(a.createdAt || a.date));
       setOrders(ol);
+      
       const il = iSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       il.sort((a: any, b: any) => parseFlexDate(a.dueDate) - parseFlexDate(b.dueDate));
       setInstallments(il);
@@ -162,7 +171,7 @@ export default function ClientDashboard() {
         period, 
         status: "Pendente", 
         source: "Portal do Cliente",
-        createdAt: new Date().toISOString() 
+        createdAt: serverTimestamp() 
       });
       toast.success(`Agendamento solicitado para ${date.includes("-") ? date.split("-").reverse().join("/") : date}!`);
       setApptOpen(false);
@@ -182,103 +191,103 @@ export default function ClientDashboard() {
   const firstName = client?.name?.split(" ")[0] || "Cliente";
 
   return (
-    <div style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif", background: S.bg, minHeight: "100vh", paddingBottom: "80px" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: S.bg, minHeight: "100vh", paddingBottom: "80px" }}>
       <style>{MOBILE_CSS}</style>
 
       {/* Header */}
-      <header className="dash-header" style={{ background: S.white, borderBottom: `1px solid ${S.border}`, padding: "0 40px", height: "72px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
-        <img src="/logo.png" alt="Ótica Melissa" style={{ height: "40px", objectFit: "contain", cursor: "pointer", transition: "transform 0.2s" }} 
-             onClick={() => navigate("/")}
-             onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-             onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ fontSize: "12px", color: S.textMuted, fontWeight: 500, margin: 0, lineHeight: "18px" }}>Olá,</p>
-            <p style={{ fontSize: "14px", color: S.text, fontWeight: 600, margin: 0, lineHeight: "22px" }}>{firstName}</p>
+      <header className="dash-header" style={{ background: "rgba(255, 255, 255, 0.8)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${S.border}`, padding: "0 40px", height: "80px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
+        <img src="/logo.png" alt="Ótica Melissa" style={{ height: "42px", objectFit: "contain", cursor: "pointer" }} 
+             onClick={() => navigate("/")} />
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <div style={{ textAlign: "right" }} className="dash-user-name">
+            <p style={{ fontSize: "11px", color: S.textMuted, fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>Bem-vindo</p>
+            <p style={{ fontSize: "14px", color: S.text, fontWeight: 700, margin: 0 }}>{firstName}</p>
           </div>
-          <button onClick={logout} title="Sair" style={{ width: "36px", height: "36px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.white, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted, transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = S.dangerBg; e.currentTarget.style.color = S.danger; e.currentTarget.style.borderColor = "#FECACA"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = S.white; e.currentTarget.style.color = S.textMuted; e.currentTarget.style.borderColor = S.border; }}>
-            <LogOut style={{ width: "15px", height: "15px" }} />
+          <button onClick={logout} style={{ width: "40px", height: "40px", borderRadius: "14px", border: "none", background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textSec, transition: "all 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = S.dangerBg; e.currentTarget.style.color = S.danger; }}
+            onMouseLeave={e => { e.currentTarget.style.background = S.surface; e.currentTarget.style.color = S.textSec; }}>
+            <LogOut style={{ width: "18px", height: "18px" }} />
           </button>
         </div>
       </header>
 
-      <main className="dash-main" style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px" }}>
+      <main className="dash-main" style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px" }}>
 
         {/* Page title */}
-        <div style={{ marginBottom: "32px" }}>
-          <h1 className="dash-title" style={{ fontSize: "32px", fontWeight: 700, color: S.text, margin: "0 0 4px 0", lineHeight: "40px" }}>Meu Painel</h1>
-          <p style={{ fontSize: "14px", color: S.textSec, margin: 0, fontWeight: 400 }}>Acompanhe seus pedidos e pagamentos</p>
+        <div style={{ marginBottom: "40px" }}>
+          <h1 className="dash-title" style={{ fontSize: "36px", fontWeight: 800, color: S.text, margin: "0 0 8px 0", letterSpacing: "-0.02em" }}>Painel do Cliente</h1>
+          <p style={{ fontSize: "15px", color: S.textSec, margin: 0, fontWeight: 500 }}>Acompanhe sua visão e seus pedidos em um só lugar.</p>
         </div>
 
         {/* Stats row */}
-        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "40px" }}>
           {[
-            { label: "Pedidos", value: orders.length, icon: <Package style={{ width: "18px", height: "18px", color: S.primary }} />, bg: S.primaryLight },
-            { label: "Parcelas pagas", value: paid.length, icon: <CheckCircle2 style={{ width: "18px", height: "18px", color: S.primary }} />, bg: S.primaryLight },
-            ...(overdue.length > 0 ? [{ label: "Vencidas", value: overdue.length, icon: <AlertTriangle style={{ width: "18px", height: "18px", color: S.danger }} />, bg: S.dangerBg }] : []),
+            { label: "Seus Pedidos", value: orders.length, icon: <Package style={{ width: "20px", height: "20px" }} /> },
+            { label: "Parcelas Pagas", value: paid.length, icon: <CheckCircle2 style={{ width: "20px", height: "20px" }} /> },
+            { label: "Vencidas", value: overdue.length, icon: <AlertTriangle style={{ width: "20px", height: "20px" }} />, isDanger: overdue.length > 0 },
           ].map((stat, i) => (
-            <div key={i} style={{ ...card, display: "flex", alignItems: "center", gap: "16px", padding: "20px 24px" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "0px", border: `1px solid ${S.border}`, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div key={i} className="dash-stat-card" style={{ ...card, padding: "24px", border: stat.isDanger ? `1px solid ${S.danger}20` : `1px solid ${S.border}` }}>
+              <div className="dash-stat-icon" style={{ color: stat.isDanger ? S.danger : S.primary, marginBottom: "16px" }}>
                 {stat.icon}
               </div>
               <div>
-                <p className="dash-stat-label" style={{ fontSize: "12px", color: S.textMuted, fontWeight: 500, margin: "0 0 2px 0" }}>{stat.label}</p>
-                <p style={{ fontSize: "24px", fontWeight: 700, color: S.text, margin: 0, lineHeight: 1 }}>{stat.value}</p>
+                <p className="dash-stat-label" style={{ fontSize: "12px", color: S.textMuted, fontWeight: 600, margin: "0 0 4px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{stat.label}</p>
+                <p className="dash-stat-value" style={{ fontSize: "28px", fontWeight: 800, color: S.text, margin: 0, lineHeight: 1 }}>{stat.value}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: "6px", marginBottom: "32px", background: S.white, border: `1px solid ${S.border}`, borderRadius: "0px", padding: "6px", width: "fit-content", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "40px", background: S.surface, borderRadius: "18px", padding: "6px", width: "fit-content" }}>
           {(["pedidos", "parcelas"] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              height: "36px", padding: "0 20px", borderRadius: "0px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
-              background: activeTab === tab ? S.primary : "transparent",
-              color: activeTab === tab ? "#fff" : S.textSec,
-              transition: "all 0.15s", display: "flex", alignItems: "center", gap: "8px",
+              height: "44px", padding: "0 24px", borderRadius: "14px", border: "none", cursor: "pointer", fontSize: "14px", fontWeight: 700,
+              background: activeTab === tab ? S.white : "transparent",
+              color: activeTab === tab ? S.text : S.textSec,
+              boxShadow: activeTab === tab ? "0 4px 12px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.2s", display: "flex", alignItems: "center", gap: "10px",
             }}>
-              {tab === "pedidos" ? <><Package style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Pedidos</span></> : <><CreditCard style={{ width: "14px", height: "14px" }} /> <span className="dash-tab-label">Parcelas</span> {overdue.length > 0 && <span style={{ background: S.danger, color: "#fff", borderRadius: "0px", fontSize: "10px", fontWeight: 700, padding: "0 6px", height: "16px", display: "flex", alignItems: "center" }}>{overdue.length}</span>}</>}
+              {tab === "pedidos" ? <><ShoppingBag style={{ width: "16px", height: "16px" }} /> <span className="dash-tab-label">Pedidos</span></> : <><CreditCard style={{ width: "16px", height: "16px" }} /> <span className="dash-tab-label">Pagamentos</span></>}
             </button>
           ))}
         </div>
 
         {/* Orders Tab */}
         {activeTab === "pedidos" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {orders.length === 0 ? (
-              <div style={{ ...card, textAlign: "center", padding: "64px 24px" }}>
-                <ShoppingBag style={{ width: "40px", height: "40px", color: S.border, margin: "0 auto 16px" }} />
-                <p style={{ fontSize: "14px", color: S.textMuted, fontWeight: 500, margin: 0 }}>Nenhum pedido encontrado</p>
+              <div style={{ ...card, textAlign: "center", padding: "80px 24px" }}>
+                <Package style={{ width: "48px", height: "48px", color: S.border, margin: "0 auto 24px" }} />
+                <p style={{ fontSize: "15px", color: S.textMuted, fontWeight: 500, margin: 0 }}>Você ainda não possui pedidos registrados.</p>
               </div>
             ) : orders.map(order => (
-              <div key={order.id} onClick={() => navigate(`/rastreio?id=${order.id}`)} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", gap: "16px", transition: "box-shadow 0.15s, border-color 0.15s" }}
-                className="dash-order-row"
-                onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.07)"; e.currentTarget.style.borderColor = "#D8D8FF"; }}
-                onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.03)"; e.currentTarget.style.borderColor = S.border; }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", border: `1px solid ${S.primaryLight}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Package style={{ width: "20px", height: "20px", color: S.primary }} />
+              <div key={order.id} className="dash-order-card" onClick={() => navigate(`/rastreio?id=${order.id}`)} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", transition: "all 0.3s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 24px rgba(0,0,0,0.04)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0,0,0,0.02)"; }}>
+                <div className="dash-order-info" style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                  <div className="dash-order-icon-wrap" style={{ width: "60px", height: "60px", borderRadius: "18px", background: S.surface, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Package className="dash-order-icon" style={{ width: "24px", height: "24px", color: S.primary }} />
                   </div>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 600, color: S.primary }}>#{order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase()}</span>
-                      <span style={statusStyle(order.status)}>{order.status}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: S.primary, letterSpacing: "0.02em" }}>#{order.orderCode || order.tso || order.id.slice(0, 8).toUpperCase()}</span>
+                      <span style={{ ...statusStyle(order.status), borderRadius: "8px", padding: "4px 10px" }}>{order.status}</span>
                     </div>
-                    <p style={{ fontSize: "15px", fontWeight: 600, color: S.text, margin: "0 0 2px 0" }}>{order.serviceType || "Serviço Óptico"}</p>
-                    <p style={{ fontSize: "12px", color: S.textMuted, margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Clock style={{ width: "11px", height: "11px" }} /> {toDisplay(order.date || order.createdAt)}
+                    <p style={{ fontSize: "15px", fontWeight: 700, color: S.text, margin: "0 0 4px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{order.serviceType || "Atendimento Óptico"}</p>
+                    <p style={{ fontSize: "12px", color: S.textMuted, margin: 0, fontWeight: 500 }}>
+                      {toDisplay(order.date || order.createdAt)}
                     </p>
                   </div>
                 </div>
-                <div className="dash-order-right" style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
                   <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: "11px", color: S.textMuted, margin: "0 0 2px 0", fontWeight: 500 }}>Total</p>
-                    <p style={{ fontSize: "16px", fontWeight: 700, color: S.text, margin: 0 }}>R$ {Number(order.totalValue || order.total || 0).toFixed(2)}</p>
+                    <p style={{ fontSize: "10px", color: S.textMuted, margin: "0 0 2px 0", fontWeight: 700, textTransform: "uppercase" }}>Total</p>
+                    <p style={{ fontSize: "16px", fontWeight: 800, color: S.text, margin: 0, whiteSpace: "nowrap" }}>R$ {Number(order.totalValue || order.total || 0).toFixed(2)}</p>
                   </div>
-                  <ChevronRight style={{ width: "18px", height: "18px", color: S.textMuted }} />
+                  <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: S.surface, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ChevronRight style={{ width: "18px", height: "18px", color: S.textSec }} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -287,75 +296,121 @@ export default function ClientDashboard() {
 
         {/* Installments Tab */}
         {activeTab === "parcelas" && (
-          <div className="dash-inst-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {installments.length === 0 ? (
-              <div style={{ ...card, textAlign: "center", padding: "64px 24px", gridColumn: "1/-1" }}>
-                <CreditCard style={{ width: "40px", height: "40px", color: S.border, margin: "0 auto 16px" }} />
-                <p style={{ fontSize: "14px", color: S.textMuted, fontWeight: 500, margin: 0 }}>Nenhuma parcela encontrada</p>
+              <div style={{ ...card, textAlign: "center", padding: "80px 24px" }}>
+                <CreditCard style={{ width: "48px", height: "48px", color: S.border, margin: "0 auto 24px" }} />
+                <p style={{ fontSize: "15px", color: S.textMuted, fontWeight: 500, margin: 0 }}>Nenhum pagamento pendente encontrado.</p>
               </div>
-            ) : installments.map(inst => {
-              const ov = inst.status !== "Pago" && isOverdue(inst.dueDate);
-              const isPaid = inst.status === "Pago";
-              return (
-                <div key={inst.id} style={{ background: S.white, borderRadius: "20px", border: `1px solid ${ov ? "#FECACA" : isPaid ? "#BBF7D0" : S.border}`, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "999px", padding: "3px 12px", background: isPaid ? S.successBg : ov ? S.dangerBg : "#FEF3C7", color: isPaid ? "#15803D" : ov ? S.danger : "#92400E" }}>
-                      {isPaid ? "Pago" : ov ? "Vencida" : "Pendente"}
-                    </span>
-                    <span style={{ fontSize: "12px", color: S.textMuted, fontWeight: 500 }}>Parc. {inst.number}/{inst.totalInstallments}</span>
+            ) : (() => {
+              const grouped: Record<string, any[]> = {};
+              installments.forEach(inst => {
+                const key = inst.atendimentoId || "Sem Atendimento";
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(inst);
+              });
+
+              return Object.entries(grouped).map(([atendimentoId, insts]) => {
+                const order = orders.find(o => o.id === atendimentoId || o.atendimentoId === atendimentoId);
+                const tso = order?.orderCode || order?.tso || atendimentoId.slice(0, 8).toUpperCase();
+                const date = order?.date || order?.createdAt || "";
+                const orderTitle = `Atendimento ${tso} • ${toDisplay(date)}`;
+                const isExpanded = expandedGroups[atendimentoId] || false;
+
+                const toggleGroup = () => {
+                    setExpandedGroups(prev => ({ ...prev, [atendimentoId]: !isExpanded }));
+                };
+
+                return (
+                  <div key={atendimentoId} style={{ ...card, padding: 0, overflow: "hidden", transition: "all 0.3s" }}>
+                    <div 
+                        onClick={toggleGroup}
+                        style={{ padding: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", background: isExpanded ? S.surface : "transparent" }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                        <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: S.surface, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <CreditCard style={{ width: "20px", height: "20px", color: S.primary }} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: "16px", fontWeight: 700, color: S.text, margin: 0 }}>{orderTitle}</h3>
+                            <p style={{ fontSize: "13px", color: S.textMuted, margin: "2px 0 0 0", fontWeight: 500 }}>{insts.length} parcelas • Total R$ {insts.reduce((acc, i) => acc + (Number(i.value) || 0), 0).toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                         <span style={{ fontSize: "11px", fontWeight: 800, color: S.primary, background: S.primaryLight, padding: "6px 14px", borderRadius: "10px", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                            {insts.filter(i => i.status === "Pago").length}/{insts.length} Pagas
+                         </span>
+                         <div style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}>
+                            <ChevronDown style={{ width: "20px", height: "20px", color: S.textMuted }} />
+                         </div>
+                      </div>
+                    </div>
+                    
+                    {isExpanded && (
+                        <div style={{ padding: "0 24px 24px", background: S.white }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px", paddingTop: "8px" }}>
+                            {insts.map(inst => {
+                                const ov = inst.status !== "Pago" && isOverdue(inst.dueDate);
+                                const isPaid = inst.status === "Pago";
+                                return (
+                                <div key={inst.id} style={{ background: S.surface, borderRadius: "18px", padding: "20px", border: isPaid ? `1px solid ${S.success}10` : ov ? `1px solid ${S.danger}10` : "1px solid transparent" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                                        <span style={{ fontSize: "10px", fontWeight: 800, borderRadius: "6px", padding: "4px 10px", background: isPaid ? S.successBg : ov ? S.dangerBg : S.white, color: isPaid ? S.success : ov ? S.danger : S.textSec, border: isPaid || ov ? "none" : `1px solid ${S.border}`, textTransform: "uppercase" }}>
+                                            {isPaid ? "Pago" : ov ? "Vencida" : "Pendente"}
+                                        </span>
+                                        <span style={{ fontSize: "12px", color: S.textMuted, fontWeight: 700 }}>{inst.number === 0 ? "Entrada" : `#${inst.number}`}</span>
+                                    </div>
+                                    <div style={{ marginBottom: "20px" }}>
+                                        <p style={{ fontSize: "22px", fontWeight: 800, color: S.text, margin: "0 0 4px 0" }}>
+                                            R$ {Number(inst.value || 0).toFixed(2)}
+                                        </p>
+                                        <p style={{ fontSize: "12px", color: ov ? S.danger : S.textMuted, margin: 0, fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <Calendar style={{ width: "13px", height: "13px" }} />
+                                            {isPaid ? `Pago em ${toDisplay(inst.paymentDate || inst.receivedAtBr || "")}` : `Vence em ${toDisplay(inst.dueDate)}`}
+                                        </p>
+                                    </div>
+                                    {!isPaid && (
+                                    <button onClick={() => wa(`Olá! Quero pagar a ${inst.number === 0 ? "entrada" : `parcela ${inst.number}`} do ${orderTitle} (R$ ${Number(inst.value).toFixed(2)}).`)}
+                                        style={{ width: "100%", height: "40px", borderRadius: "10px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 700, background: ov ? S.danger : S.text, color: S.white, transition: "all 0.2s" }}>
+                                        {ov ? "Regularizar" : "Pagar via Pix"}
+                                    </button>
+                                    )}
+                                </div>
+                                );
+                            })}
+                            </div>
+                        </div>
+                    )}
                   </div>
-                  <div>
-                    <p style={{ fontSize: "24px", fontWeight: 700, color: isPaid ? "#15803D" : ov ? S.danger : S.text, margin: "0 0 4px 0" }}>
-                      R$ {Number(inst.value || 0).toFixed(2)}
-                    </p>
-                    <p style={{ fontSize: "12px", color: ov ? S.danger : S.textMuted, margin: 0, display: "flex", alignItems: "center", gap: "4px", fontWeight: 500 }}>
-                      {ov && <AlertTriangle style={{ width: "12px", height: "12px" }} />}
-                      <Calendar style={{ width: "12px", height: "12px" }} />
-                      {isPaid ? `Pago em ${toDisplay(inst.paymentDate)}` : ov ? `Venceu em ${toDisplay(inst.dueDate)}` : `Vence em ${toDisplay(inst.dueDate)}`}
-                    </p>
-                  </div>
-                  {!isPaid && (
-                    <button onClick={() => wa(`Olá! Quero pagar a parcela ${inst.number} (R$ ${Number(inst.value).toFixed(2)}).`)}
-                      style={{ height: "44px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "14px", fontWeight: 700, background: ov ? S.danger : S.primary, color: "#fff", transition: "all 0.2s", boxShadow: `0 4px 10px ${ov ? "rgba(239,68,68,0.2)" : "rgba(196,18,26,0.2)"}` }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = `0 6px 15px ${ov ? "rgba(239,68,68,0.3)" : "rgba(196,18,26,0.3)"}`; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 4px 10px ${ov ? "rgba(239,68,68,0.2)" : "rgba(196,18,26,0.2)"}`; }}>
-                      {ov ? "Regularizar via WhatsApp" : "Pagar via Pix"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         )}
 
         {/* Bottom Banners */}
-        <div className="dash-banners" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "32px" }}>
-          <div style={{ background: S.primary, borderRadius: "16px", padding: "32px", color: "#fff", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 25px -5px rgba(196,18,26,0.15)" }}>
-            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MessageCircle style={{ width: "22px", height: "22px" }} />
+        <div className="dash-banners" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "40px" }}>
+          <div style={{ background: S.text, borderRadius: "28px", padding: "32px", color: S.white, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "relative", zIndex: 2 }}>
+                <MessageCircle style={{ width: "28px", height: "28px", marginBottom: "20px", opacity: 0.8 }} />
+                <h3 style={{ fontSize: "22px", fontWeight: 800, margin: "0 0 8px 0" }}>Precisa de ajuda?</h3>
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", margin: "0 0 24px 0", fontWeight: 500, lineHeight: 1.5 }}>Nossa equipe está pronta para te atender agora mesmo via WhatsApp.</p>
+                <button onClick={() => wa("Olá! Preciso de suporte com meu pedido.")} style={{ height: "44px", borderRadius: "14px", background: "rgba(255,255,255,0.15)", border: "none", color: S.white, fontSize: "14px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s", padding: "0 24px" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}>
+                Suporte WhatsApp
+                </button>
             </div>
-            <div>
-              <h3 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 4px 0" }}>Precisa de ajuda?</h3>
-              <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)", margin: 0, fontWeight: 400 }}>Fale com nossa equipe pelo WhatsApp.</p>
-            </div>
-            <button onClick={() => wa("Olá! Preciso de suporte com meu pedido.")} style={{ height: "44px", borderRadius: "12px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s", width: "fit-content", padding: "0 24px" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}>
-              Suporte online
-            </button>
           </div>
-          <div style={{ ...card, display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ width: "48px", height: "48px", borderRadius: "12px", border: `1px solid ${S.border}`, background: S.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Calendar style={{ width: "22px", height: "22px", color: S.primary }} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: "20px", fontWeight: 700, color: S.text, margin: "0 0 4px 0" }}>Agendar exame</h3>
-              <p style={{ fontSize: "14px", color: S.textSec, margin: 0, fontWeight: 400 }}>Renove sua receita com um novo exame de vista.</p>
-            </div>
-            <button onClick={() => setApptOpen(true)} style={{ height: "44px", borderRadius: "0px", background: S.primary, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s", width: "fit-content", padding: "0 24px", boxShadow: "0 4px 10px rgba(196,18,26,0.1)" }}
+          
+          <div style={{ ...card, borderRadius: "28px", padding: "32px", background: S.white }}>
+            <Calendar style={{ width: "28px", height: "28px", marginBottom: "20px", color: S.primary }} />
+            <h3 style={{ fontSize: "22px", fontWeight: 800, color: S.text, margin: "0 0 8px 0" }}>Novo Exame</h3>
+            <p style={{ fontSize: "14px", color: S.textSec, margin: "0 0 24px 0", fontWeight: 500, lineHeight: 1.5 }}>Já faz tempo que você não revisa seu grau? Agende um exame de vista.</p>
+            <button onClick={() => setApptOpen(true)} style={{ height: "44px", borderRadius: "14px", background: S.primary, border: "none", color: S.white, fontSize: "14px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s", padding: "0 24px" }}
               onMouseEnter={e => (e.currentTarget.style.background = S.primaryHover)}
               onMouseLeave={e => (e.currentTarget.style.background = S.primary)}>
-              Solicitar agendamento
+              Agendar Agora
             </button>
           </div>
         </div>
@@ -363,20 +418,20 @@ export default function ClientDashboard() {
 
       {/* Appointment Modal */}
       {apptOpen && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "24px" }}>
-          <div style={{ background: S.white, borderRadius: "0px", border: `1px solid ${S.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)", width: "100%", maxWidth: "440px", overflow: "hidden" }}>
-            <div style={{ padding: "24px 24px 20px", borderBottom: `1px solid ${S.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}>
+          <div style={{ background: S.white, borderRadius: "32px", boxShadow: "0 30px 60px -12px rgba(0,0,0,0.25)", width: "100%", maxWidth: "460px", overflow: "hidden" }}>
+            <div style={{ padding: "32px 32px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <h2 style={{ fontSize: "20px", fontWeight: 700, color: S.text, margin: "0 0 2px 0" }}>Agendar Exame</h2>
-                <p style={{ fontSize: "13px", color: S.textMuted, margin: 0 }}>Escolha data e período de preferência</p>
+                <h2 style={{ fontSize: "24px", fontWeight: 800, color: S.text, margin: "0 0 8px 0" }}>Agendar Exame</h2>
+                <p style={{ fontSize: "14px", color: S.textSec, margin: 0, fontWeight: 500 }}>Escolha o melhor dia para você.</p>
               </div>
-              <button onClick={() => setApptOpen(false)} style={{ width: "32px", height: "32px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textMuted }}>
-                <X style={{ width: "14px", height: "14px" }} />
+              <button onClick={() => setApptOpen(false)} style={{ width: "40px", height: "40px", borderRadius: "14px", border: "none", background: S.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.textSec }}>
+                <X style={{ width: "20px", height: "20px" }} />
               </button>
             </div>
-            <form onSubmit={handleAppt} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 600, color: S.textSec, textTransform: "uppercase", letterSpacing: "0.05em" }}>Data preferencial</label>
+            <form onSubmit={handleAppt} style={{ padding: "0 32px 40px", display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Data preferencial</label>
                 {availableDates.length > 0 ? (
                     <select 
                         name="date" 
@@ -388,7 +443,7 @@ export default function ClientDashboard() {
                             const dateObj = availableDates.find(d => d.date === date);
                             setSelectedPeriod(dateObj?.period !== "Ambos" ? dateObj?.period || "" : "");
                         }} 
-                        style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+                        style={{ height: "52px", borderRadius: "16px", border: `2px solid ${S.surface}`, background: S.surface, padding: "0 16px", fontSize: "15px", fontWeight: 600, color: S.text, outline: "none", appearance: "none", cursor: "pointer" }}
                     >
                         <option value="">Selecione uma data</option>
                         {availableDates.map(d => (
@@ -396,17 +451,17 @@ export default function ClientDashboard() {
                         ))}
                     </select>
                 ) : (
-                    <input type="date" name="date" required style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit" }} />
+                    <input type="date" name="date" required style={{ height: "52px", borderRadius: "16px", border: `2px solid ${S.surface}`, background: S.surface, padding: "0 16px", fontSize: "15px", fontWeight: 600, color: S.text, outline: "none" }} />
                 )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 600, color: S.textSec, textTransform: "uppercase", letterSpacing: "0.05em" }}>Período preferido</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: S.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Período preferido</label>
                 <select 
                     name="period" 
                     required 
                     value={selectedPeriod}
                     onChange={(e) => setSelectedPeriod(e.target.value)}
-                    style={{ height: "48px", borderRadius: "0px", border: `1px solid ${S.border}`, background: S.surface, padding: "0 14px", fontSize: "16px", color: S.text, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+                    style={{ height: "52px", borderRadius: "16px", border: `2px solid ${S.surface}`, background: S.surface, padding: "0 16px", fontSize: "15px", fontWeight: 600, color: S.text, outline: "none", appearance: "none", cursor: "pointer" }}
                 >
                   <option value="">Qualquer período</option>
                   {(() => {
@@ -423,26 +478,15 @@ export default function ClientDashboard() {
                   })()}
                 </select>
               </div>
-              <p style={{ fontSize: "12px", color: S.textMuted, margin: "4px 0 0", textAlign: "center", fontWeight: 500 }}>Sujeito à confirmação da equipe.</p>
-              <button type="submit" disabled={isSubmitting} style={{ height: "52px", borderRadius: "0px", background: S.primary, border: "none", color: "#fff", fontSize: "16px", fontWeight: 700, cursor: "pointer", opacity: isSubmitting ? 0.5 : 1, transition: "all 0.2s", boxShadow: "0 10px 15px -3px rgba(196,18,26,0.2)" }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 15px 20px -5px rgba(196,18,26,0.3)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(196,18,26,0.2)"; }}>
-                {isSubmitting ? "Solicitando..." : "Confirmar solicitação"}
+              <button type="submit" disabled={isSubmitting} style={{ height: "56px", borderRadius: "16px", background: S.primary, border: "none", color: S.white, fontSize: "16px", fontWeight: 800, cursor: "pointer", opacity: isSubmitting ? 0.6 : 1, transition: "all 0.2s", marginTop: "8px" }}
+                onMouseEnter={e => { e.currentTarget.style.background = S.primaryHover; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = S.primary; e.currentTarget.style.transform = "none"; }}>
+                {isSubmitting ? "Processando..." : "Confirmar Agendamento"}
               </button>
             </form>
           </div>
         </div>
       )}
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        @keyframes spin { to { transform: rotate(360deg); } }
-        * { box-sizing: border-box; }
-        @media (max-width: 640px) {
-          main { padding: 24px 16px !important; }
-          header { padding: 0 16px !important; }
-        }
-      `}</style>
     </div>
   );
 }

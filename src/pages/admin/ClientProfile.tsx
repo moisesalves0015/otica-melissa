@@ -2,7 +2,7 @@ import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import html2pdf from 'html2pdf.js';
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { calculateCreditScore, getCreditStatusColor } from "../../lib/credit";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Printer, FileText, User, Phone, Calendar, ShoppingBag, MapPin, Activity, Download, Wrench, Save, XCircle } from "lucide-react";
+import { ArrowLeft, Printer, FileText, User, Phone, Calendar, ShoppingBag, MapPin, Activity, Download, Wrench, Save, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientProfile() {
@@ -60,7 +60,7 @@ export default function ClientProfile() {
           }));
         }
       } catch (err) {
-        console.error("Erro ao buscar CEP", err);
+        /* SILENT ERROR */
       }
     }
   };
@@ -76,6 +76,19 @@ export default function ClientProfile() {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !client) return;
+    if (!confirm(`TEM CERTEZA QUE DESEJA EXCLUIR O CLIENTE "${client.name.toUpperCase()}"?\nEsta ação é permanente e removerá todos os dados do cadastro.`)) return;
+
+    try {
+      await deleteDoc(doc(db, "clients", id));
+      toast.success("Cliente excluído com sucesso.");
+      navigate("/admin/clientes");
+    } catch (error: any) {
+      toast.error("Erro ao excluir cliente: " + error.message);
     }
   };
 
@@ -117,7 +130,7 @@ export default function ClientProfile() {
         const balance = unpaidInst.reduce((acc: number, curr: any) => acc + (curr.value || 0), 0);
         setDynamicBalance(balance);
       } catch (error) {
-        console.error("Erro ao buscar histórico", error);
+        /* SILENT ERROR */
       } finally {
         setLoading(false);
       }
@@ -195,7 +208,7 @@ export default function ClientProfile() {
         toast.success("Download concluído!");
     }).catch((err: any) => {
         element.style.display = originalStyle;
-        console.error("Erro no PDF:", err);
+        /* SILENT ERROR */
         toast.error("Erro ao gerar PDF.");
     });
   };
@@ -247,6 +260,9 @@ export default function ClientProfile() {
                   </Button>
                   <Button onClick={handlePrint} variant="outline" size="icon" className="rounded-full h-9 w-9 border-slate-300 text-slate-700" title="Imprimir Prontuário">
                       <Printer className="h-4 w-4" />
+                  </Button>
+                  <Button onClick={handleDelete} variant="outline" size="icon" className="rounded-full h-9 w-9 border-red-200 text-red-600 hover:bg-red-50" title="Excluir Cliente">
+                      <Trash2 className="h-4 w-4" />
                   </Button>
               </>
             )}

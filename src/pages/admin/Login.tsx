@@ -24,7 +24,7 @@ export default function AdminLogin() {
       navigate("/admin");
     } catch (error: any) {
       toast.error("E-mail ou senha incorretos.");
-      console.error(error);
+      // Auth error handled by UI
     } finally {
       setLoading(false);
     }
