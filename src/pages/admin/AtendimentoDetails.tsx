@@ -427,13 +427,30 @@ export default function AtendimentoDetails() {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (window.confirm("ATENÇÃO: Tem certeza que deseja excluir permanentemente este atendimento? Esta ação não pode ser desfeita e pode causar inconsistência se houverem pedidos associados.")) {
+    if (window.confirm("ATENÇÃO: Tem certeza que deseja excluir permanentemente este atendimento? Esta ação não pode ser desfeita e removerá também qualquer ficha financeira (carnê) vinculada.")) {
       try {
+        setSaving(true);
+        // 1. Deletar parcelas vinculadas (carnê)
+        const qInst = query(collection(db, "installments"), where("atendimentoId", "==", id));
+        const instSnap = await getDocs(qInst);
+        const instPromises = instSnap.docs.map(d => deleteDoc(doc(db, "installments", d.id)));
+        await Promise.all(instPromises);
+
+        // 1.5 Deletar transações de caixa vinculadas
+        const qTrans = query(collection(db, "financial_transactions"), where("atendimentoId", "==", id));
+        const transSnap = await getDocs(qTrans);
+        const transPromises = transSnap.docs.map(d => deleteDoc(doc(db, "financial_transactions", d.id)));
+        await Promise.all(transPromises);
+
+        // 2. Deletar o atendimento
         await deleteDoc(doc(db, "atendimentos", id));
-        toast.success("Atendimento excluído com sucesso.");
+        
+        toast.success("Atendimento e dados financeiros excluídos com sucesso.");
         navigate("/admin/atendimentos");
       } catch (err: any) {
         toast.error("Erro ao excluir atendimento: " + err.message);
+      } finally {
+        setSaving(false);
       }
     }
   };
