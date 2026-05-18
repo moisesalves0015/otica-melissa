@@ -1124,48 +1124,57 @@ export default function Orders() {
                       setIsOverdueDialogOpen(false);
                       navigate(`/admin/pedidos/${order.id}`);
                     }}
-                    className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center p-3.5 rounded border border-slate-100 hover:border-red-200 hover:bg-red-50/10 transition-all cursor-pointer group bg-white shadow-sm"
+                    className="flex flex-col gap-3.5 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/10 transition-all cursor-pointer group bg-white shadow-sm"
                   >
-                    {/* Col 1: OS & Cliente */}
-                    <div className="sm:col-span-5 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono font-bold text-slate-900 text-xs tracking-wider bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                          #{order.orderCode || order.tso || order.id.substring(0, 8).toUpperCase()}
+                    {/* Linha 1: Nome, Código e Dias de Atraso */}
+                    <div className="flex items-center justify-between gap-3 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <h4 className="text-xs sm:text-sm font-black text-slate-800 truncate group-hover:text-red-700 transition-colors">
+                          {order.clientName}
+                        </h4>
+                        <span className="font-mono font-bold text-[9px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-150 shrink-0">
+                          #{order.orderCode || order.tso || order.id.substring(0, 6).toUpperCase()}
                         </span>
-                        <Badge className={`rounded ${statusColors[order.status] || 'bg-slate-100'} text-[8px] font-bold uppercase tracking-wider shadow-none border-none px-1.5 py-0.5`}>
-                          {order.status}
-                        </Badge>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-slate-900">
-                        {order.clientName}
-                      </h4>
+                      
+                      {delayDaysText && (
+                        <span className="text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wider">
+                          {delayDaysText}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Col 2: Atraso e Prazo */}
-                    <div className="sm:col-span-4 min-w-0">
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Previsão de Entrega</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-600">
-                          {order.dueDate || '—'}
-                        </span>
-                        {delayDaysText && (
-                          <span className="text-[9px] font-extrabold text-red-600 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">
-                            {delayDaysText}
+                    {/* Separador sutil */}
+                    <div className="h-[1px] bg-slate-100/80" />
+
+                    {/* Linha 2: Informações de Previsão, Valor Total e Ícone de Navegação */}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500 font-medium">
+                        {/* Previsão */}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Previsão</span>
+                          <span className="text-slate-700 font-bold leading-normal">{order.dueDate || '—'}</span>
+                        </div>
+                        {/* Valor Total */}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Valor Total</span>
+                          <span className="text-slate-900 font-extrabold leading-normal">
+                            R$ {(Number(order.total) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                           </span>
-                        )}
+                        </div>
+                        {/* Status */}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Status</span>
+                          <span className="text-slate-600 font-semibold text-[10px] flex items-center gap-1.5 leading-normal">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse" />
+                            {order.status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Col 3: Financeiro e Botão de Ir */}
-                    <div className="sm:col-span-3 flex items-center justify-between sm:justify-end gap-3 min-w-0">
-                      <div className="text-left sm:text-right">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Valor Total</p>
-                        <p className="text-xs font-bold text-slate-950">
-                          R$ {(Number(order.total) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                      <div className="h-7 w-7 rounded bg-slate-50 group-hover:bg-red-50 flex items-center justify-center border border-slate-100 group-hover:border-red-100 transition-colors">
-                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-red-500 transition-colors" />
+                      {/* Botão Chevron */}
+                      <div className="h-7 w-7 rounded-lg bg-slate-50 group-hover:bg-red-500 group-hover:text-white flex items-center justify-center border border-slate-100 group-hover:border-red-500 transition-all shadow-sm shrink-0">
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
                       </div>
                     </div>
                   </div>
