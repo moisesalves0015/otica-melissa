@@ -613,10 +613,6 @@ export function Footer() {
                     <span>CNPJ: 52.173.061/0001-54</span>
                     <Link to="/privacidade" className="hover:text-primary transition-colors text-[10px] uppercase font-medium">Privacidade</Link>
                     <Link to="/termos" className="hover:text-primary transition-colors text-[10px] uppercase font-medium">Termos</Link>
-                    <Link to="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
-                        <Lock size={10} />
-                        Painel Admin
-                    </Link>
                 </div>
             </div>
             

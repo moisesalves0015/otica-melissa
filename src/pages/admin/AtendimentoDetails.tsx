@@ -164,7 +164,7 @@ export default function AtendimentoDetails() {
       const historyEntry = {
         date: new Date().toISOString(),
         action: `Alterações efetuadas: Item removido do atendimento: ${orderBeingRemoved?.serviceType || 'Serviço/Produto'}`,
-        user: "Administrador"
+        user: localStorage.getItem("selectedAtendente") || "Vendedora"
       };
 
       // Atualiza o atendimento
@@ -201,7 +201,7 @@ export default function AtendimentoDetails() {
       const historyEntry = {
         date: new Date().toISOString(),
         action: `Pedido cancelado automaticamente ao ser removido do Atendimento #${atendimento.tso || id}`,
-        user: "Administrador"
+        user: localStorage.getItem("selectedAtendente") || "Vendedora"
       };
 
       await updateDoc(doc(db, "orders", orderToDelete.id), {
@@ -346,7 +346,7 @@ export default function AtendimentoDetails() {
       const historyEntry = {
         date: new Date().toISOString(),
         action: `Alterações efetuadas: ${changes.join(', ')}`,
-        user: "Administrador"
+        user: localStorage.getItem("selectedAtendente") || "Vendedora"
       };
 
       // Recalcula o total final baseado nos pedidos editados e ajustes globais
@@ -1501,7 +1501,7 @@ export default function AtendimentoDetails() {
             <div className="p-6">
               <p className="text-sm text-slate-600 font-medium">Tem certeza que deseja remover este item da ficha de atendimento?</p>
             </div>
-            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none">
+            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none !m-0">
               <Button variant="ghost" onClick={() => setShowRemovalConfirm(false)} className="flex-1 text-[10px] font-bold h-10 !rounded-none">NÃO, VOLTAR</Button>
               <Button onClick={confirmRemoval} className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold h-10 !rounded-none">SIM, REMOVER</Button>
             </DialogFooter>
@@ -1517,7 +1517,7 @@ export default function AtendimentoDetails() {
             <div className="p-6">
               <p className="text-sm text-slate-600 font-medium">O item foi removido da ficha. Deseja também <strong className="text-rose-600 uppercase">Cancelar</strong> o pedido vinculado no sistema?</p>
             </div>
-            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none">
+            <DialogFooter className="p-4 bg-slate-50 flex gap-2 !rounded-none !m-0">
               <Button variant="ghost" onClick={() => { setShowCancelOrderConfirm(false); setOrderToDelete(null); }} className="flex-1 text-[10px] font-bold h-10 !rounded-none">NÃO, APENAS REMOVER</Button>
               <Button onClick={handleCancelOrderAction} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold h-10 !rounded-none">SIM, CANCELAR PEDIDO</Button>
             </DialogFooter>

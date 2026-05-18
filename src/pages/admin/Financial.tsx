@@ -68,8 +68,30 @@ import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+type FinPeriod = "hoje" | "ontem" | "semana" | "mes" | "mes-anterior" | "trimestre" | "ano" | "personalizado" | "30-dias";
+
+const parseFinDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  if (dateStr.includes('/')) {
+    const [d, m, y] = dateStr.split('/').map(Number);
+    if (!d || !m || !y) return null;
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export default function Financial() {
   const [activeTab, setActiveTab] = React.useState(localStorage.getItem('financialTab') || "caixa");
+  const [finPeriod, setFinPeriod] = React.useState<FinPeriod>("30-dias");
+  const [customStartDate, setCustomStartDate] = React.useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29);
+    return d.toISOString().split('T')[0];
+  });
+  const [customEndDate, setCustomEndDate] = React.useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -524,9 +546,16 @@ export default function Financial() {
     };
 
     toast.info("Gerando PDF, aguarde...");
+    
+    // Temporarily make the element visible for PDF generation
+    const originalDisplay = element.style.display;
+    element.style.display = 'block';
+
     html2pdf().from(element).set(opt).save().then(() => {
+        element.style.display = originalDisplay;
         toast.success("Download concluído!");
     }).catch((err: any) => {
+        element.style.display = originalDisplay;
         toast.error("Erro ao gerar PDF.");
     });
   };
@@ -552,16 +581,94 @@ export default function Financial() {
       }
   };
 
-  const filteredTransactions = transactions.filter(t => 
-    t.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  // Dashboard calcs
-  const totalReceitas = transactions.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const totalDespesas = transactions.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const saldo = totalReceitas - totalDespesas;
+  // Period filter helper
+  const isInFinPeriod = React.useCallback((dateStr: string): boolean => {
+    const date = parseFinDate(dateStr);
+    if (!date) return false;
+    const today = new Date();
+    
+    let start = new Date();
+    let end = new Date();
+    
+    if (finPeriod === 'hoje') {
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'ontem') {
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'semana') {
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'mes') {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === '30-dias') {
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'mes-anterior') {
+      start.setMonth(start.getMonth() - 1);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(end.getMonth() - 1 + 1);
+      end.setDate(0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'trimestre') {
+      start.setMonth(start.getMonth() - 2);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'ano') {
+      start.setMonth(0);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (finPeriod === 'personalizado') {
+      if (!customStartDate && !customEndDate) return true;
+      if (customStartDate) {
+        const [y, m, d] = customStartDate.split("-").map(Number);
+        start = new Date(y, m - 1, d, 0, 0, 0, 0);
+      } else {
+        start = new Date(1970, 0, 1);
+      }
+      if (customEndDate) {
+        const [y, m, d] = customEndDate.split("-").map(Number);
+        end = new Date(y, m - 1, d, 23, 59, 59, 999);
+      } else {
+        end = new Date(2100, 11, 31);
+      }
+    }
+    
+    return date >= start && date <= end;
+  }, [finPeriod, customStartDate, customEndDate]);
 
-  const expensesByCategory = transactions
+  const periodTransactions = React.useMemo(
+    () => transactions.filter(t => isInFinPeriod(t.date || '')),
+    [transactions, isInFinPeriod]
+  );
+
+  const filteredTransactions = React.useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = !searchTerm || 
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        t.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPeriod = isInFinPeriod(t.date || '');
+      return matchesSearch && matchesPeriod;
+    });
+  }, [transactions, searchTerm, isInFinPeriod]);
+
+  // Dashboard calcs — period-aware
+  const totalReceitas = periodTransactions.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const totalDespesas = periodTransactions.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const saldo = totalReceitas - totalDespesas;
+  const ticketMedioFin = periodTransactions.length > 0 ? (totalReceitas / periodTransactions.filter(t => t.type === 'Entrada').length || 0) : 0;
+  const totalTransacoes = periodTransactions.length;
+
+  const expensesByCategory = periodTransactions
       .filter(t => t.type === 'Saída')
       .reduce((acc, curr) => {
           acc[curr.category] = (acc[curr.category] || 0) + Math.abs(Number(curr.amount));
@@ -590,6 +697,18 @@ export default function Financial() {
       const [mB, yB] = b.name.split('/');
       return new Date(Number(yA), Number(mA)-1).getTime() - new Date(Number(yB), Number(mB)-1).getTime();
   });
+
+  const finPeriodLabels: Record<FinPeriod, string> = {
+    hoje: 'Hoje',
+    ontem: 'Ontem',
+    semana: 'Últimos 7 Dias',
+    mes: 'Este Mês',
+    '30-dias': 'Últimos 30 Dias',
+    'mes-anterior': 'Mês Anterior',
+    trimestre: 'Trimestre',
+    ano: 'Este Ano',
+    personalizado: 'Personalizado',
+  };
 
   return (
     <div className="space-y-6">
@@ -723,7 +842,7 @@ export default function Financial() {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="bg-slate-50 p-4 border-t border-slate-100">
+                    <DialogFooter className="bg-slate-50 p-4 border-t border-slate-100 !m-0 rounded-b-xl">
                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded h-9 text-xs font-bold uppercase tracking-wider">Cancelar</Button>
                         <Button type="submit" disabled={isSaving} className="rounded bg-slate-900 hover:bg-slate-800 text-white h-9 text-xs font-bold uppercase tracking-wider px-6">
                             {isSaving ? "PROCESSANDO..." : (editingTransaction ? "SALVAR ALTERAÇÕES" : "CONFIRMAR LANÇAMENTO")}
@@ -735,77 +854,139 @@ export default function Financial() {
         </div>
       </div>
 
-      {/* Main Financial KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Period Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-slate-500" />
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Filtro de Análise</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {finPeriod === 'personalizado' && (
+            <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-250">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={e => setCustomStartDate(e.target.value)}
+                className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+              />
+              <span className="text-[10px] font-bold text-slate-400">até</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={e => setCustomEndDate(e.target.value)}
+                className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+              />
+            </div>
+          )}
+          <Select value={finPeriod} onValueChange={(p: FinPeriod) => setFinPeriod(p)}>
+            <SelectTrigger className="h-8 w-44 rounded border-slate-200 text-xs font-semibold uppercase tracking-wider bg-slate-50 text-slate-700">
+              <SelectValue placeholder="Selecione o período" />
+            </SelectTrigger>
+            <SelectContent className="text-xs font-medium uppercase tracking-wider">
+              <SelectItem value="hoje">Hoje</SelectItem>
+              <SelectItem value="ontem">Ontem</SelectItem>
+              <SelectItem value="semana">Últimos 7 Dias</SelectItem>
+              <SelectItem value="mes">Este Mês</SelectItem>
+              <SelectItem value="30-dias">Últimos 30 Dias</SelectItem>
+              <SelectItem value="mes-anterior">Mês Anterior</SelectItem>
+              <SelectItem value="trimestre">Últimos 3 Meses</SelectItem>
+              <SelectItem value="ano">Este Ano</SelectItem>
+              <SelectItem value="personalizado">Período Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Main Financial KPIs — period-filtered */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="rounded border-slate-200 shadow-none bg-white">
-              <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                      <div className="h-10 w-10 rounded bg-slate-50 text-emerald-600 flex items-center justify-center border border-slate-100">
-                          <TrendingUp className="h-5 w-5" />
-                      </div>
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Receitas</p>
-                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ {totalReceitas.toFixed(2)}</h3>
+              <CardContent className="p-3">
+                  <div className="h-6 w-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5"><TrendingUp className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">Receitas</p>
+                  <h3 className="text-sm font-bold text-slate-900">R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
               </CardContent>
           </Card>
-
           <Card className="rounded border-slate-200 shadow-none bg-white">
-              <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                      <div className="h-10 w-10 rounded bg-slate-50 text-red-600 flex items-center justify-center border border-slate-100">
-                          <TrendingDown className="h-5 w-5" />
-                      </div>
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Despesas</p>
-                  <h3 className="text-2xl font-bold text-slate-900 mt-1">R$ {totalDespesas.toFixed(2)}</h3>
+              <CardContent className="p-3">
+                  <div className="h-6 w-6 rounded bg-red-50 text-red-500 flex items-center justify-center mb-1.5"><TrendingDown className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">Despesas</p>
+                  <h3 className="text-sm font-bold text-slate-900">R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
               </CardContent>
           </Card>
-
-          <Card className="rounded border-none bg-slate-900 shadow-none text-white">
-              <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                      <div className="h-10 w-10 rounded bg-white/10 text-white flex items-center justify-center">
-                          <DollarSign className="h-5 w-5" />
-                      </div>
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase text-slate-400">Saldo Atual</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">R$ {saldo.toFixed(2)}</h3>
+          <Card className="rounded border-none bg-slate-900 shadow-none">
+              <CardContent className="p-3">
+                  <div className="h-6 w-6 rounded bg-white/10 text-white flex items-center justify-center mb-1.5"><DollarSign className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">Saldo</p>
+                  <h3 className={`text-sm font-bold ${saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+              </CardContent>
+          </Card>
+          <Card className="rounded border-slate-200 shadow-none bg-white">
+              <CardContent className="p-3">
+                  <div className="h-6 w-6 rounded bg-slate-50 text-slate-600 flex items-center justify-center mb-1.5"><ArrowUpRight className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">Ticket Médio</p>
+                  <h3 className="text-sm font-bold text-slate-900">R$ {(isNaN(ticketMedioFin) ? 0 : ticketMedioFin).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+              </CardContent>
+          </Card>
+          <Card className="rounded border-slate-200 shadow-none bg-white">
+              <CardContent className="p-3">
+                  <div className="h-6 w-6 rounded bg-slate-50 text-slate-600 flex items-center justify-center mb-1.5"><History className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">Transações</p>
+                  <h3 className="text-sm font-bold text-slate-900">{totalTransacoes}</h3>
+              </CardContent>
+          </Card>
+          <Card className={`rounded shadow-none border ${
+              walletStats.adimplencia >= 90 ? 'border-emerald-200 bg-emerald-50' :
+              walletStats.adimplencia >= 70 ? 'border-amber-200 bg-amber-50' :
+              'border-red-200 bg-red-50'
+          }`}>
+              <CardContent className="p-3">
+                  <div className={`h-6 w-6 rounded flex items-center justify-center mb-1.5 ${
+                    walletStats.adimplencia >= 90 ? 'bg-emerald-100 text-emerald-600' :
+                    walletStats.adimplencia >= 70 ? 'bg-amber-100 text-amber-600' :
+                    'bg-red-100 text-red-600'
+                  }`}><UserCheck className="h-3.5 w-3.5" /></div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Adimplência</p>
+                  <h3 className={`text-sm font-bold ${
+                    walletStats.adimplencia >= 90 ? 'text-emerald-700' :
+                    walletStats.adimplencia >= 70 ? 'text-amber-700' :
+                    'text-red-700'
+                  }`}>{walletStats.adimplencia}%</h3>
               </CardContent>
           </Card>
       </div>
 
-      <Card className="rounded border-slate-200 shadow-none bg-white mt-6 overflow-hidden">
-          <CardHeader className="px-6 py-4 border-b border-slate-100 flex flex-row items-center justify-between">
+      <Card className="rounded border-slate-200 shadow-none bg-white mt-4 overflow-hidden">
+          <CardHeader className="px-5 py-3 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
-                  <CardTitle className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Desempenho de Faturamento</CardTitle>
-                  <p className="text-[11px] text-slate-400 font-medium">Comparativo mensal de entradas e saídas (últimos 6 meses)</p>
+                  <CardTitle className="text-xs font-semibold text-slate-900 uppercase tracking-wider">Desempenho de Faturamento</CardTitle>
+                  <p className="text-[10px] text-slate-400 font-medium">Comparativo mensal de entradas e saídas (últimos 6 meses)</p>
               </div>
           </CardHeader>
-          <CardContent className="p-6">
-              <div className="h-[280px] w-full">
+          <CardContent className="px-5 py-4">
+              <div className="h-[180px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                           <XAxis 
                               dataKey="name" 
                               axisLine={false} 
                               tickLine={false} 
-                              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
-                              dy={10}
+                              tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} 
+                              dy={5}
                           />
                           <YAxis 
                               axisLine={false} 
                               tickLine={false} 
-                              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
+                              tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} 
                               tickFormatter={(value) => `R$ ${value}`}
                           />
                           <Tooltip 
                               cursor={{ fill: '#f8fafc' }}
-                              contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                              contentStyle={{ borderRadius: '4px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px', fontWeight: 'bold' }}
                               formatter={(value: any) => [`R$ ${Number(value).toFixed(2)}`, '']}
                           />
-                          <Bar dataKey="entrada" name="Vendas / Entradas" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
-                          <Bar dataKey="saida" name="Custo / Saídas" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={32} />
+                          <Bar dataKey="entrada" name="Vendas / Entradas" fill="#10b981" radius={[3, 3, 0, 0]} barSize={20} />
+                          <Bar dataKey="saida" name="Custo / Saídas" fill="#ef4444" radius={[3, 3, 0, 0]} barSize={20} />
                       </BarChart>
                   </ResponsiveContainer>
               </div>
@@ -814,8 +995,14 @@ export default function Financial() {
 
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem('financialTab', v); }} className="w-full">
           <TabsList className="bg-transparent p-0 border-b border-slate-200 h-10 w-full justify-start rounded-none gap-8 mb-6">
-            <TabsTrigger value="caixa" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Fluxo de Caixa</TabsTrigger>
-            <TabsTrigger value="carnes" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Carnês & Parcelas</TabsTrigger>
+            <TabsTrigger value="caixa" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              Fluxo de Caixa
+              <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{filteredTransactions.length}</span>
+            </TabsTrigger>
+            <TabsTrigger value="carnes" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none flex items-center gap-2">
+              Carnês & Parcelas
+              <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{groupedInstallments.length}</span>
+            </TabsTrigger>
             <TabsTrigger value="analise-credito" className="rounded-none border-b-2 border-transparent px-0 h-full font-semibold text-sm text-slate-500 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 bg-transparent shadow-none">Análise de Crédito</TabsTrigger>
           </TabsList>
 
@@ -1703,7 +1890,7 @@ export default function Financial() {
                             </div>
                         </div>
 
-                        <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3 !rounded-none">
+                        <DialogFooter className="bg-slate-50 p-6 border-t border-slate-100 flex items-center justify-end gap-3 !rounded-none !m-0">
                             <Button type="button" variant="ghost" className="!rounded-none px-6 font-semibold text-slate-500 text-xs h-10 hover:bg-slate-100" onClick={() => { setIsCreditDialogOpen(false); setEditingCreditClient(null); }}>CANCELAR</Button>
                             <Button type="submit" disabled={isSaving} className="!rounded-none bg-slate-900 hover:bg-slate-800 text-white px-8 font-semibold text-xs h-10 shadow-lg">
                                 {isSaving ? "SALVANDO..." : "SALVAR ALTERAÇÃO"}
@@ -1725,51 +1912,70 @@ export default function Financial() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <p style={{ margin: 0, fontSize: '9pt' }}>Data de Emissão: {new Date().toLocaleDateString('pt-BR')}</p>
-                        <p style={{ margin: '1mm 0 0 0', fontSize: '9pt' }}>Período: Completo</p>
+                        <p style={{ margin: '1mm 0 0 0', fontSize: '9pt' }}>
+                          Período: {finPeriodLabels[finPeriod]}{finPeriod === 'personalizado' ? ` (${customStartDate.split('-').reverse().join('/')} a ${customEndDate.split('-').reverse().join('/')})` : ''}
+                        </p>
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10mm', marginBottom: '10mm' }}>
-                    <div style={{ padding: '4mm', border: '1px solid #ddd', borderRadius: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '8pt', color: '#666', textTransform: 'uppercase' }}>Total Receitas</p>
-                        <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold', color: '#166534' }}>R$ {totalReceitas.toFixed(2)}</p>
-                    </div>
-                    <div style={{ padding: '4mm', border: '1px solid #ddd', borderRadius: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '8pt', color: '#666', textTransform: 'uppercase' }}>Total Despesas</p>
-                        <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold', color: '#991b1b' }}>R$ {totalDespesas.toFixed(2)}</p>
-                    </div>
-                    <div style={{ padding: '4mm', background: '#000', color: '#fff', borderRadius: '4px' }}>
-                        <p style={{ margin: 0, fontSize: '8pt', color: '#ccc', textTransform: 'uppercase' }}>Saldo Final</p>
-                        <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold' }}>R$ {saldo.toFixed(2)}</p>
-                    </div>
-                </div>
+                {(() => {
+                  const exportTotalReceitas = filteredTransactions.filter(t => t.type === 'Entrada').reduce((acc, curr) => acc + Number(curr.amount), 0);
+                  const exportTotalDespesas = filteredTransactions.filter(t => t.type === 'Saída').reduce((acc, curr) => acc + Number(curr.amount), 0);
+                  const exportSaldo = exportTotalReceitas - exportTotalDespesas;
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                            <th style={{ padding: '3mm', textAlign: 'left' }}>Data</th>
-                            <th style={{ padding: '3mm', textAlign: 'left' }}>Descrição</th>
-                            <th style={{ padding: '3mm', textAlign: 'left' }}>Categoria</th>
-                            <th style={{ padding: '3mm', textAlign: 'center' }}>Tipo</th>
-                            <th style={{ padding: '3mm', textAlign: 'right' }}>Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[...transactions].sort((a, b) => {
-                            const dateA = a.date?.includes('/') ? a.date.split('/').reverse().join('') : a.date;
-                            const dateB = b.date?.includes('/') ? b.date.split('/').reverse().join('') : b.date;
-                            return dateB.localeCompare(dateA);
-                        }).map((t, idx) => (
-                            <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#fff' : '#f8fafc', pageBreakInside: 'avoid' }}>
-                                <td style={{ padding: '3mm' }}>{t.date}</td>
-                                <td style={{ padding: '3mm', fontWeight: 'bold' }}>{t.description}</td>
-                                <td style={{ padding: '3mm' }}>{t.category}</td>
-                                <td style={{ padding: '3mm', textAlign: 'center', color: t.type === 'Entrada' ? '#166534' : '#991b1b', fontWeight: 'bold' }}>{t.type}</td>
-                                <td style={{ padding: '3mm', textAlign: 'right', fontWeight: 'bold' }}>R$ {Number(t.amount).toFixed(2)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                  return (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10mm', marginBottom: '10mm' }}>
+                          <div style={{ padding: '4mm', border: '1px solid #ddd', borderRadius: '4px' }}>
+                              <p style={{ margin: 0, fontSize: '8pt', color: '#666', textTransform: 'uppercase' }}>Total Receitas</p>
+                              <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold', color: '#166534' }}>R$ {exportTotalReceitas.toFixed(2)}</p>
+                          </div>
+                          <div style={{ padding: '4mm', border: '1px solid #ddd', borderRadius: '4px' }}>
+                              <p style={{ margin: 0, fontSize: '8pt', color: '#666', textTransform: 'uppercase' }}>Total Despesas</p>
+                              <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold', color: '#991b1b' }}>R$ {exportTotalDespesas.toFixed(2)}</p>
+                          </div>
+                          <div style={{ padding: '4mm', background: '#000', color: '#fff', borderRadius: '4px' }}>
+                              <p style={{ margin: 0, fontSize: '8pt', color: '#ccc', textTransform: 'uppercase' }}>Saldo Final</p>
+                              <p style={{ margin: '1mm 0 0 0', fontSize: '14pt', fontWeight: 'bold' }}>R$ {exportSaldo.toFixed(2)}</p>
+                          </div>
+                      </div>
+
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
+                          <thead>
+                              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                                  <th style={{ padding: '3mm', textAlign: 'left' }}>Data</th>
+                                  <th style={{ padding: '3mm', textAlign: 'left' }}>Descrição</th>
+                                  <th style={{ padding: '3mm', textAlign: 'left' }}>Categoria</th>
+                                  <th style={{ padding: '3mm', textAlign: 'center' }}>Tipo</th>
+                                  <th style={{ padding: '3mm', textAlign: 'right' }}>Valor</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {[...filteredTransactions].sort((a, b) => {
+                                  const dateA = a.date?.includes('/') ? a.date.split('/').reverse().join('') : a.date;
+                                  const dateB = b.date?.includes('/') ? b.date.split('/').reverse().join('') : b.date;
+                                  return dateB.localeCompare(dateA);
+                              }).map((t, idx) => (
+                                  <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#fff' : '#f8fafc', pageBreakInside: 'avoid' }}>
+                                      <td style={{ padding: '3mm' }}>{(() => {
+                                          if (!t.date) return "---";
+                                          if (t.date.includes("-") && t.date.split("-")[0].length === 4) {
+                                              const [y, m, d] = t.date.split("-");
+                                              return `${d}/${m}/${y}`;
+                                          }
+                                          return t.date;
+                                      })()}</td>
+                                      <td style={{ padding: '3mm', fontWeight: 'bold' }}>{t.description}</td>
+                                      <td style={{ padding: '3mm' }}>{t.category}</td>
+                                      <td style={{ padding: '3mm', textAlign: 'center', color: t.type === 'Entrada' ? '#166534' : '#991b1b', fontWeight: 'bold' }}>{t.type}</td>
+                                      <td style={{ padding: '3mm', textAlign: 'right', fontWeight: 'bold' }}>R$ {Number(t.amount).toFixed(2)}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                    </>
+                  );
+                })()}
 
                 <div style={{ marginTop: '10mm', paddingTop: '5mm', borderTop: '1px solid #ddd', fontSize: '8pt', color: '#991b1b', textAlign: 'center' }}>
                     Ótica Melissa — Relatório Administrativo Interno

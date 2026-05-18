@@ -103,7 +103,7 @@ export default function OrderDetails() {
       const historyEntry = {
         date: new Date().toISOString(),
         action: changes.length > 0 ? `Alterações: ${changes.join(', ')}` : "Pedido atualizado sem mudanças visíveis",
-        user: "Administrador" // Em um sistema real, viria do Auth
+        user: localStorage.getItem("selectedAtendente") || "Vendedora"
       };
 
       await updateDoc(doc(db, "orders", id), {

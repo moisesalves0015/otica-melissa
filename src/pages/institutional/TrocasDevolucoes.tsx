@@ -8,7 +8,7 @@ const TrocasDevolucoes = () => {
     {
       icon: <AlertCircle className="text-primary" size={24} />,
       title: "Solicitação",
-      desc: "Entre em contato via WhatsApp ou e-mail em até 7 dias após o recebimento."
+      desc: "Entre em contato via WhatsApp ou e-mail em até 24h após o recebimento."
     },
     {
       icon: <Package className="text-primary" size={24} />,
@@ -39,7 +39,7 @@ const TrocasDevolucoes = () => {
           <div className="p-8 rounded-[24px] bg-slate-50 border border-slate-100">
             <RefreshCcw className="text-primary mb-4" size={32} />
             <h3 className="font-bold text-xl text-slate-900 mb-2">Arrependimento</h3>
-            <p className="text-slate-500 text-sm">Você tem até 7 dias corridos para desistir da compra por qualquer motivo.</p>
+            <p className="text-slate-500 text-sm">Você tem até 24h para desistir da compra por qualquer motivo.</p>
           </div>
           <div className="p-8 rounded-[24px] bg-slate-50 border border-slate-100">
             <ShieldCheck className="text-primary mb-4" size={32} />

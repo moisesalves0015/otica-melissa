@@ -513,7 +513,7 @@ export default function Clients() {
               </div>
             </div>
 
-            <DialogFooter className="bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 p-6 -mx-0 -mb-0 rounded-none">
+            <DialogFooter className="bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 p-6 !m-0 rounded-b-xl">
               <Button type="button" variant="ghost" className="rounded px-4 font-semibold text-slate-500 text-xs h-9" onClick={() => setIsDialogOpen(false)}>CANCELAR</Button>
               <Button type="submit" disabled={isSaving} className="rounded bg-slate-900 hover:bg-slate-800 text-white px-6 font-semibold text-xs h-9">
                 {isSaving ? "SALVANDO..." : "SALVAR CLIENTE"}
@@ -779,7 +779,7 @@ export default function Clients() {
                  </div>
              )}
           </div>
-          <DialogFooter className="bg-slate-50 p-4 border-t border-slate-100">
+          <DialogFooter className="bg-slate-50 p-4 border-t border-slate-100 !m-0 rounded-b-xl">
             <Button onClick={() => setQuickAccessModal(null)} variant="outline" className="rounded font-semibold text-xs border-slate-200 text-slate-600 hover:bg-slate-100">FECHAR</Button>
           </DialogFooter>
         </DialogContent>

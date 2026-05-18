@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, onSnapshot, query, doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { toast } from "sonner";
 
 const sidebarLinks = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
@@ -47,12 +48,25 @@ export default function AdminLayout() {
   const { logout } = useAuth();
 
   const [atendentes, setAtendentes] = React.useState<any[]>([]);
-  const [selectedAtendente, setSelectedAtendente] = React.useState("Administrador");
+  const [selectedAtendente, setSelectedAtendente] = React.useState<string>(() => {
+    return localStorage.getItem("selectedAtendente") || "";
+  });
+  const [loadingAtendentes, setLoadingAtendentes] = React.useState(true);
   const [dynamicBreadcrumb, setDynamicBreadcrumb] = React.useState("");
 
   React.useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "atendentes")), (snap) => {
-      setAtendentes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAtendentes(list);
+      setLoadingAtendentes(false);
+      
+      const persisted = localStorage.getItem("selectedAtendente");
+      if (persisted && persisted !== "Administrador" && list.some(a => a.name === persisted)) {
+        setSelectedAtendente(persisted);
+      } else {
+        setSelectedAtendente("");
+        localStorage.removeItem("selectedAtendente");
+      }
     });
     return () => unsub();
   }, []);
@@ -183,6 +197,77 @@ export default function AdminLayout() {
     </>
   );
 
+  if (loadingAtendentes) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!selectedAtendente) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden select-none">
+        {/* Decorative background gradients */}
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
+        <div className="absolute bottom-0 -right-4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+
+        <div className="w-full max-w-md bg-[#0f172a]/95 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col items-center gap-8 relative z-10 animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center text-center gap-2">
+            <img
+              src="/logo.png"
+              alt="Melissa"
+              className="h-10 w-auto object-contain brightness-0 invert"
+            />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.25em] mt-1.5">
+              Identificação de Operador
+            </span>
+          </div>
+
+          <div className="text-center space-y-1">
+            <h2 className="text-lg font-bold text-white tracking-tight">Quem está utilizando este terminal?</h2>
+            <p className="text-xs text-slate-400">Selecione a vendedora ativa para iniciar o turno.</p>
+          </div>
+
+          <div className="w-full flex flex-col gap-3">
+            {atendentes.map((atendente) => {
+              const initials = atendente.name ? atendente.name.substring(0, 2).toUpperCase() : "VD";
+              return (
+                <button
+                  key={atendente.id}
+                  onClick={() => {
+                    localStorage.setItem("selectedAtendente", atendente.name);
+                    setSelectedAtendente(atendente.name);
+                    toast.success(`Turno iniciado para ${atendente.name}!`);
+                  }}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-800 bg-white/[0.02] hover:bg-white/[0.06] hover:border-slate-700 transition-all duration-200 group text-left shadow-sm"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-slate-800 group-hover:bg-primary transition-colors flex items-center justify-center font-bold text-white text-sm uppercase shrink-0">
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors truncate">{atendente.name}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Vendedora</p>
+                  </div>
+                  <div className="h-6 w-6 rounded-full bg-slate-800/80 group-hover:bg-primary/20 flex items-center justify-center shrink-0 border border-slate-700/50 group-hover:border-primary/30 transition-all">
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-primary transition-colors" />
+                  </div>
+                </button>
+              );
+            })}
+
+            {atendentes.length === 0 && (
+              <div className="text-center py-6">
+                <p className="text-sm text-slate-400 italic font-medium">Nenhuma vendedora cadastrada no banco de dados.</p>
+                <p className="text-xs text-slate-500 mt-1">Por favor, cadastre uma vendedora no painel ou entre em contato com o suporte.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 print:block overflow-x-hidden">
       
@@ -298,22 +383,34 @@ export default function AdminLayout() {
               <div className="text-right hidden sm:block">
                 <div className="relative flex items-center justify-end group">
                   <select 
-                    className="text-xs font-semibold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none text-right appearance-none py-0 pl-2 pr-4 m-0 z-10"
+                    className="text-xs font-semibold text-slate-700 bg-transparent border-none focus:ring-0 cursor-pointer outline-none text-right appearance-none py-0 pl-2 pr-4 m-0 z-10 font-bold"
                     value={selectedAtendente}
-                    onChange={(e) => setSelectedAtendente(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__switch") {
+                        localStorage.removeItem("selectedAtendente");
+                        setSelectedAtendente("");
+                        toast.info("Turno encerrado. Identifique-se novamente.");
+                      } else {
+                        localStorage.setItem("selectedAtendente", val);
+                        setSelectedAtendente(val);
+                        toast.success(`Operador alterado para ${val}!`);
+                      }
+                    }}
                     style={{ textAlignLast: "right" }}
                   >
-                    <option value="Administrador">Administrador</option>
+                    <option value="" disabled className="text-slate-400 font-normal">Selecionar Vendedora</option>
                     {atendentes.map(a => (
                       <option key={a.id} value={a.name}>{a.name}</option>
                     ))}
+                    <option value="__switch" className="text-rose-600 font-bold border-t border-slate-100">← Trocar Operador</option>
                   </select>
                   <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none group-hover:text-slate-600" />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-0.5 uppercase font-medium">Administrador</p>
+                <p className="text-[10px] text-slate-400 mt-0.5 uppercase font-medium">Vendedora Ativa</p>
               </div>
               <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs shrink-0 uppercase">
-                {selectedAtendente === "Administrador" ? "AD" : selectedAtendente.substring(0, 2)}
+                {selectedAtendente ? selectedAtendente.substring(0, 2) : "VD"}
               </div>
             </div>
           </div>
